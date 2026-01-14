@@ -18,6 +18,10 @@ endif::[]
 
 image::https://img.shields.io/badge/version-1.0.0-blue[]
 
+== system specification link
+
+https://2526-3bhif-syp.github.io/2526-3bhif-syp-project-better-mind-maps/system-specifications
+
 == doc-as-code
 
 === Overview
