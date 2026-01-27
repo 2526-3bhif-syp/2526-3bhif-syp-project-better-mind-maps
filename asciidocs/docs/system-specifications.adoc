@@ -10,11 +10,11 @@ Schüler in der HTL Leonding müssen komplexe Themen erlernt werden, Schüler ha
 
 === 1.2. Istzustand
 
-Derzeit schreiben Schüler Notizen in Form von linearen Texten, vielleicht haben sie sich noch nicht mit Mind Maps befasst.
+Derzeit schreiben Schüler Notizen in Form von linearen Texten.
 
 === 1.3. Problemstellung
 
-Die Schüler haben Probleme damit, komplexe Themen zu strukturieren und zu visualisieren. Lineare Notizen bieten oft nicht den optimalen Lernerfolg. Wir möchten den Schülern Mind Maps näher legen, als Werkzeug zum besseren Verständnis und zur besseren Organisation von Wissen.
+Die Schüler haben Probleme damit, komplexe Themen zu strukturieren und zu visualisieren. Lineare Notizen bieten oft nicht den optimalen Lernerfolg.
 
 === 1.4. Aufgabenstellung
 
