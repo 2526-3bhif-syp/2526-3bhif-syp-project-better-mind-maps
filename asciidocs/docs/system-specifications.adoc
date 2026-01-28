@@ -54,6 +54,20 @@ S -- UC5
 * **Mind Maps pro Benutzer:** Durchschnittlich 10–20 Projekte.
 * **Speicherplatz:** Geringer Bedarf durch textbasierte Speicherung der Map-Daten.
 
+<<<<<<< HEAD
+=======
+* Verbesserung der Lernmethoden durch Mind Maps
+* Schülern ein nützliches Werkzeug zur Verfügung stellen
+* Digitales lernen einfacher und effizienter machen
+* Notengrade dadurch verbessern
+
+=== 1.6. Mengengerüst
+
+* Anzahl der Benutzer: maximal geschätzt 100 Schüler
+* Anzahl der Mind Maps pro Benutzer: variabel, geschätzt 10-20
+* Speicherplatzbedarf: noch unbekannt
+
+>>>>>>> eb04624227a40c2283811a20f5440fbd291db09b
 === 1.8. Rahmenbedingungen
 * **Technologie:** Java
 * **GUI-Framework:** JavaFX
