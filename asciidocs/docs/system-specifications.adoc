@@ -1,40 +1,58 @@
 = Pflichtenheft und Projektstruktur Better Mind Maps
-:toc:
+:toc: left
 :toclevels: 3
+:icons: font
 
 == 1. Pflichtenheft
 
 === 1.1. Ausgangssituation
-
-Schüler in der HTL Leonding müssen komplexe Themen erlernen und haben viele verschiedene Methoden ihr Wissen zu strukturieren. 
+Schüler der HTL Leonding sind im Schulalltag mit einer hohen Informationsdichte und komplexen technischen Themen konfrontiert. Zur Wissensaufbereitung nutzen sie individuelle, oft analoge oder unstrukturierte Methoden.
 
 === 1.2. Istzustand
-
-Derzeit schreiben Schüler Notizen in Form von linearen Texten.
+Die Wissenssicherung erfolgt derzeit primär durch lineare Textnotizen (z. B. in Word, OneNote oder auf Papier).
 
 === 1.3. Problemstellung
-
-Die Schüler haben Probleme damit, komplexe Themen zu strukturieren und visualisieren. Lineare Notizen bieten oft nicht den optimalen Lernerfolg, was zu schlechteren Noten führt.
+Lineare Aufzeichnungen führen bei komplexen Themen häufig zu einem Mangel an Übersichtlichkeit. Die kognitive Verknüpfung von Informationen fällt Schülern schwerer, was den Lernerfolg mindert. Bestehende Tools sind oft entweder zu überladen oder nicht spezifisch auf den schulischen Workflow zugeschnitten.
 
 === 1.4. Aufgabenstellung
 
-==== 1.4.1. Funktionale Anforderungen
+==== 1.4.1. Funktionale Anforderungen (FA)
+[plantuml, usecase-diagram, svg]
+----
+@startuml
+left to right direction
+actor "Schüler" as S
 
-* Mind Map Erstellung (zentrales Thema mittig, Unterpunkte außenrum)
-* Knoten hinzufügen, bearbeiten und löschen
-* Verbindungen zwischen Knoten erstellen
-* Exportieren und Speichern von Mind Maps (?)
-* Benutzerverwaltung (Anmeldung, Profil) (?)
+rectangle "Better Mind Maps System" {
+  usecase "Registrieren / Anmelden" as UC1
+  usecase "Mind Map erstellen" as UC2
+  usecase "Knoten verwalten\n(Hinzufügen, Bearbeiten, Löschen)" as UC3
+  usecase "Projekt speichern / laden" as UC4
+  usecase "Export als Bild" as UC5
+}
+
+S -- UC1
+S -- UC2
+S -- UC3
+S -- UC4
+S -- UC5
+@enduml
+----
 
 ==== 1.4.2. Nichtfunktionale Anforderungen (NFA)
+* **Usability:** Intuitive Bedienung durch eine klare GUI.
+* **Performance:** Flüssiges Verwalten von Knoten auch bei größeren Maps (bis zu 100 Knoten).
+* **Robustheit:** Fehlerresistentenz.
 
-* Sicherer Umgang mit Benutzerdaten
-* Intuitive Benutzeroberfläche
-* Angenehmes UI
-* Schnelle Performance
-* Sicherheit gewährleisten
+=== 1.6. Ziele
+* **Verbesserung der Lernmethoden:** Förderung des vernetzten Denkens durch visuelle Aufbereitung.
+* **Effizienz:** Zeitersparnis bei der Strukturierung von Unterrichtsstoff.
+* **Digitaler Mehrwert:** Bereitstellung eines modernen Werkzeugs für den HTL-Alltag.
 
-=== 1.5. Ziele
+=== 1.7. Mengengerüst
+* **Anzahl der Benutzer:** Geschätzt ca. 100 Schüler.
+* **Mind Maps pro Benutzer:** Durchschnittlich 10–20 Projekte.
+* **Speicherplatz:** Geringer Bedarf durch textbasierte Speicherung der Map-Daten.
 
 * Verbesserung der Lernmethoden durch Mind Maps
 * Schülern ein nützliches Werkzeug zur Verfügung stellen
@@ -47,10 +65,9 @@ Die Schüler haben Probleme damit, komplexe Themen zu strukturieren und visualis
 * Anzahl der Mind Maps pro Benutzer: variabel, geschätzt 10-20
 * Speicherplatzbedarf: noch unbekannt
 
-=== 1.7. Rahmenbedingungen
-
-* Verwendung von javafx für die GUI
-* Programmiersprache: Java
+=== 1.8. Rahmenbedingungen
+* **Technologie:** Java
+* **GUI-Framework:** JavaFX
 
 == 2. Entwurf
 
@@ -64,4 +81,3 @@ Weitere Entwurfsaspekte.
 
 === 3.1. GANTT-Diagramm
 Zeit- und Ablaufplanung des Projekts.
-
