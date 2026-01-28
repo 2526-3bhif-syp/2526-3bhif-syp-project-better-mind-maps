@@ -456,9 +456,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_1_2_istzustand">1.2. 1.2. Istzustand</a></li>
 <li><a href="#_1_3_problemstellung">1.3. 1.3. Problemstellung</a></li>
 <li><a href="#_1_4_aufgabenstellung">1.4. 1.4. Aufgabenstellung</a></li>
-<li><a href="#_1_5_ziele">1.5. 1.5. Ziele</a></li>
-<li><a href="#_1_6_mengengerüst">1.6. 1.6. Mengengerüst</a></li>
-<li><a href="#_1_7_rahmenbedingungen">1.7. 1.7. Rahmenbedingungen</a></li>
+<li><a href="#_1_6_ziele">1.5. 1.6. Ziele</a></li>
+<li><a href="#_1_7_mengengerüst">1.6. 1.7. Mengengerüst</a></li>
+<li><a href="#_1_6_mengengerüst">1.7. 1.6. Mengengerüst</a></li>
+<li><a href="#_1_8_rahmenbedingungen">1.8. 1.8. Rahmenbedingungen</a></li>
 </ul>
 </li>
 <li><a href="#_2_entwurf">2. 2. Entwurf</a>
@@ -482,43 +483,29 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="sect2">
 <h3 id="_1_1_ausgangssituation"><a class="anchor" href="#_1_1_ausgangssituation"></a>1.1. 1.1. Ausgangssituation</h3>
 <div class="paragraph">
-<p>Schüler in der HTL Leonding müssen komplexe Themen erlernen und haben viele verschiedene Methoden ihr Wissen zu strukturieren.</p>
+<p>Schüler der HTL Leonding sind im Schulalltag mit einer hohen Informationsdichte und komplexen technischen Themen konfrontiert. Zur Wissensaufbereitung nutzen sie individuelle, oft analoge oder unstrukturierte Methoden.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_1_2_istzustand"><a class="anchor" href="#_1_2_istzustand"></a>1.2. 1.2. Istzustand</h3>
 <div class="paragraph">
-<p>Derzeit schreiben Schüler Notizen in Form von linearen Texten.</p>
+<p>Die Wissenssicherung erfolgt derzeit primär durch lineare Textnotizen (z. B. in Word, OneNote oder auf Papier).</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_1_3_problemstellung"><a class="anchor" href="#_1_3_problemstellung"></a>1.3. 1.3. Problemstellung</h3>
 <div class="paragraph">
-<p>Die Schüler haben Probleme damit, komplexe Themen zu strukturieren und visualisieren. Lineare Notizen bieten oft nicht den optimalen Lernerfolg, was zu schlechteren Noten führt.</p>
+<p>Lineare Aufzeichnungen führen bei komplexen Themen häufig zu einem Mangel an Übersichtlichkeit. Die kognitive Verknüpfung von Informationen fällt Schülern schwerer, was den Lernerfolg mindert. Bestehende Tools sind oft entweder zu überladen oder nicht spezifisch auf den schulischen Workflow zugeschnitten.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_1_4_aufgabenstellung"><a class="anchor" href="#_1_4_aufgabenstellung"></a>1.4. 1.4. Aufgabenstellung</h3>
 <div class="sect3">
-<h4 id="_1_4_1_funktionale_anforderungen"><a class="anchor" href="#_1_4_1_funktionale_anforderungen"></a>1.4.1. 1.4.1. Funktionale Anforderungen</h4>
-<div class="ulist">
-<ul>
-<li>
-<p>Mind Map Erstellung (zentrales Thema mittig, Unterpunkte außenrum)</p>
-</li>
-<li>
-<p>Knoten hinzufügen, bearbeiten und löschen</p>
-</li>
-<li>
-<p>Verbindungen zwischen Knoten erstellen</p>
-</li>
-<li>
-<p>Exportieren und Speichern von Mind Maps (?)</p>
-</li>
-<li>
-<p>Benutzerverwaltung (Anmeldung, Profil) (?)</p>
-</li>
-</ul>
+<h4 id="_1_4_1_funktionale_anforderungen_fa"><a class="anchor" href="#_1_4_1_funktionale_anforderungen_fa"></a>1.4.1. 1.4.1. Funktionale Anforderungen (FA)</h4>
+<div class="imageblock">
+<div class="content">
+<img src="images/usecase-diagram.svg" alt="usecase diagram" width="446" height="434">
+</div>
 </div>
 </div>
 <div class="sect3">
@@ -526,28 +513,47 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="ulist">
 <ul>
 <li>
-<p>Sicherer Umgang mit Benutzerdaten</p>
+<p><strong>Usability:</strong> Intuitive Bedienung durch eine klare GUI.</p>
 </li>
 <li>
-<p>Intuitive Benutzeroberfläche</p>
+<p><strong>Performance:</strong> Flüssiges Verwalten von Knoten auch bei größeren Maps (bis zu 100 Knoten).</p>
 </li>
 <li>
-<p>Angenehmes UI</p>
-</li>
-<li>
-<p>Schnelle Performance</p>
-</li>
-<li>
-<p>Sicherheit gewährleisten</p>
+<p><strong>Robustheit:</strong> Fehlerresistentenz.</p>
 </li>
 </ul>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_1_5_ziele"><a class="anchor" href="#_1_5_ziele"></a>1.5. 1.5. Ziele</h3>
+<h3 id="_1_6_ziele"><a class="anchor" href="#_1_6_ziele"></a>1.5. 1.6. Ziele</h3>
 <div class="ulist">
 <ul>
+<li>
+<p><strong>Verbesserung der Lernmethoden:</strong> Förderung des vernetzten Denkens durch visuelle Aufbereitung.</p>
+</li>
+<li>
+<p><strong>Effizienz:</strong> Zeitersparnis bei der Strukturierung von Unterrichtsstoff.</p>
+</li>
+<li>
+<p><strong>Digitaler Mehrwert:</strong> Bereitstellung eines modernen Werkzeugs für den HTL-Alltag.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_1_7_mengengerüst"><a class="anchor" href="#_1_7_mengengerüst"></a>1.6. 1.7. Mengengerüst</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Anzahl der Benutzer:</strong> Geschätzt ca. 100 Schüler.</p>
+</li>
+<li>
+<p><strong>Mind Maps pro Benutzer:</strong> Durchschnittlich 10–20 Projekte.</p>
+</li>
+<li>
+<p><strong>Speicherplatz:</strong> Geringer Bedarf durch textbasierte Speicherung der Map-Daten.</p>
+</li>
 <li>
 <p>Verbesserung der Lernmethoden durch Mind Maps</p>
 </li>
@@ -564,7 +570,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect2">
-<h3 id="_1_6_mengengerüst"><a class="anchor" href="#_1_6_mengengerüst"></a>1.6. 1.6. Mengengerüst</h3>
+<h3 id="_1_6_mengengerüst"><a class="anchor" href="#_1_6_mengengerüst"></a>1.7. 1.6. Mengengerüst</h3>
 <div class="ulist">
 <ul>
 <li>
@@ -580,14 +586,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect2">
-<h3 id="_1_7_rahmenbedingungen"><a class="anchor" href="#_1_7_rahmenbedingungen"></a>1.7. 1.7. Rahmenbedingungen</h3>
+<h3 id="_1_8_rahmenbedingungen"><a class="anchor" href="#_1_8_rahmenbedingungen"></a>1.8. 1.8. Rahmenbedingungen</h3>
 <div class="ulist">
 <ul>
 <li>
-<p>Verwendung von javafx für die GUI</p>
+<p><strong>Technologie:</strong> Java</p>
 </li>
 <li>
-<p>Programmiersprache: Java</p>
+<p><strong>GUI-Framework:</strong> JavaFX</p>
 </li>
 </ul>
 </div>
@@ -625,7 +631,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-01-28 07:36:40 UTC
+Last updated 2026-01-28 11:40:04 UTC
 </div>
 </div>
 </body>
