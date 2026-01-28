@@ -6,7 +6,7 @@
 
 === 1.1. Ausgangssituation
 
-Schüler in der HTL Leonding müssen komplexe Themen erlernt werden, Schüler haben viele Verschiedene Methoden ihr Wissen zu strukturieren. Eine davon sind Mind Maps, Ein zentrales Thema wird in der Mitte angegeben und "Äste" mit Unterthemen oder Verbindenden Begriffen werden beigefügt.
+Schüler in der HTL Leonding müssen komplexe Themen erlernen und haben viele verschiedene Methoden ihr Wissen zu strukturieren. 
 
 === 1.2. Istzustand
 
@@ -14,13 +14,13 @@ Derzeit schreiben Schüler Notizen in Form von linearen Texten.
 
 === 1.3. Problemstellung
 
-Die Schüler haben Probleme damit, komplexe Themen zu strukturieren und zu visualisieren. Lineare Notizen bieten oft nicht den optimalen Lernerfolg.
+Die Schüler haben Probleme damit, komplexe Themen zu strukturieren und visualisieren. Lineare Notizen bieten oft nicht den optimalen Lernerfolg, was zu schlechteren Noten führt.
 
 === 1.4. Aufgabenstellung
 
 ==== 1.4.1. Funktionale Anforderungen
 
-* Mind Map Erstellung
+* Mind Map Erstellung (zentrales Thema mittig, Unterpunkte außenrum)
 * Knoten hinzufügen, bearbeiten und löschen
 * Verbindungen zwischen Knoten erstellen
 * Exportieren und Speichern von Mind Maps (?)
@@ -32,12 +32,14 @@ Die Schüler haben Probleme damit, komplexe Themen zu strukturieren und zu visua
 * Intuitive Benutzeroberfläche
 * Angenehmes UI
 * Schnelle Performance
+* Sicherheit gewährleisten
 
 === 1.5. Ziele
 
 * Verbesserung der Lernmethoden durch Mind Maps
 * Schülern ein nützliches Werkzeug zur Verfügung stellen
 * Digitales lernen einfacher und effizienter machen
+* Notengrade dadurch verbessern
 
 === 1.6. Mengengerüst
 
