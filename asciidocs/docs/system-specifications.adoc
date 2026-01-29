@@ -60,7 +60,7 @@ S -- UC5
 
 === 1.8. Abgrenzung
 * Automatische Lernanalysen oder KI-Funktionen
-* Cloud-Synchronisation oder Online-Speicherung
+* Online-Speicherung oder Synchronisation über das Internet
 
 == 2. Entwurf
 
