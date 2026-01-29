@@ -44,33 +44,23 @@ S -- UC5
 * **Performance:** Flüssiges Verwalten von Knoten auch bei größeren Maps (bis zu 100 Knoten).
 * **Robustheit:** Fehlerresistentenz.
 
-=== 1.6. Ziele
+=== 1.5. Ziele
 * **Verbesserung der Lernmethoden:** Förderung des vernetzten Denkens durch visuelle Aufbereitung.
 * **Effizienz:** Zeitersparnis bei der Strukturierung von Unterrichtsstoff.
 * **Digitaler Mehrwert:** Bereitstellung eines modernen Werkzeugs für den HTL-Alltag.
 
-=== 1.7. Mengengerüst
+=== 1.6. Mengengerüst
 * **Anzahl der Benutzer:** Geschätzt ca. 100 Schüler.
 * **Mind Maps pro Benutzer:** Durchschnittlich 10–20 Projekte.
 * **Speicherplatz:** Geringer Bedarf durch textbasierte Speicherung der Map-Daten.
 
-<<<<<<< HEAD
-=======
-* Verbesserung der Lernmethoden durch Mind Maps
-* Schülern ein nützliches Werkzeug zur Verfügung stellen
-* Digitales lernen einfacher und effizienter machen
-* Notengrade dadurch verbessern
-
-=== 1.6. Mengengerüst
-
-* Anzahl der Benutzer: maximal geschätzt 100 Schüler
-* Anzahl der Mind Maps pro Benutzer: variabel, geschätzt 10-20
-* Speicherplatzbedarf: noch unbekannt
-
->>>>>>> eb04624227a40c2283811a20f5440fbd291db09b
-=== 1.8. Rahmenbedingungen
+=== 1.7. Rahmenbedingungen
 * **Technologie:** Java
 * **GUI-Framework:** JavaFX
+
+=== 1.8. Abgrenzung
+* Automatische Lernanalysen oder KI-Funktionen
+* Cloud-Synchronisation oder Online-Speicherung
 
 == 2. Entwurf
 
