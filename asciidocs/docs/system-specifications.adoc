@@ -6,7 +6,7 @@
 == 1. Pflichtenheft
 
 === 1.1. Ausgangssituation
-Schüler der HTL Leonding sind im Schulalltag mit einer hohen Informationsdichte und komplexen technischen Themen konfrontiert. Zur Wissensaufbereitung nutzen sie individuelle, oft analoge oder unstrukturierte Methoden.
+Schüler der HTL Leonding sind im Alltag mit komplexen technischen Themen konfrontiert. Zur Wissensaufbereitung nutzen sie meist lineare Methoden.
 
 === 1.2. Istzustand
 Die Wissenssicherung erfolgt derzeit primär durch lineare Textnotizen (z. B. in Word, OneNote oder auf Papier).
@@ -23,7 +23,7 @@ Lineare Aufzeichnungen führen bei komplexen Themen häufig zu einem Mangel an �
 left to right direction
 actor "Schüler" as S
 
-rectangle "Better Mind Maps System" {
+rectangle "Better Mind Maps" {
   usecase "Registrieren / Anmelden" as UC1
   usecase "Mind Map erstellen" as UC2
   usecase "Knoten verwalten\n(Hinzufügen, Bearbeiten, Löschen)" as UC3
@@ -41,26 +41,33 @@ S -- UC5
 
 ==== 1.4.2. Nichtfunktionale Anforderungen (NFA)
 * **Usability:** Intuitive Bedienung durch eine klare GUI.
-* **Performance:** Flüssiges Verwalten von Knoten auch bei größeren Maps (bis zu 100 Knoten).
+* **Performance:** Flüssiges Verwalten von Knoten auch bei größeren Maps.
 * **Robustheit:** Fehlerresistentenz.
 
-=== 1.5. Ziele
+=== 1.6. Ziele
 * **Verbesserung der Lernmethoden:** Förderung des vernetzten Denkens durch visuelle Aufbereitung.
 * **Effizienz:** Zeitersparnis bei der Strukturierung von Unterrichtsstoff.
-* **Digitaler Mehrwert:** Bereitstellung eines modernen Werkzeugs für den HTL-Alltag.
+* **Bessere Schulleistung:** Leistungsverbesserung durch strukturierte Wissensdarstellung.
 
-=== 1.6. Mengengerüst
+=== 1.7. Mengengerüst
 * **Anzahl der Benutzer:** Geschätzt ca. 100 Schüler.
 * **Mind Maps pro Benutzer:** Durchschnittlich 10–20 Projekte.
 * **Speicherplatz:** Geringer Bedarf durch textbasierte Speicherung der Map-Daten.
 
-=== 1.7. Rahmenbedingungen
+* Verbesserung der Lernmethoden durch Mind Maps
+* Schülern ein nützliches Werkzeug zur Verfügung stellen
+* Digitales lernen einfacher und effizienter machen
+* Notengrade dadurch verbessern
+
+=== 1.6. Mengengerüst
+
+* Anzahl der Benutzer: maximal geschätzt 100 Schüler
+* Anzahl der Mind Maps pro Benutzer: variabel, geschätzt 10-20
+* Speicherplatzbedarf: noch unbekannt
+
+=== 1.8. Rahmenbedingungen
 * **Technologie:** Java
 * **GUI-Framework:** JavaFX
-
-=== 1.8. Abgrenzung
-* Automatische Lernanalysen oder KI-Funktionen
-* Online-Speicherung oder Synchronisation über das Internet
 
 == 2. Entwurf
 
