@@ -50,16 +50,6 @@ S -- UC5
 * **Bessere Schulleistung:** Leistungsverbesserung durch strukturierte Wissensdarstellung.
 
 === 1.7. Mengengerüst
-* **Anzahl der Benutzer:** Geschätzt ca. 100 Schüler.
-* **Mind Maps pro Benutzer:** Durchschnittlich 10–20 Projekte.
-* **Speicherplatz:** Geringer Bedarf durch textbasierte Speicherung der Map-Daten.
-
-* Verbesserung der Lernmethoden durch Mind Maps
-* Schülern ein nützliches Werkzeug zur Verfügung stellen
-* Digitales lernen einfacher und effizienter machen
-* Notengrade dadurch verbessern
-
-=== 1.6. Mengengerüst
 
 * Anzahl der Benutzer: maximal geschätzt 100 Schüler
 * Anzahl der Mind Maps pro Benutzer: variabel, geschätzt 10-20
