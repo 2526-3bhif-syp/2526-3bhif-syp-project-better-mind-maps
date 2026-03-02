@@ -1,0 +1,7 @@
+= User Stories
+
+* As a student, I want to create a mindmap in order to collect ideas easaly
+* As a student, I want to edit my mind map so that I can expand and improve it
+* As a student, I want to manage my mindmaps in order to save, delete or to move mindmaps
+* As a professor, I want to use a mind map so that I can present complex topics more clearly.
+* As a student, I want to create an account so that I can access my mind maps.
