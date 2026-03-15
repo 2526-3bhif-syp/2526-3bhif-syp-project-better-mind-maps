@@ -10,9 +10,12 @@ Schüler der HTL Leonding sind im Alltag mit komplexen technischen Themen konfro
 
 === 1.2. Istzustand
 Die Wissenssicherung erfolgt derzeit primär durch lineare Textnotizen (z. B. in Word, OneNote oder auf Papier).
+Die Notizen werden meist der Reihe nach geschrieben. Eine klare Struktur zwischen den Themen fehlt oft. Zusammenhänge zwischen Begriffen sind schwer zu erkennen.
+Beim späteren Lernen oder Wiederholen des Stoffes müssen Schüler daher häufig lange in ihren Notizen suchen. Spezielle Mind-Mapping-Tools werden im Schulalltag nur selten verwendet.
 
 === 1.3. Problemstellung
 Lineare Aufzeichnungen führen bei komplexen Themen häufig zu einem Mangel an Übersichtlichkeit. Die kognitive Verknüpfung von Informationen fällt Schülern schwerer, was den Lernerfolg mindert. Bestehende Tools sind oft entweder zu überladen oder nicht spezifisch auf den schulischen Workflow zugeschnitten.
+Zwar gibt es bereits Mind-Mapping-Programme, diese sind jedoch oft zu kompliziert oder nicht speziell für den schulischen Einsatz entwickelt.
 
 === 1.4. Aufgabenstellung
 
