@@ -59,7 +59,7 @@ S -- UC4
 === 1.7. Mengengerüst
 
 * Anzahl der Benutzer: maximal geschätzt 100 Schüler
-* Anzahl der Mind Maps pro Benutzer: variabel, geschätzt 10-20
+* Anzahl der Mind Maps pro Benutzer:ca. 10 bis 20 pro Schuljahr
 * Speicherplatzbedarf: noch unbekannt
 
 === 1.8. Rahmenbedingungen
