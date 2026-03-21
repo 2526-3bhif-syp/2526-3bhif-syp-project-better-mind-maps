@@ -23,6 +23,8 @@ Bestehende Tools bieten dafür oft zu viele unnötige Funktionen oder sind nicht
 
 === 1.4. Aufgabenstellung
 
+Die Anwendung ist ein Mind-Mapping-Tool, bei dem Benutzer Knoten erstellen, verbinden und visuell anordnen können.
+
 ==== 1.4.1. Funktionale Anforderungen (FA)
 [plantuml, usecase-diagram, svg]
 ----
