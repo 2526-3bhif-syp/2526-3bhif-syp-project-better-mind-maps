@@ -32,18 +32,31 @@ Die Anwendung ist ein Mind-Mapping-Tool, bei dem Benutzer Knoten erstellen, verb
 @startuml
 left to right direction
 actor "Schüler" as S
+actor "Professor" as P
 
 rectangle "Better Mind Maps" {
   usecase "Mind Map erstellen" as UC1
-  usecase "Knoten verwalten\n(Hinzufügen, Bearbeiten, Löschen)" as UC2
-  usecase "Projekt speichern / laden" as UC3
-  usecase "Export als Bild" as UC4
+  usecase "Knoten bearbeiten" as UC2
+  usecase "Knoten verbinden" as UC3
+  usecase "Knoten verschieben" as UC4
+  usecase "Mind Map speichern / laden" as UC5
+  usecase "Mind Map öffnen" as UC6
+  usecase "Navigation / Zoom" as UC7
+  usecase "Knoten gestalten" as UC8
+  usecase "Mind Map präsentieren" as UC9
 }
 
 S -- UC1
 S -- UC2
 S -- UC3
 S -- UC4
+S -- UC5
+S -- UC6
+S -- UC7
+S -- UC8
+
+P -- UC6
+P -- UC9
 @enduml
 ----
 
@@ -62,7 +75,7 @@ S -- UC4
 === Mengengerüst
 
 * Anzahl der Benutzer: maximal geschätzt 100 Schüler
-* Anzahl der Mind Maps pro Benutzer:ca. 10 bis 20 pro Schuljahr
+* Anzahl der Mind Maps pro Benutzer: ca. 10 bis 20 pro Schuljahr
 * Speicherplatzbedarf: noch unbekannt
 
 === Rahmenbedingungen
