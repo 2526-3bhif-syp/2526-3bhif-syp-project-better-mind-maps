@@ -3,30 +3,30 @@
 :toclevels: 3
 :icons: font
 
-== 1. Pflichtenheft
+== Pflichtenheft
 
-=== 1.1. Ausgangssituation
+=== Ausgangssituation
 Schüler der HTL Leonding sind im Unterricht mit komplexen technischen Themen konfrontiert. 
 Zur Wissensaufbereitung nutzen sie meist lineare Notizen, z. B. in Word, OneNote oder auf Papier. 
 Dabei werden Informationen der Reihe nach aufgeschrieben.
 
-=== 1.2. Istzustand
+=== Istzustand
 Der Unterrichtsstoff wird derzeit meist mit einfachen Notizen auf Papier oder in digitalen Programmen festgehalten. 
 Diese Notizen werden der Reihe nach aufgeschrieben und sind oft unvollständig. 
 Zusammenhänge zwischen einzelnen Themen sind dadurch schwer zu erkennen.
 
-=== 1.3. Problemstellung
+=== Problemstellung
 Schüler haben oft Schwierigkeiten, während des Unterrichts schnell genug mitzuschreiben und gleichzeitig die Erklärung zu verstehen. 
 Dadurch entstehen unvollständige oder unübersichtliche Notizen. 
 Besonders bei komplexen technischen Themen sind Zusammenhänge zwischen Begriffen, Abläufen und Teilbereichen in linearen Notizen nur schwer erkennbar. 
 Bestehende Tools bieten dafür oft zu viele unnötige Funktionen oder sind nicht auf den schulischen Einsatz abgestimmt.
 Zum Beispiel ist es bei Themen wie Netzwerken schwierig, Zusammenhänge zwischen Protokollen und Schichten in linearen Notizen darzustellen.
 
-=== 1.4. Aufgabenstellung
+=== Aufgabenstellung
 
 Die Anwendung ist ein Mind-Mapping-Tool, bei dem Benutzer Knoten erstellen, verbinden und visuell anordnen können.
 
-==== 1.4.1. Funktionale Anforderungen (FA)
+==== Funktionale Anforderungen (FA)
 [plantuml, usecase-diagram, svg]
 ----
 @startuml
@@ -47,29 +47,29 @@ S -- UC4
 @enduml
 ----
 
-==== 1.4.2. Nichtfunktionale Anforderungen (NFA)
+==== Nichtfunktionale Anforderungen (NFA)
 * **Usability:** Die Anwendung soll einfach und intuitiv bedienbar sein. Die Benutzeroberfläche soll übersichtlich und leicht verständlich sein.
 * **Performance:** Mind Maps sollen auch bei vielen Knoten flüssig erstellt und bearbeitet werden können.
 * **Robustheit:** Die Anwendung soll stabil laufen und Eingabefehler möglichst gut abfangen.
 * **Zuverlässigkeit:** Gespeicherte Mind Maps sollen korrekt gespeichert und wieder geladen werden können.
 
-=== 1.6. Ziele
+=== Ziele
 * Schüler sollen Lerninhalte übersichtlich darstellen können.
 * Zusammenhänge zwischen Themen und Begriffen sollen leichter erkennbar sein.
 * Die Anwendung soll das Wiederholen und Strukturieren des Unterrichtsstoffs erleichtern.
 * Die Inhalte sollen schneller strukturiert werden können als mit normalen Notizen.
 
-=== 1.7. Mengengerüst
+=== Mengengerüst
 
 * Anzahl der Benutzer: maximal geschätzt 100 Schüler
 * Anzahl der Mind Maps pro Benutzer:ca. 10 bis 20 pro Schuljahr
 * Speicherplatzbedarf: noch unbekannt
 
-=== 1.8. Rahmenbedingungen
+=== Rahmenbedingungen
 * **Technologie:** Java
 * **GUI-Framework:** JavaFX
 
-== 2. Projekthandbuch – _Organisatorische Rahmenbedingungen_
+== Projekthandbuch – _Organisatorische Rahmenbedingungen_
 
-=== 2.1. GANTT-Diagramm
+=== GANTT-Diagramm
 Zeit- und Ablaufplanung des Projekts.
