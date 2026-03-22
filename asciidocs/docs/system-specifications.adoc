@@ -20,6 +20,7 @@ Schüler haben oft Schwierigkeiten, während des Unterrichts schnell genug mitzu
 Dadurch entstehen unvollständige oder unübersichtliche Notizen. 
 Besonders bei komplexen technischen Themen sind Zusammenhänge zwischen Begriffen, Abläufen und Teilbereichen in linearen Notizen nur schwer erkennbar. 
 Bestehende Tools bieten dafür oft zu viele unnötige Funktionen oder sind nicht auf den schulischen Einsatz abgestimmt.
+Zum Beispiel ist es bei Themen wie Netzwerken schwierig, Zusammenhänge zwischen Protokollen und Schichten in linearen Notizen darzustellen.
 
 === 1.4. Aufgabenstellung
 
@@ -68,15 +69,7 @@ S -- UC4
 * **Technologie:** Java
 * **GUI-Framework:** JavaFX
 
-== 2. Entwurf
+== 2. Projekthandbuch – _Organisatorische Rahmenbedingungen_
 
-=== 2.1. Systemarchitektur
-Beschreibung der geplanten Systemarchitektur.
-
-=== 2.2. …
-Weitere Entwurfsaspekte.
-
-== 3. Projekthandbuch – _Organisatorische Rahmenbedingungen_
-
-=== 3.1. GANTT-Diagramm
+=== 2.1. GANTT-Diagramm
 Zeit- und Ablaufplanung des Projekts.
