@@ -60,6 +60,9 @@ P -- UC9
 @enduml
 ----
 
+==== UI Skizze
+image::images/ui-sketch.jpg[]
+
 ==== Nichtfunktionale Anforderungen (NFA)
 * **Usability:** Die Anwendung soll einfach und intuitiv bedienbar sein. Die Benutzeroberfläche soll übersichtlich und leicht verständlich sein.
 * **Performance:** Mind Maps sollen auch bei vielen Knoten flüssig erstellt und bearbeitet werden können.
@@ -81,8 +84,3 @@ P -- UC9
 === Rahmenbedingungen
 * **Technologie:** Java
 * **GUI-Framework:** JavaFX
-
-== Projekthandbuch – _Organisatorische Rahmenbedingungen_
-
-=== GANTT-Diagramm
-Zeit- und Ablaufplanung des Projekts.
