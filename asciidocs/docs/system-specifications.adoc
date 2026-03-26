@@ -61,7 +61,7 @@ P -- UC9
 ----
 
 ==== UI Skizze
-image::/ui-sketch.jpg[]
+image::ui-sketch.jpg[]
 
 ==== Nichtfunktionale Anforderungen (NFA)
 * **Usability:** Die Anwendung soll einfach und intuitiv bedienbar sein. Die Benutzeroberfläche soll übersichtlich und leicht verständlich sein.
