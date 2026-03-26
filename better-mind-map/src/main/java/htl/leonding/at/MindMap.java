@@ -15,8 +15,13 @@ public class MindMap {
         this.nodes = new ArrayList<Node>();
     }
 
-    public String getId() { return _id; }
-    public String getName() { return _name; }
+    public String getId() {
+        return _id;
+    }
+
+    public String getName() {
+        return _name;
+    }
 
     public void addNode(Node node) {
         nodes.add(node);
@@ -25,6 +30,12 @@ public class MindMap {
     public List<Node> getNodes() {
         return nodes;
     }
+
+    public static MindMap createNew(String name) {
+        String id = java.util.UUID.randomUUID().toString();
+        MindMap map = new MindMap(id, name);
+        Node root = new Node(java.util.UUID.randomUUID().toString(), name, null, 400, 300);
+        map.addNode(root);
+        return map;
+    }
 }
-
-
