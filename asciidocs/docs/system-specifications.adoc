@@ -82,5 +82,5 @@ image::ui-sketch.jpg[]
 * Speicherplatzbedarf: noch unbekannt
 
 === Rahmenbedingungen
-* **Technologie:** Java
+* **Technologie:** Java, MVP-Pattern
 * **GUI-Framework:** JavaFX
