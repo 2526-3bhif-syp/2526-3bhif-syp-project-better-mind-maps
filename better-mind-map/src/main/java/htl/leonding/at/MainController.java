@@ -2,6 +2,7 @@ package htl.leonding.at;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
@@ -27,7 +28,8 @@ public class MainController {
     @FXML
     public void initialize() {
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
-            if (newTab != null && newTab.getUserData() instanceof MindMap map) {
+            if (newTab != null && newTab.getUserData() instanceof MindMap) {
+                MindMap map = (MindMap) newTab.getUserData();
                 currentNode = getRoot(map);
                 Pane canvas = (Pane) newTab.getContent();
                 refreshCanvas(canvas, map);
@@ -75,67 +77,67 @@ public class MainController {
     private void handleKeyPress(KeyEvent e, MindMap map, Pane canvas) {
         if (currentNode == null) return;
 
-        switch (e.getCode()) {
-            case ENTER, INSERT -> {
-                promptAddChild(map, canvas, currentNode);
-                e.consume();
+        KeyCode code = e.getCode();
+
+        if (code == KeyCode.ENTER || code == KeyCode.INSERT) {
+            promptAddChild(map, canvas, currentNode);
+            e.consume();
+
+        } else if (code == KeyCode.TAB) {
+            List<Node> nodes = map.getNodes();
+            int idx = nodes.indexOf(currentNode);
+            if (e.isShiftDown()) {
+                idx = (idx - 1 + nodes.size()) % nodes.size();
+            } else {
+                idx = (idx + 1) % nodes.size();
             }
-            case TAB -> {
-                List<Node> nodes = map.getNodes();
-                int idx = nodes.indexOf(currentNode);
-                if (e.isShiftDown()) {
-                    idx = (idx - 1 + nodes.size()) % nodes.size();
-                } else {
-                    idx = (idx + 1) % nodes.size();
-                }
-                currentNode = nodes.get(idx);
+            currentNode = nodes.get(idx);
+            refreshCanvas(canvas, map);
+            e.consume();
+
+        } else if (code == KeyCode.RIGHT) {
+            List<Node> children = getChildren(map, currentNode);
+            if (!children.isEmpty()) {
+                currentNode = children.get(0);
                 refreshCanvas(canvas, map);
-                e.consume();
             }
-            case RIGHT -> {
-                getChildren(map, currentNode).stream().findFirst().ifPresent(child -> {
-                    currentNode = child;
-                    refreshCanvas(canvas, map);
-                });
-                e.consume();
+            e.consume();
+
+        } else if (code == KeyCode.LEFT) {
+            if (currentNode.getParentId() != null) {
+                map.getNodes().stream()
+                        .filter(n -> n.getId().equals(currentNode.getParentId()))
+                        .findFirst()
+                        .ifPresent(parent -> {
+                            currentNode = parent;
+                            refreshCanvas(canvas, map);
+                        });
             }
-            case LEFT -> {
-                if (currentNode.getParentId() != null) {
-                    map.getNodes().stream()
-                            .filter(n -> n.getId().equals(currentNode.getParentId()))
-                            .findFirst()
-                            .ifPresent(parent -> {
-                                currentNode = parent;
-                                refreshCanvas(canvas, map);
-                            });
-                }
-                e.consume();
+            e.consume();
+
+        } else if (code == KeyCode.UP) {
+            navigateSibling(map, canvas, -1);
+            e.consume();
+
+        } else if (code == KeyCode.DOWN) {
+            navigateSibling(map, canvas, 1);
+            e.consume();
+
+        } else if (code == KeyCode.F2) {
+            promptEditNode(map, canvas, currentNode);
+            e.consume();
+
+        } else if (code == KeyCode.DELETE) {
+            if (currentNode.getParentId() != null) {
+                String parentId = currentNode.getParentId();
+                service.deleteNode(map, currentNode);
+                currentNode = map.getNodes().stream()
+                        .filter(n -> n.getId().equals(parentId))
+                        .findFirst()
+                        .orElse(map.getNodes().isEmpty() ? null : map.getNodes().get(0));
+                refreshCanvas(canvas, map);
             }
-            case UP -> {
-                navigateSibling(map, canvas, -1);
-                e.consume();
-            }
-            case DOWN -> {
-                navigateSibling(map, canvas, 1);
-                e.consume();
-            }
-            case F2 -> {
-                promptEditNode(map, canvas, currentNode);
-                e.consume();
-            }
-            case DELETE -> {
-                if (currentNode.getParentId() != null) {
-                    String parentId = currentNode.getParentId();
-                    service.deleteNode(map, currentNode);
-                    currentNode = map.getNodes().stream()
-                            .filter(n -> n.getId().equals(parentId))
-                            .findFirst()
-                            .orElse(map.getNodes().isEmpty() ? null : map.getNodes().get(0));
-                    refreshCanvas(canvas, map);
-                }
-                e.consume();
-            }
-            default -> {}
+            e.consume();
         }
     }
 
