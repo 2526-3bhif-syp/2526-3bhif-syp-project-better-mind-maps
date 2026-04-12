@@ -93,7 +93,7 @@ image::ui-sketch.jpg[]
 
 * Anzahl der Benutzer: maximal geschätzt 100 Schüler
 * Anzahl der Mind Maps pro Benutzer: ca. 10 bis 20 pro Schuljahr
-* Speicherplatzbedarf: noch unbekannt
+* Speicherplatzbedarf: Speicherplatzbedarf: gering (weniger als 1 MB pro Mind Map, da nur Text und Positionen gespeichert werden)
 
 === Rahmenbedingungen
 * **Technologie:** Java, MVP-Pattern
