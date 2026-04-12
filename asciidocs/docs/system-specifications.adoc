@@ -29,10 +29,7 @@ Ein Tool, das Mind Maps und Projektmanagement kombiniert und häufig auch im sch
 
 Diese umfangreichen Funktionen machen die Tools sehr leistungsfähig, aber auch komplex für den einfachen Einsatz im Unterricht.
 
-Unsere Anwendung konzentriert sich daher auf:
-* einfache Bedienung
-* schnelle Erstellung von Mind Maps
-* nur die wichtigsten Funktionen für die Schule
+Unsere Anwendung konzentriert sich daher auf: einfache Bedienung, schnelle Erstellung von Mind Maps und nur die wichtigsten Funktionen für die Schule
 
 === Aufgabenstellung
 
