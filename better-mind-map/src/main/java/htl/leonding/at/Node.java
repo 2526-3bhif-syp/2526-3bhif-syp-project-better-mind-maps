@@ -17,7 +17,10 @@ public class Node {
 
     public String getId() { return _id; }
     public String getText() { return _text; }
+    public void setText(String text) { _text = text; }
     public String getParentId() { return _parentId; }
     public double getXCoordinate() { return _xCoordinate; }
     public double getYCoordinate() { return _yCoordinate; }
+    public void setXCoordinate(double x) { _xCoordinate = x; }
+    public void setYCoordinate(double y) { _yCoordinate = y; }
 }
