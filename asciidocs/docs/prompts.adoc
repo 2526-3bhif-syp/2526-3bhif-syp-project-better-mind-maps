@@ -8,64 +8,45 @@ ifndef::imagesdir[:imagesdir: images]
 
 == Kontext
 
-Vor der Implementierung von *User Story #2 – Mindmap Editing* wurde das Projekt vollständig
-analysiert. Anschließend wurden folgende Fragen gestellt, um keine Annahmen zu treffen.
+Zuerst wurde das Projekt gründlich überprüft. Danach wurden Fragen gestellt, um sicherzugehen, dass alles richtig verstanden ist.
 
-== Fragen & Antworten
+== Fragen & Antworten (einfach erklärt)
 
-[cols="1,4,4", options="header"]
-|===
-|#
-|Frage
-|Antwort
+. Wie sollen Daten gespeichert werden?
++
+Es gab schon eine JSON-Datei, aber entschieden wurde:
+SQLite wird als Datenbank verwendet.
 
-|1
-|Im `data/`-Ordner liegt bereits eine JSON-Datei. Gson ist als Dependency vorhanden, aber noch
-nicht benutzt. Soll die Persistenz über JSON-Dateien laufen, oder ist etwas anderes geplant
-(z.B. SQLite, in-memory)?
-|Datenbanken in Java → *SQLite* (Nachfrage ergab: SQLite via JDBC)
+. Darf das Datenmodell verändert werden?
++
+Ja, Setter dürfen hinzugefügt werden.
 
-|2
-|`Node` hat keine Setter — soll das Modell unveränderlich bleiben, oder darf ich Setter /
-Builder hinzufügen wenn nötig?
-|Ja, Setter dürfen hinzugefügt werden.
+. Dürfen bestehende Dateien geändert werden?
++
+Ja, die Dateien `MindMapService.java` und `MindMapRepository.java` dürfen bearbeitet werden.
 
-|3
-|`MindMapService.java` und `MindMapRepository.java` sind laut git als `AM`
-(Added/Modified, noch nicht committed) markiert — darf ich diese Dateien verändern?
-|Ja.
+. Darf die Oberfläche neu gemacht werden?
++
+Nein, es soll auf dem bestehenden Code aufgebaut werden.
 
-|4
-|Das aktuelle Rendering (Ellipsen auf einem `Pane`) ist sehr rudimentär. Darf ich das
-bestehende Rendering grundlegend umbauen, oder soll ich auf dem vorhandenen Code aufbauen?
-|Auf dem vorhandenen Code aufbauen.
+. Wie werden Verbindungen zwischen Knoten dargestellt?
++
+Als Linien auf demselben `Pane`.
 
-|5
-|Verbindungen zwischen Nodes (Linien/Kanten) — sollen die auf demselben `Pane` gezeichnet
-werden?
-|Ja.
+. Gibt es eine Reihenfolge bei den Aufgaben?
++
+Ja, die Reihenfolge soll eingehalten werden.
 
-|6
-|Gibt es eine Reihenfolge der Stories, die eingehalten werden soll
-(z.B. erst #2 Editing, dann #8 Connect Nodes)?
-|Ja.
-
-|7
-|Sollen Tests geschrieben werden?
-|Ja.
-|===
+. Sollen Tests geschrieben werden?
++
+Ja.
 
 == Ergebnis
 
 Auf Basis dieser Antworten wurde folgende Implementierung umgesetzt:
 
-* *Persistenz:* SQLite via `org.xerial:sqlite-jdbc`, neuer `DatabaseManager` für
-  Verbindungsverwaltung und Schema-Initialisierung
-* *Datenmodell:* `setText`, `setXCoordinate`, `setYCoordinate` in `Node` ergänzt;
-  `removeNode` in `MindMap` ergänzt
-* *Repository:* vollständige SQLite-Implementierung (`save`, `saveNode`, `updateNode`,
-  `deleteNode`, `loadAll`)
-* *Service:* `addNode`, `updateNodeText`, `deleteNode` (mit Cascade) hinzugefügt
-* *UI:* Rechtsklick-Kontextmenü (Add Child Node / Edit Text / Delete Node),
-  Kanten-Rendering auf demselben `Pane`, Tastaturnavigation
-* *Tests:* 17 Unit-Tests in `MindMapServiceTest` mit temporärer SQLite-Datenbank
+* Es wird eine kleine Datenbank verwendet, damit alles gespeichert bleibt. Dafür gibt es eine eigene Klasse `DatabaseManager`.
+* Knoten (Nodes) können jetzt Text und eine Position (x und y) speichern. Außerdem können Knoten gelöscht werden.
+* Es gibt Funktionen, um Daten zu speichern, zu aktualisieren, zu löschen und zu laden.
+* Mit Rechtsklick kann man einen neuen Unterknoten erstellen, Text bearbeiten und Knoten löschen. Verbindungen zwischen Knoten werden angezeigt und die Navigation per Tastatur ist möglich.
+* Man kann neue Knoten hinzufügen, Texte ändern und Knoten löschen.
