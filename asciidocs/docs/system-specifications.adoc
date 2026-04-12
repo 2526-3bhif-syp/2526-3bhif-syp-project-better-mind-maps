@@ -24,7 +24,15 @@ Zum Beispiel ist es bei Themen wie Netzwerken schwierig, Zusammenhänge zwischen
 
 === Aufgabenstellung
 
-Die Anwendung ist ein Mind-Mapping-Tool, bei dem Benutzer Knoten erstellen, verbinden und visuell anordnen können.
+Die Anwendung ist ein Mind-Mapping-Tool, bei dem Benutzer Knoten erstellen, bearbeiten, löschen und miteinander verbinden können.
+
+Jeder Knoten enthält:
+- einen Text
+- eine Position (x/y-Koordinaten)
+- optionale Verbindungen zu anderen Knoten
+
+Mind Maps können gespeichert und später wieder geladen werden.
+Die Darstellung erfolgt auf einer visuellen Arbeitsfläche, auf der die Knoten frei angeordnet werden können.
 
 ==== Funktionale Anforderungen (FA)
 [plantuml, usecase-diagram, svg]
@@ -64,10 +72,10 @@ P -- UC9
 image::ui-sketch.jpg[]
 
 ==== Nichtfunktionale Anforderungen (NFA)
-* **Usability:** Die Anwendung soll einfach und intuitiv bedienbar sein. Die Benutzeroberfläche soll übersichtlich und leicht verständlich sein.
-* **Performance:** Mind Maps sollen auch bei vielen Knoten flüssig erstellt und bearbeitet werden können.
-* **Robustheit:** Die Anwendung soll stabil laufen und Eingabefehler möglichst gut abfangen.
-* **Zuverlässigkeit:** Gespeicherte Mind Maps sollen korrekt gespeichert und wieder geladen werden können.
+* **Usability:** Ein neuer Knoten soll in maximal 3 Interaktionen erstellt werden können. Die Anwendung soll ohne Anleitung verständlich sein.
+* **Performance:** Das Laden einer Mind Map mit bis zu 100 Knoten dauert weniger als 1 Sekunde. Das Verschieben eines Knotens erfolgt ohne spürbare Verzögerung 
+* **Robustheit:** Ungültige Eingaben, wie zum Beispiel leere Texte, werden abgefangen.
+* **Zuverlässigkeit:** Daten werden dauerhaft in einer SQLite-Datenbank gespeichert und korrekt wieder geladen.
 
 === Ziele
 * Schüler sollen Lerninhalte übersichtlich darstellen können.
