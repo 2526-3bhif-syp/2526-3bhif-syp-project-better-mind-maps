@@ -27,6 +27,10 @@ public class MindMap {
         nodes.add(node);
     }
 
+    public void removeNode(String nodeId) {
+        nodes.removeIf(n -> n.getId().equals(nodeId));
+    }
+
     public List<Node> getNodes() {
         return nodes;
     }
