@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l src/main/java/htl/leonding/at/*.java src/main/resources/htl/leonding/at/*.fxml)",
+      "Bash(mvn test:*)",
+      "Bash(java:*)",
+      "Bash(mvn compile:*)",
+      "Bash(mvn dependency:resolve)",
+      "mcp__github__list_issues",
+      "Bash(xargs cat *)"
+    ]
+  }
+}

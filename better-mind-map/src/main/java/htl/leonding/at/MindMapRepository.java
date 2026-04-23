@@ -63,6 +63,21 @@ public class MindMapRepository {
         }
     }
 
+    public void deleteMindMap(String mapId) {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM nodes WHERE mind_map_id = ?")) {
+                stmt.setString(1, mapId);
+                stmt.executeUpdate();
+            }
+            try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM mind_maps WHERE id = ?")) {
+                stmt.setString(1, mapId);
+                stmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete mind map", e);
+        }
+    }
+
     public List<MindMap> loadAll() {
         List<MindMap> maps = new ArrayList<>();
         String mapSql = "SELECT id, name FROM mind_maps";

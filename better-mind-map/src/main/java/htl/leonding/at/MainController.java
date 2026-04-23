@@ -1,24 +1,30 @@
 package htl.leonding.at;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Ellipse;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
+import javafx.scene.paint.CycleMethod;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class MainController {
 
-    @FXML
-    private TreeView<String> hierarchyTree;
-    @FXML
-    private TabPane tabPane;
+    @FXML private TreeView<String> hierarchyTree;
+    @FXML private TabPane tabPane;
+    @FXML private HBox sidebarHeader;
 
     private final MindMapRepository repository = new MindMapRepository();
     private final MindMapService service = new MindMapService(repository);
@@ -35,6 +41,39 @@ public class MainController {
                 refreshCanvas(canvas, map);
             }
         });
+
+        // Sync sidebar header height with the TabPane tab-header-area after layout
+        tabPane.needsLayoutProperty().addListener((obs, wasNeeded, needed) -> {
+            if (!needed) syncSidebarHeaderHeight();
+        });
+        javafx.application.Platform.runLater(this::syncSidebarHeaderHeight);
+    }
+
+    private void syncSidebarHeaderHeight() {
+        javafx.scene.Node tabHeader = tabPane.lookup(".tab-header-area");
+        if (tabHeader != null && tabHeader.getBoundsInLocal().getHeight() > 0) {
+            double h = tabHeader.getBoundsInLocal().getHeight();
+            sidebarHeader.setMinHeight(h);
+            sidebarHeader.setPrefHeight(h);
+            sidebarHeader.setMaxHeight(h);
+        }
+    }
+
+    public void loadMindMap(MindMap map) {
+        currentNode = getRoot(map);
+        renderMindMap(map);
+    }
+
+    @FXML
+    private void onBackToOverview() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("overview-view.fxml"));
+            Scene scene = new Scene(loader.load(), 1024, 768);
+            Stage stage = (Stage) tabPane.getScene().getWindow();
+            stage.setScene(scene);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to open overview", e);
+        }
     }
 
     @FXML
@@ -192,6 +231,7 @@ public class MainController {
         layoutMindMap(map, w, h);
 
         canvas.getChildren().clear();
+        canvas.setStyle("-fx-background-color: #f8f9fa;");
 
         // Edges (drawn first, appear behind nodes)
         for (Node node : map.getNodes()) {
@@ -204,8 +244,8 @@ public class MainController {
                                 parent.getXCoordinate(), parent.getYCoordinate(),
                                 node.getXCoordinate(), node.getYCoordinate()
                         );
-                        line.setStroke(Color.DARKGRAY);
-                        line.setStrokeWidth(1.5);
+                        line.setStroke(Color.web("#adb5bd"));
+                        line.setStrokeWidth(2);
                         canvas.getChildren().add(line);
                     });
         }
@@ -215,8 +255,8 @@ public class MainController {
             boolean isCurrent = node == currentNode;
             boolean isRoot = node.getParentId() == null;
             StackPane nodeView = createNodeView(node, map, canvas, isCurrent, isRoot);
-            nodeView.setLayoutX(node.getXCoordinate() - 52);
-            nodeView.setLayoutY(node.getYCoordinate() - 26);
+            nodeView.setLayoutX(node.getXCoordinate() - NODE_W / 2);
+            nodeView.setLayoutY(node.getYCoordinate() - NODE_H / 2);
             canvas.getChildren().add(nodeView);
         }
 
@@ -227,6 +267,9 @@ public class MainController {
      * Radial layout: root is centered, children are distributed angularly
      * weighted by their subtree leaf-count so no branches overlap.
      */
+    private static final double H_SPACING = 200;
+    private static final double V_SPACING = 60;
+
     private void layoutMindMap(MindMap map, double w, double h) {
         Node root = getRoot(map);
         if (root == null) return;
@@ -234,36 +277,47 @@ public class MainController {
         root.setXCoordinate(w / 2);
         root.setYCoordinate(h / 2);
 
-        double radius = Math.min(w, h) * 0.28;
-        positionChildren(map, root, 0, 2 * Math.PI, radius);
-    }
-
-    private void positionChildren(MindMap map, Node parent,
-                                  double startAngle, double endAngle, double radius) {
-        List<Node> children = getChildren(map, parent);
+        List<Node> children = getChildren(map, root);
         if (children.isEmpty()) return;
 
-        double range = endAngle - startAngle;
-        int totalLeaves = countLeaves(map, parent);
-        double currentAngle = startAngle;
+        int rightCount = (children.size() + 1) / 2;
+        List<Node> rightChildren = children.subList(0, rightCount);
+        List<Node> leftChildren  = children.subList(rightCount, children.size());
 
+        double rightHeight = subtreeListHeight(map, rightChildren);
+        double leftHeight  = subtreeListHeight(map, leftChildren);
+
+        layoutChildren(map, rightChildren, w / 2 + H_SPACING, h / 2 - rightHeight / 2,  1);
+        layoutChildren(map, leftChildren,  w / 2 - H_SPACING, h / 2 - leftHeight  / 2, -1);
+    }
+
+    private void layoutChildren(MindMap map, List<Node> children, double x, double startY, int dir) {
+        double y = startY;
         for (Node child : children) {
-            int childLeaves = countLeaves(map, child);
-            double childRange = range * (double) childLeaves / totalLeaves;
-            double midAngle = currentAngle + childRange / 2;
+            double sh = subtreeHeight(map, child);
+            child.setXCoordinate(x);
+            child.setYCoordinate(y + sh / 2);
 
-            child.setXCoordinate(parent.getXCoordinate() + radius * Math.cos(midAngle));
-            child.setYCoordinate(parent.getYCoordinate() + radius * Math.sin(midAngle));
-
-            positionChildren(map, child, currentAngle, currentAngle + childRange, radius * 0.58);
-            currentAngle += childRange;
+            List<Node> grandchildren = getChildren(map, child);
+            if (!grandchildren.isEmpty()) {
+                double gcHeight = subtreeListHeight(map, grandchildren);
+                layoutChildren(map, grandchildren,
+                        x + dir * H_SPACING,
+                        child.getYCoordinate() - gcHeight / 2,
+                        dir);
+            }
+            y += sh;
         }
     }
 
-    private int countLeaves(MindMap map, Node node) {
+    private double subtreeListHeight(MindMap map, List<Node> nodes) {
+        return nodes.stream().mapToDouble(n -> subtreeHeight(map, n)).sum();
+    }
+
+    private double subtreeHeight(MindMap map, Node node) {
         List<Node> children = getChildren(map, node);
-        if (children.isEmpty()) return 1;
-        return children.stream().mapToInt(c -> countLeaves(map, c)).sum();
+        if (children.isEmpty()) return V_SPACING;
+        return Math.max(V_SPACING, subtreeListHeight(map, children));
     }
 
     private List<Node> getChildren(MindMap map, Node parent) {
@@ -280,32 +334,41 @@ public class MainController {
 
     // ── Node view ────────────────────────────────────────────────────────────
 
+    private static final double NODE_W = 110;
+    private static final double NODE_H = 40;
+    private static final double NODE_ARC = 10;
+
     private StackPane createNodeView(Node node, MindMap map, Pane canvas,
                                      boolean isCurrent, boolean isRoot) {
         StackPane nodeView = new StackPane();
 
-        Ellipse ellipse = new Ellipse(52, 26);
-        ellipse.setFill(isRoot ? Color.web("#FFD700") : Color.WHITE);
+        Rectangle rect = new Rectangle(NODE_W, NODE_H);
+        rect.setArcWidth(NODE_ARC * 2);
+        rect.setArcHeight(NODE_ARC * 2);
 
-        if (isCurrent) {
-            ellipse.setStroke(Color.DODGERBLUE);
-            ellipse.setStrokeWidth(3.5);
-        } else if (isRoot) {
-            ellipse.setStroke(Color.GOLDENROD);
-            ellipse.setStrokeWidth(2);
+        if (isRoot) {
+            rect.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+                    new Stop(0, Color.web("#3498db")),
+                    new Stop(1, Color.web("#2980b9"))));
+            rect.setStroke(isCurrent ? Color.web("#e74c3c") : Color.web("#1a6fa8"));
+            rect.setStrokeWidth(isCurrent ? 3 : 2);
         } else {
-            ellipse.setStroke(Color.web("#555555"));
-            ellipse.setStrokeWidth(1.5);
+            rect.setFill(Color.WHITE);
+            rect.setStroke(isCurrent ? Color.web("#e74c3c") : Color.web("#b2bec3"));
+            rect.setStrokeWidth(isCurrent ? 3 : 1.5);
+            rect.setEffect(new javafx.scene.effect.DropShadow(4, 0, 2, Color.web("#00000018")));
         }
 
         Label label = new Label(node.getText());
-        label.setMaxWidth(96);
+        label.setMaxWidth(NODE_W - 12);
         label.setWrapText(true);
-        label.setStyle("-fx-font-size: 12px; -fx-alignment: center; -fx-text-alignment: center;");
+        label.setStyle(
+            "-fx-font-size: 12px; -fx-text-alignment: center; -fx-alignment: center;" +
+            (isRoot ? " -fx-text-fill: white; -fx-font-weight: bold;" : " -fx-text-fill: #2c3e50;")
+        );
 
-        nodeView.getChildren().addAll(ellipse, label);
+        nodeView.getChildren().addAll(rect, label);
 
-        // Click to select
         nodeView.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY) {
                 currentNode = node;
@@ -314,7 +377,6 @@ public class MainController {
             }
         });
 
-        // Context menu
         ContextMenu contextMenu = new ContextMenu();
 
         MenuItem addChild = new MenuItem("Add Child Node  [Enter]");
