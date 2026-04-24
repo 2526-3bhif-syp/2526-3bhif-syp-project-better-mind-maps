@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 public class MainController {
 
+    @FXML private BorderPane rootPane;
     @FXML private TreeView<String> hierarchyTree;
     @FXML private TabPane tabPane;
     @FXML private HBox sidebarHeader;
@@ -48,18 +49,14 @@ public class MainController {
         });
         javafx.application.Platform.runLater(this::syncSidebarHeaderHeight);
 
-        // Scene-level key filter so navigation works regardless of which node has focus
-        tabPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
-            if (newScene != null) {
-                newScene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-                    Tab selected = tabPane.getSelectionModel().getSelectedItem();
-                    if (selected == null) return;
-                    Object content = selected.getContent();
-                    Object data = selected.getUserData();
-                    if (content instanceof Pane && data instanceof MindMap) {
-                        handleKeyPress(e, (MindMap) data, (Pane) content);
-                    }
-                });
+        // Root-level key filter so navigation works regardless of which node has focus
+        rootPane.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+            Tab selected = tabPane.getSelectionModel().getSelectedItem();
+            if (selected == null) return;
+            Object content = selected.getContent();
+            Object data = selected.getUserData();
+            if (content instanceof Pane && data instanceof MindMap) {
+                handleKeyPress(e, (MindMap) data, (Pane) content);
             }
         });
     }
