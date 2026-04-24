@@ -47,6 +47,21 @@ public class MainController {
             if (!needed) syncSidebarHeaderHeight();
         });
         javafx.application.Platform.runLater(this::syncSidebarHeaderHeight);
+
+        // Scene-level key filter so navigation works regardless of which node has focus
+        tabPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+                    Tab selected = tabPane.getSelectionModel().getSelectedItem();
+                    if (selected == null) return;
+                    Object content = selected.getContent();
+                    Object data = selected.getUserData();
+                    if (content instanceof Pane && data instanceof MindMap) {
+                        handleKeyPress(e, (MindMap) data, (Pane) content);
+                    }
+                });
+            }
+        });
     }
 
     private void syncSidebarHeaderHeight() {
@@ -95,7 +110,6 @@ public class MainController {
         Pane canvas = new Pane();
         canvas.setFocusTraversable(true);
         canvas.setOnMouseClicked(e -> canvas.requestFocus());
-        canvas.setOnKeyPressed(e -> handleKeyPress(e, map, canvas));
 
         // Re-layout when canvas gets its actual size on first display
         canvas.widthProperty().addListener((obs, oldW, newW) -> {
@@ -135,22 +149,37 @@ public class MainController {
             e.consume();
 
         } else if (code == KeyCode.RIGHT) {
-            List<Node> children = getChildren(map, currentNode);
-            if (!children.isEmpty()) {
-                currentNode = children.get(0);
-                refreshCanvas(canvas, map);
+            if (isOnLeftSide(map, currentNode)) {
+                navigateToParent(map, canvas);
+            } else {
+                List<Node> children = getChildren(map, currentNode);
+                if (!children.isEmpty()) {
+                    currentNode = children.get(0);
+                    refreshCanvas(canvas, map);
+                }
             }
             e.consume();
 
         } else if (code == KeyCode.LEFT) {
-            if (currentNode.getParentId() != null) {
-                map.getNodes().stream()
-                        .filter(n -> n.getId().equals(currentNode.getParentId()))
-                        .findFirst()
-                        .ifPresent(parent -> {
-                            currentNode = parent;
-                            refreshCanvas(canvas, map);
-                        });
+            if (currentNode.getParentId() == null) {
+                // Root: go to left-side children
+                List<Node> all = getChildren(map, currentNode);
+                int rightCount = (all.size() + 1) / 2;
+                List<Node> leftChildren = all.subList(rightCount, all.size());
+                if (!leftChildren.isEmpty()) {
+                    currentNode = leftChildren.get(0);
+                    refreshCanvas(canvas, map);
+                }
+            } else if (isOnLeftSide(map, currentNode)) {
+                // Left-side node: go deeper to children
+                List<Node> children = getChildren(map, currentNode);
+                if (!children.isEmpty()) {
+                    currentNode = children.get(0);
+                    refreshCanvas(canvas, map);
+                }
+            } else {
+                // Right-side node: go to parent
+                navigateToParent(map, canvas);
             }
             e.consume();
 
@@ -175,6 +204,7 @@ public class MainController {
                         .findFirst()
                         .orElse(map.getNodes().isEmpty() ? null : map.getNodes().get(0));
                 refreshCanvas(canvas, map);
+                canvas.requestFocus();
             }
             e.consume();
         }
@@ -182,8 +212,10 @@ public class MainController {
 
     private void navigateSibling(MindMap map, Pane canvas, int direction) {
         if (currentNode.getParentId() == null) return;
+        boolean onLeft = isOnLeftSide(map, currentNode);
         List<Node> siblings = map.getNodes().stream()
                 .filter(n -> currentNode.getParentId().equals(n.getParentId()))
+                .filter(n -> isOnLeftSide(map, n) == onLeft)
                 .collect(Collectors.toList());
         int idx = siblings.indexOf(currentNode);
         if (idx >= 0) {
@@ -193,6 +225,23 @@ public class MainController {
                 refreshCanvas(canvas, map);
             }
         }
+    }
+
+    private void navigateToParent(MindMap map, Pane canvas) {
+        if (currentNode.getParentId() == null) return;
+        map.getNodes().stream()
+                .filter(n -> n.getId().equals(currentNode.getParentId()))
+                .findFirst()
+                .ifPresent(parent -> {
+                    currentNode = parent;
+                    refreshCanvas(canvas, map);
+                });
+    }
+
+    private boolean isOnLeftSide(MindMap map, Node node) {
+        if (node.getParentId() == null) return false;
+        Node root = getRoot(map);
+        return root != null && node.getXCoordinate() < root.getXCoordinate();
     }
 
     private void promptAddChild(MindMap map, Pane canvas, Node parent) {
@@ -395,6 +444,7 @@ public class MainController {
                         .filter(n -> n.getId().equals(parentId))
                         .findFirst().orElse(null);
                 refreshCanvas(canvas, map);
+                canvas.requestFocus();
             }
         });
 
