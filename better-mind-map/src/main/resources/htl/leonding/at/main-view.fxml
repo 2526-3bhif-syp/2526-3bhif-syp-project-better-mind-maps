@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.BorderPane?>
@@ -20,13 +21,19 @@
         <TreeView fx:id="hierarchyTree" prefWidth="200" BorderPane.alignment="CENTER"/>
     </left>
     <center>
-        <TabPane fx:id="tabPane" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER" />
+        <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER"/>
     </center>
     <bottom>
-        <HBox spacing="10">
+        <HBox spacing="20" style="-fx-background-color: #f0f0f0; -fx-border-color: #cccccc; -fx-border-width: 1 0 0 0;">
             <padding>
-                <Insets bottom="10" left="10" right="10" top="10"/>
+                <Insets bottom="6" left="12" right="12" top="6"/>
             </padding>
+            <Label text="Enter / Ins — Add child" style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
+            <Label text="Arrow keys — Navigate" style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
+            <Label text="Tab / Shift+Tab — Cycle nodes" style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
+            <Label text="F2 — Edit" style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
+            <Label text="Del — Delete" style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
+            <Label text="  |  Click canvas, then use keys" style="-fx-font-size: 11px; -fx-text-fill: #888; -fx-font-style: italic;"/>
         </HBox>
     </bottom>
 </BorderPane>
