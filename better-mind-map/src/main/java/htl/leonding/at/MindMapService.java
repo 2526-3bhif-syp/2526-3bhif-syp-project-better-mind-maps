@@ -62,6 +62,10 @@ public class MindMapService {
         }
     }
 
+    public void deleteMindMap(String mapId) {
+        repository.deleteMindMap(mapId);
+    }
+
     private void collectDescendantIds(MindMap map, String nodeId, List<String> result) {
         for (Node n : new ArrayList<>(map.getNodes())) {
             if (nodeId.equals(n.getParentId())) {

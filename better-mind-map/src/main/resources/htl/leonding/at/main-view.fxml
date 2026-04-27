@@ -7,33 +7,46 @@
 <?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.VBox?>
 
-<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="htl.leonding.at.MainController">
+<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="htl.leonding.at.MainController"
+            stylesheets="@styles.css">
     <top>
-        <HBox spacing="10">
-            <padding>
-                <Insets bottom="10" left="10" right="10" top="10"/>
-            </padding>
-            <Button text="New Mind Map" onAction="#onCreateNewMap"/>
+        <HBox styleClass="toolbar" alignment="CENTER_LEFT">
+            <Button text="← Overview" onAction="#onBackToOverview" styleClass="btn-ghost"/>
+            <Button text="+ New Mind Map" onAction="#onCreateNewMap" styleClass="btn-primary"/>
         </HBox>
     </top>
-    <left>
-        <TreeView fx:id="hierarchyTree" prefWidth="200" BorderPane.alignment="CENTER"/>
-    </left>
     <center>
-        <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER"/>
+        <HBox>
+            <!-- Sidebar: header + tree on the same level as tabs -->
+            <VBox prefWidth="200" minWidth="200" maxWidth="200"
+                  style="-fx-border-color: #dee2e6; -fx-border-width: 0 1 0 0;">
+                <HBox fx:id="sidebarHeader" styleClass="sidebar-header" alignment="CENTER_LEFT">
+                    <Label text="STRUCTURE" styleClass="sidebar-label"/>
+                </HBox>
+                <TreeView fx:id="hierarchyTree" styleClass="tree-view" VBox.vgrow="ALWAYS"/>
+            </VBox>
+            <!-- Editor: TabPane fills remaining space -->
+            <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE"
+                     HBox.hgrow="ALWAYS"
+                     style="-fx-background-color: #f8f9fa;"/>
+        </HBox>
     </center>
     <bottom>
-        <HBox spacing="20" style="-fx-background-color: #f0f0f0; -fx-border-color: #cccccc; -fx-border-width: 1 0 0 0;">
-            <padding>
-                <Insets bottom="6" left="12" right="12" top="6"/>
-            </padding>
-            <Label text="Enter / Ins — Add child" style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
-            <Label text="Arrow keys — Navigate" style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
-            <Label text="Tab / Shift+Tab — Cycle nodes" style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
-            <Label text="F2 — Edit" style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
-            <Label text="Del — Delete" style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
-            <Label text="  |  Click canvas, then use keys" style="-fx-font-size: 11px; -fx-text-fill: #888; -fx-font-style: italic;"/>
+        <HBox styleClass="statusbar" alignment="CENTER_LEFT">
+            <Label text="Enter / Ins" styleClass="statusbar-key"/>
+            <Label text="Add child" styleClass="statusbar-desc"/>
+            <Label text="F2" styleClass="statusbar-key"/>
+            <Label text="Edit" styleClass="statusbar-desc"/>
+            <Label text="Del" styleClass="statusbar-key"/>
+            <Label text="Delete" styleClass="statusbar-desc"/>
+            <Label text="Arrow keys" styleClass="statusbar-key"/>
+            <Label text="Navigate" styleClass="statusbar-desc"/>
+            <Label text="Tab" styleClass="statusbar-key"/>
+            <Label text="Cycle nodes" styleClass="statusbar-desc"/>
         </HBox>
     </bottom>
 </BorderPane>
