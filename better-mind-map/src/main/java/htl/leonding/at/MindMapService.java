@@ -32,11 +32,37 @@ public class MindMapService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Parent node not found"));
 
-        long siblingCount = map.getNodes().stream().filter(n -> parentId.equals(n.getParentId())).count();
-        double x = parent.getXCoordinate() + 150;
-        double y = parent.getYCoordinate() + (siblingCount * 60);
+        double candidateX = 0;
+        double candidateY = 0;
+        
+        int i = 0;
+        double angleStep = Math.PI / 4; // 45 Grad Schritte (8 Positionen pro Kreis)
+        double currentRadius = 150;
 
-        Node node = new Node(UUID.randomUUID().toString(), text, parentId, x, y);
+        while (true) {
+            candidateX = parent.getXCoordinate() + currentRadius * Math.cos(i * angleStep);
+            candidateY = parent.getYCoordinate() + currentRadius * Math.sin(i * angleStep);
+            
+            boolean collision = false;
+            for (Node n : map.getNodes()) {
+                if (Math.abs(n.getXCoordinate() - candidateX) < 120 && Math.abs(n.getYCoordinate() - candidateY) < 60) {
+                    collision = true;
+                    break;
+                }
+            }
+            
+            if (!collision) {
+                break; // Nearest free spot found
+            }
+            
+            i++;
+            // Wenn wir einen vollen Kreis (8 Positionen) geprüft haben, machen wir den Suchradius größer
+            if (i % 8 == 0) {
+                currentRadius += 80;
+            }
+        }
+
+        Node node = new Node(UUID.randomUUID().toString(), text, parentId, candidateX, candidateY);
         map.addNode(node);
         repository.saveNode(map.getId(), node);
         return node;
