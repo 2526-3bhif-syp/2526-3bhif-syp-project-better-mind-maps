@@ -63,6 +63,10 @@ public class MindMapService {
         }
 
         Node node = new Node(UUID.randomUUID().toString(), text, parentId, candidateX, candidateY);
+        double x = parent.getXCoordinate() + 150;
+        double y = parent.getYCoordinate();
+
+        Node node = new Node(UUID.randomUUID().toString(), text, parentId, x, y);
         map.addNode(node);
         repository.saveNode(map.getId(), node);
         return node;

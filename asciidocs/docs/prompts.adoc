@@ -1,0 +1,52 @@
+= KI-Prompts: Analyse & Implementierung User Story #2
+ryanj
+1.0, 2026-04-12: Fragen und Antworten vor der Implementierung von User Story #2 (Mindmap Editing)
+ifndef::imagesdir[:imagesdir: images]
+:icons: font
+:toc: left
+:toclevels: 2
+
+== Kontext
+
+Zuerst wurde das Projekt gründlich überprüft. Danach wurden Fragen gestellt, um sicherzugehen, dass alles richtig verstanden ist.
+
+== Fragen & Antworten (einfach erklärt)
+
+. Wie sollen Daten gespeichert werden?
++
+Es gab schon eine JSON-Datei, aber entschieden wurde:
+SQLite wird als Datenbank verwendet.
+
+. Darf das Datenmodell verändert werden?
++
+Ja, Setter dürfen hinzugefügt werden.
+
+. Dürfen bestehende Dateien geändert werden?
++
+Ja, die Dateien `MindMapService.java` und `MindMapRepository.java` dürfen bearbeitet werden.
+
+. Darf die Oberfläche neu gemacht werden?
++
+Nein, es soll auf dem bestehenden Code aufgebaut werden.
+
+. Wie werden Verbindungen zwischen Knoten dargestellt?
++
+Als Linien auf demselben `Pane`.
+
+. Gibt es eine Reihenfolge bei den Aufgaben?
++
+Ja, die Reihenfolge soll eingehalten werden.
+
+. Sollen Tests geschrieben werden?
++
+Ja.
+
+== Ergebnis
+
+Auf Basis dieser Antworten wurde folgende Implementierung umgesetzt:
+
+* Es wird eine kleine Datenbank verwendet, damit alles gespeichert bleibt. Dafür gibt es eine eigene Klasse `DatabaseManager`.
+* Knoten (Nodes) können jetzt Text und eine Position (x und y) speichern. Außerdem können Knoten gelöscht werden.
+* Es gibt Funktionen, um Daten zu speichern, zu aktualisieren, zu löschen und zu laden.
+* Mit Rechtsklick kann man einen neuen Unterknoten erstellen, Text bearbeiten und Knoten löschen. Verbindungen zwischen Knoten werden angezeigt und die Navigation per Tastatur ist möglich.
+* Man kann neue Knoten hinzufügen, Texte ändern und Knoten löschen.

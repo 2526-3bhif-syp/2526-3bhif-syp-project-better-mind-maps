@@ -279,12 +279,28 @@ public class MainController {
         if (root != null && root.getXCoordinate() == 0 && root.getYCoordinate() == 0) {
             layoutMindMap(map, w, h);
         }
+        layoutMindMap(map, w, h);
 
         canvas.getChildren().clear();
         canvas.setStyle("-fx-background-color: #f8f9fa;");
 
         // Edges (drawn first, appear behind nodes)
         drawLines(canvas, map);
+        for (Node node : map.getNodes()) {
+            if (node.getParentId() == null) continue;
+            map.getNodes().stream()
+                    .filter(p -> p.getId().equals(node.getParentId()))
+                    .findFirst()
+                    .ifPresent(parent -> {
+                        Line line = new Line(
+                                parent.getXCoordinate(), parent.getYCoordinate(),
+                                node.getXCoordinate(), node.getYCoordinate()
+                        );
+                        line.setStroke(Color.web("#adb5bd"));
+                        line.setStrokeWidth(2);
+                        canvas.getChildren().add(line);
+                    });
+        }
 
         // Nodes
         for (Node node : map.getNodes()) {
@@ -427,6 +443,7 @@ public class MainController {
 
         nodeView.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && !e.isConsumed()) {
+            if (e.getButton() == MouseButton.PRIMARY) {
                 currentNode = node;
                 refreshCanvas(canvas, map);
                 canvas.requestFocus();
