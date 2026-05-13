@@ -258,10 +258,40 @@ public class MainController {
         }
     }
 
+    private void setupCanvasNavigation(Pane canvas) {
+        final double[] dragContext = new double[2];
+
+        canvas.setOnMousePressed(event -> {
+            if (event.getButton() == MouseButton.PRIMARY || event.getButton() == MouseButton.SECONDARY || event.getButton() == MouseButton.MIDDLE) {
+                dragContext[0] = canvas.getTranslateX() - event.getSceneX();
+                dragContext[1] = canvas.getTranslateY() - event.getSceneY();
+            }
+        });
+
+        canvas.setOnMouseDragged(event -> {
+            if (event.getButton() == MouseButton.PRIMARY || event.getButton() == MouseButton.SECONDARY || event.getButton() == MouseButton.MIDDLE) {
+                canvas.setTranslateX(dragContext[0] + event.getSceneX());
+                canvas.setTranslateY(dragContext[1] + event.getSceneY());
+            }
+        });
+
+        canvas.setOnScroll(event -> {
+            double zoomFactor = 1.05;
+            if (event.getDeltaY() < 0) {
+                zoomFactor = 1 / zoomFactor;
+            }
+            canvas.setScaleX(canvas.getScaleX() * zoomFactor);
+            canvas.setScaleY(canvas.getScaleY() * zoomFactor);
+            event.consume();
+        });
+    }
+
     private void renderMindMap(MindMap map) {
         Pane canvas = new Pane();
         canvas.setFocusTraversable(true);
         canvas.setOnMouseClicked(e -> canvas.requestFocus());
+        
+        setupCanvasNavigation(canvas);
 
         // Re-layout when canvas gets its actual size on first display
         canvas.widthProperty().addListener((obs, oldW, newW) -> {
