@@ -35,6 +35,7 @@ public class MainController {
     private final MindMapService service = new MindMapService(repository);
 
     private Node currentNode = null;
+    private String userApiKey = null;
 
     @FXML
     public void initialize() {
@@ -123,15 +124,29 @@ public class MainController {
             Node root = getRoot(map);
             
             String apiKey = System.getenv("MINDMAP_AI_KEY");
+            
             if (apiKey == null || apiKey.trim().isEmpty()) {
-                // Fallback auf den direkt angegebenen Key, falls die Umgebungsvariable nicht gesetzt ist
-                apiKey = "AIzaSyANWxRFMXA1OF6BGD_rhzqE4qjXimTpnyE";
+                if (userApiKey != null && !userApiKey.trim().isEmpty()) {
+                    apiKey = userApiKey;
+                } else {
+                    TextInputDialog keyDialog = new TextInputDialog();
+                    keyDialog.setTitle("API Key benötigt");
+                    keyDialog.setHeaderText("Google Gemini API Key");
+                    keyDialog.setContentText("Bitte gib deinen Gemini API Key ein:");
+                    keyDialog.getDialogPane().setPrefWidth(400);
+                    
+                    Optional<String> keyResult = keyDialog.showAndWait();
+                    if (keyResult.isPresent() && !keyResult.get().trim().isEmpty()) {
+                        userApiKey = keyResult.get().trim();
+                        apiKey = userApiKey;
+                    }
+                }
             }
             
-            if (apiKey != null && !apiKey.isEmpty()) {
+            if (apiKey != null && !apiKey.trim().isEmpty()) {
                 callGeminiApi(map, root, prompt, apiKey);
             } else {
-                System.out.println("Kein API Key gefunden. Nutze lokale Mock-KI.");
+                System.out.println("Kein API Key gefunden oder eingegeben. Nutze lokale Mock-KI.");
                 generateSmarterMockAiMindMap(map, root, prompt);
             }
             
