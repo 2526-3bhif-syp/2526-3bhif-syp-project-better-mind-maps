@@ -20,14 +20,28 @@
 
 /* ── Buttons ── */
 .btn-primary {
-    -fx-background-color: #27ae60;
+    -fx-background-color: #007bff;
     -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-font-size: 13px;
-    -fx-padding: 8 20;
-    -fx-background-radius: 6;
+    -fx-padding: 6 12;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
     -fx-cursor: hand;
-    -fx-border-width: 0;
+}
+.btn-primary:hover {
+    -fx-background-color: #0056b3;
+}
+
+.btn-secondary {
+    -fx-background-color: #6f42c1;
+    -fx-text-fill: white;
+    -fx-padding: 6 12;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+}
+.btn-secondary:hover {
+    -fx-background-color: #5936a2;
 }
 .btn-primary:hover { -fx-background-color: #219a52; }
 

@@ -17,6 +17,10 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -101,6 +105,158 @@ public class MainController {
             currentNode = getRoot(map);
             renderMindMap(map);
         });
+    }
+
+    @FXML
+    public void onOpenAiChat() {
+        TextInputDialog dialog = new TextInputDialog("");
+        dialog.setTitle("✨ AI Mindmap Assistant");
+        dialog.setHeaderText("Worüber möchtest du eine Mindmap erstellen?");
+        dialog.setContentText("Prompt (z.B. 'Aktien', 'Programmieren', 'Geschichte'):");
+        dialog.getDialogPane().setPrefWidth(500);
+
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(prompt -> {
+            if (prompt.trim().isEmpty()) return;
+            
+            MindMap map = service.createMindMap("AI: " + prompt.substring(0, Math.min(prompt.length(), 20)));
+            Node root = getRoot(map);
+            
+            String apiKey = System.getenv("MINDMAP_AI_KEY");
+            if (apiKey == null || apiKey.trim().isEmpty()) {
+                // Fallback auf den direkt angegebenen Key, falls die Umgebungsvariable nicht gesetzt ist
+                apiKey = "AIzaSyANWxRFMXA1OF6BGD_rhzqE4qjXimTpnyE";
+            }
+            
+            if (apiKey != null && !apiKey.isEmpty()) {
+                callGeminiApi(map, root, prompt, apiKey);
+            } else {
+                System.out.println("Kein API Key gefunden. Nutze lokale Mock-KI.");
+                generateSmarterMockAiMindMap(map, root, prompt);
+            }
+            
+            currentNode = root;
+            renderMindMap(map);
+        });
+    }
+
+    private void callGeminiApi(MindMap map, Node root, String prompt, String apiKey) {
+        try {
+            String aiPrompt = "Du bist ein Mindmap-Experte. Führe eine Internet-Recherche zum Thema '" + prompt + "' durch, um die wichtigsten und aktuellsten Begriffe zu finden. " +
+                    "Baue daraus eine extrem detaillierte und logisch strukturierte Mindmap. " +
+                    "WICHTIG: Antworte AUSSCHLIESSLICH im folgenden Format, OHNE Markdown, OHNE Text davor oder danach. " +
+                    "Zeile 1 MUSS das Hauptthema sein.\n" +
+                    "Zeile 2 und weiter für Kategorien und Unterkategorien:\n" +
+                    "Kategorie 1\n- Unterkategorie 1.1\n- Unterkategorie 1.2\nKategorie 2\n- Unterkategorie 2.1";
+
+            // Gemini API JSON für Search Grounding (gemini-1.5-pro für bessere Logik)
+            String jsonPayload = "{\"contents\": [{\"parts\": [{\"text\": \"" + aiPrompt.replace("\"", "\\\"") + "\"}]}], \"tools\": [{\"google_search\": {}}]}";
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + apiKey))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            String responseBody = response.body();
+
+            // Setze root Text schon mal auf den prompt, falls was schief geht
+            service.updateNodeText(map, root, prompt.substring(0, Math.min(prompt.length(), 20)));
+
+            int textIndex = responseBody.indexOf("\"text\": \"");
+            if (textIndex > -1) {
+                int startIndex = textIndex + 9;
+                int endIndex = responseBody.indexOf("\"", startIndex);
+                if (endIndex == -1) endIndex = responseBody.length() - 1; // Fallback
+                
+                String content = responseBody.substring(startIndex, endIndex);
+                content = content.replace("\\n", "\n").replace("\\\"", "\"").replace("\\*", "");
+
+                Node currentMain = null;
+                boolean isFirstLine = true;
+                
+                for (String line : content.split("\n")) {
+                    line = line.trim();
+                    if (line.isEmpty() || line.startsWith("```") || line.toLowerCase().contains("hier ist die mindmap")) continue;
+                    
+                    if (isFirstLine) {
+                        service.updateNodeText(map, root, line);
+                        isFirstLine = false;
+                        continue;
+                    }
+                    
+                    if (line.startsWith("- ")) {
+                        if (currentMain != null) {
+                            service.addNode(map, currentMain.getId(), line.substring(2).trim());
+                        }
+                    } else {
+                        currentMain = service.addNode(map, root.getId(), line);
+                    }
+                }
+            } else {
+                System.out.println("Konnte API Response nicht lesen. Nutze Fallback.");
+                generateSmarterMockAiMindMap(map, root, prompt);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            generateSmarterMockAiMindMap(map, root, prompt);
+        }
+    }
+
+    private void generateSmarterMockAiMindMap(MindMap map, Node root, String prompt) {
+        String p = prompt.toLowerCase();
+        
+        if (p.contains("aktien") || p.contains("börse") || p.contains("stock") || p.contains("investieren")) {
+            Node basics = service.addNode(map, root.getId(), "Grundlagen");
+            service.addNode(map, basics.getId(), "Börse & Handel");
+            service.addNode(map, basics.getId(), "Broker");
+            service.addNode(map, basics.getId(), "Dividende");
+
+            Node types = service.addNode(map, root.getId(), "Anlageklassen");
+            service.addNode(map, types.getId(), "Einzelaktien");
+            service.addNode(map, types.getId(), "ETFs");
+            service.addNode(map, types.getId(), "Aktienfonds");
+
+            Node strategy = service.addNode(map, root.getId(), "Strategie");
+            service.addNode(map, strategy.getId(), "Buy & Hold");
+            service.addNode(map, strategy.getId(), "Daytrading");
+            service.addNode(map, strategy.getId(), "Value Investing");
+            
+            Node risks = service.addNode(map, root.getId(), "Risiken");
+            service.addNode(map, risks.getId(), "Kursschwankungen");
+            service.addNode(map, risks.getId(), "Inflation");
+            service.addNode(map, risks.getId(), "Totalverlust");
+
+        } else if (p.contains("java") || p.contains("programmieren") || p.contains("software")) {
+            Node concepts = service.addNode(map, root.getId(), "Konzepte");
+            service.addNode(map, concepts.getId(), "Objektorientierung");
+            service.addNode(map, concepts.getId(), "Datenstrukturen");
+            
+            Node tools = service.addNode(map, root.getId(), "Tools");
+            service.addNode(map, tools.getId(), "IDE (IntelliJ, Eclipse)");
+            service.addNode(map, tools.getId(), "Git & GitHub");
+            
+            Node languages = service.addNode(map, root.getId(), "Sprachen");
+            service.addNode(map, languages.getId(), "Java");
+            service.addNode(map, languages.getId(), "Python");
+            service.addNode(map, languages.getId(), "JavaScript");
+            
+        } else {
+            // Generisches Fallback für alle anderen Prompts
+            Node info = service.addNode(map, root.getId(), "Was ist das?");
+            service.addNode(map, info.getId(), "Definition");
+            service.addNode(map, info.getId(), "Ursprung");
+            
+            Node proCon = service.addNode(map, root.getId(), "Vor- & Nachteile");
+            service.addNode(map, proCon.getId(), "Vorteile");
+            service.addNode(map, proCon.getId(), "Nachteile");
+            
+            Node examples = service.addNode(map, root.getId(), "Beispiele & Nutzung");
+            service.addNode(map, examples.getId(), "Praxisbeispiele");
+            service.addNode(map, examples.getId(), "Anwendungsfälle");
+        }
     }
 
     private void renderMindMap(MindMap map) {
