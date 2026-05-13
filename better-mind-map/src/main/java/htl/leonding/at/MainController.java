@@ -142,19 +142,18 @@ public class MainController {
 
     private void callGeminiApi(MindMap map, Node root, String prompt, String apiKey) {
         try {
-            String aiPrompt = "Du bist ein Mindmap-Experte. Führe eine Internet-Recherche zum Thema '" + prompt + "' durch, um die wichtigsten und aktuellsten Begriffe zu finden. " +
-                    "Baue daraus eine extrem detaillierte und logisch strukturierte Mindmap. " +
+            String aiPrompt = "Du bist ein Mindmap-Experte. Erstelle zum Thema '" + prompt + "' eine extrem detaillierte und logisch strukturierte Mindmap mit den wichtigsten Begriffen. " +
                     "WICHTIG: Antworte AUSSCHLIESSLICH im folgenden Format, OHNE Markdown, OHNE Text davor oder danach. " +
                     "Zeile 1 MUSS das Hauptthema sein.\n" +
                     "Zeile 2 und weiter für Kategorien und Unterkategorien:\n" +
                     "Kategorie 1\n- Unterkategorie 1.1\n- Unterkategorie 1.2\nKategorie 2\n- Unterkategorie 2.1";
 
-            // Gemini API JSON für Search Grounding (gemini-1.5-pro für bessere Logik)
-            String jsonPayload = "{\"contents\": [{\"parts\": [{\"text\": \"" + aiPrompt.replace("\"", "\\\"") + "\"}]}], \"tools\": [{\"google_search\": {}}]}";
+            // Gemini API JSON (gemini-2.5-flash)
+            String jsonPayload = "{\"contents\": [{\"parts\": [{\"text\": \"" + aiPrompt.replace("\"", "\\\"") + "\"}]}]}";
 
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + apiKey))
+                    .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
