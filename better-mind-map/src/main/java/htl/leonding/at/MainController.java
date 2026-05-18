@@ -443,7 +443,6 @@ public class MainController {
 
         nodeView.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && !e.isConsumed()) {
-            if (e.getButton() == MouseButton.PRIMARY) {
                 currentNode = node;
                 refreshCanvas(canvas, map);
                 canvas.requestFocus();
