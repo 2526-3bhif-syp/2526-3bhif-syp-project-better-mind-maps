@@ -35,6 +35,7 @@ public class MainController {
     private final MindMapService service = new MindMapService(repository);
 
     private Node currentNode = null;
+    private String userApiKey = null;
 
     @FXML
     public void initialize() {
@@ -123,15 +124,29 @@ public class MainController {
             Node root = getRoot(map);
             
             String apiKey = System.getenv("MINDMAP_AI_KEY");
+            
             if (apiKey == null || apiKey.trim().isEmpty()) {
-                // Fallback auf den direkt angegebenen Key, falls die Umgebungsvariable nicht gesetzt ist
-                apiKey = "AIzaSyANWxRFMXA1OF6BGD_rhzqE4qjXimTpnyE";
+                if (userApiKey != null && !userApiKey.trim().isEmpty()) {
+                    apiKey = userApiKey;
+                } else {
+                    TextInputDialog keyDialog = new TextInputDialog();
+                    keyDialog.setTitle("API Key benötigt");
+                    keyDialog.setHeaderText("Google Gemini API Key");
+                    keyDialog.setContentText("Bitte gib deinen Gemini API Key ein:");
+                    keyDialog.getDialogPane().setPrefWidth(400);
+                    
+                    Optional<String> keyResult = keyDialog.showAndWait();
+                    if (keyResult.isPresent() && !keyResult.get().trim().isEmpty()) {
+                        userApiKey = keyResult.get().trim();
+                        apiKey = userApiKey;
+                    }
+                }
             }
             
-            if (apiKey != null && !apiKey.isEmpty()) {
+            if (apiKey != null && !apiKey.trim().isEmpty()) {
                 callGeminiApi(map, root, prompt, apiKey);
             } else {
-                System.out.println("Kein API Key gefunden. Nutze lokale Mock-KI.");
+                System.out.println("Kein API Key gefunden oder eingegeben. Nutze lokale Mock-KI.");
                 generateSmarterMockAiMindMap(map, root, prompt);
             }
             
@@ -258,40 +273,10 @@ public class MainController {
         }
     }
 
-    private void setupCanvasNavigation(Pane canvas) {
-        final double[] dragContext = new double[2];
-
-        canvas.setOnMousePressed(event -> {
-            if (event.getButton() == MouseButton.PRIMARY || event.getButton() == MouseButton.SECONDARY || event.getButton() == MouseButton.MIDDLE) {
-                dragContext[0] = canvas.getTranslateX() - event.getSceneX();
-                dragContext[1] = canvas.getTranslateY() - event.getSceneY();
-            }
-        });
-
-        canvas.setOnMouseDragged(event -> {
-            if (event.getButton() == MouseButton.PRIMARY || event.getButton() == MouseButton.SECONDARY || event.getButton() == MouseButton.MIDDLE) {
-                canvas.setTranslateX(dragContext[0] + event.getSceneX());
-                canvas.setTranslateY(dragContext[1] + event.getSceneY());
-            }
-        });
-
-        canvas.setOnScroll(event -> {
-            double zoomFactor = 1.05;
-            if (event.getDeltaY() < 0) {
-                zoomFactor = 1 / zoomFactor;
-            }
-            canvas.setScaleX(canvas.getScaleX() * zoomFactor);
-            canvas.setScaleY(canvas.getScaleY() * zoomFactor);
-            event.consume();
-        });
-    }
-
     private void renderMindMap(MindMap map) {
         Pane canvas = new Pane();
         canvas.setFocusTraversable(true);
         canvas.setOnMouseClicked(e -> canvas.requestFocus());
-        
-        setupCanvasNavigation(canvas);
 
         // Re-layout when canvas gets its actual size on first display
         canvas.widthProperty().addListener((obs, oldW, newW) -> {

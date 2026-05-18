@@ -5,7 +5,7 @@ import java.net.http.HttpResponse;
 
 public class test_gemini {
     public static void main(String[] args) throws Exception {
-        String apiKey = "AIzaSyANWxRFMXA1OF6BGD_rhzqE4qjXimTpnyE";
+        String apiKey = "";
         String aiPrompt = "Du bist ein Mindmap-Experte. Erstelle zum Thema 'Fussball' eine extrem detaillierte und logisch strukturierte Mindmap mit den wichtigsten Begriffen.";
         String jsonPayload = "{\"contents\": [{\"parts\": [{\"text\": \"" + aiPrompt.replace("\"", "\\\"") + "\"}]}]}";
         HttpClient client = HttpClient.newHttpClient();
