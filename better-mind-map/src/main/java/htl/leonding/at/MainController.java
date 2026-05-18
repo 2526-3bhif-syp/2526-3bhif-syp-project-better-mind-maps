@@ -274,12 +274,18 @@ public class MainController {
         double h = canvas.getHeight() > 0 ? canvas.getHeight()
                 : (canvas.getScene() != null ? canvas.getScene().getHeight() - 80 : 600);
 
+        // Layout only if root has no coordinates (e.g. initially)
+        Node root = getRoot(map);
+        if (root != null && root.getXCoordinate() == 0 && root.getYCoordinate() == 0) {
+            layoutMindMap(map, w, h);
+        }
         layoutMindMap(map, w, h);
 
         canvas.getChildren().clear();
         canvas.setStyle("-fx-background-color: #f8f9fa;");
 
         // Edges (drawn first, appear behind nodes)
+        drawLines(canvas, map);
         for (Node node : map.getNodes()) {
             if (node.getParentId() == null) continue;
             map.getNodes().stream()
@@ -307,6 +313,26 @@ public class MainController {
         }
 
         refreshTree(map);
+    }
+
+    private void drawLines(Pane canvas, MindMap map) {
+        canvas.getChildren().removeIf(n -> n instanceof Line);
+        int index = 0;
+        for (Node node : map.getNodes()) {
+            if (node.getParentId() == null) continue;
+            Node parent = map.getNodes().stream()
+                    .filter(p -> p.getId().equals(node.getParentId()))
+                    .findFirst().orElse(null);
+            if (parent != null) {
+                Line line = new Line(
+                        parent.getXCoordinate(), parent.getYCoordinate(),
+                        node.getXCoordinate(), node.getYCoordinate()
+                );
+                line.setStroke(Color.web("#adb5bd"));
+                line.setStrokeWidth(2);
+                canvas.getChildren().add(index++, line);
+            }
+        }
     }
 
     /**
@@ -416,10 +442,41 @@ public class MainController {
         nodeView.getChildren().addAll(rect, label);
 
         nodeView.setOnMouseClicked(e -> {
-            if (e.getButton() == MouseButton.PRIMARY) {
+            if (e.getButton() == MouseButton.PRIMARY && !e.isConsumed()) {
                 currentNode = node;
                 refreshCanvas(canvas, map);
                 canvas.requestFocus();
+            }
+        });
+
+        final double[] dragDelta = new double[2];
+
+        nodeView.setOnMousePressed(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                dragDelta[0] = nodeView.getLayoutX() - e.getSceneX();
+                dragDelta[1] = nodeView.getLayoutY() - e.getSceneY();
+                e.consume();
+            }
+        });
+
+        nodeView.setOnMouseDragged(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                double newX = e.getSceneX() + dragDelta[0];
+                double newY = e.getSceneY() + dragDelta[1];
+                nodeView.setLayoutX(newX);
+                nodeView.setLayoutY(newY);
+                node.setXCoordinate(newX + NODE_W / 2);
+                node.setYCoordinate(newY + NODE_H / 2);
+                
+                drawLines(canvas, map);
+                e.consume();
+            }
+        });
+
+        nodeView.setOnMouseReleased(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                repository.updateNode(node);
+                e.consume();
             }
         });
 
