@@ -35,28 +35,3 @@ Refactor this Project to use the MVP pattern
 ## Ryan James
 
 ## Arda Dönmez
-
-Lies dir die User Story #7 aus dem GitHub Issue "Move / Arrange Nodes" durch.
-
-**Aufgabe:**
-Ich möchte die Funktion implementieren, mit der User Nodes in der Mindmap frei bewegen können.
-
-**Anforderungen basierend auf den Akzeptanzkriterien:**
-1. Ermögliche es, Nodes per Drag-and-Drop frei zu verschieben.
-2. Die Position im Datenmodell muss sofort aktualisiert werden.
-3. Die Verbindungslinien zwischen den Nodes müssen sich automatisch mitbewegen.
-4. Achte darauf, dass das MVP-Pattern (wie von Julian Heissinger gefordert) beibehalten wird.
-
-**Kontext:**
-- Wir nutzen JavaFX und FXML.
-- Die Abhängigkeiten sind bereits in der pom.xml vorhanden.
-
-Bitte analysiere den aktuellen Code im `view` und `presenter` Paket und schlage mir die notwendigen Änderungen vor, um das Verschieben der Nodes zu ermöglichen.
-
-Die neuen Nodes die erstellt werden sollen nicht immer weiter unten platziert werden sondern den am nähsten freien platz
-
-die nodes sollen beim erstellen nicht untereinander sein sondern sollen kreislich gehen. Das jetzige problem ist, dass sie nur an einer bestimmten position entweder wie in einem array nur von unten nach oben erstellt wird.
-
-Erstelle ein Button der zu einem KI chat führt. Ich möchte eine funktion haben wo ich der KI sage was für eine art von mindmap ich haben möchte und die KI soll sie mir dann erstellen. Sie soll achten dass sie strukturiert ist und so übersichtlich macht wie es geht. Die KI funktion soll sehr schön gestyled sein.
-
-Das jetzige Problem von der KI function ist, dass sie nicht das macht was ich will bsp.: ich wollte eine Mindmap über aktien und sie macht es nicht richtig. Die KI soll selber recherchieren was die wichtgisten begriffe für die mindmap ist und sie dementsprechend "zeichne".
