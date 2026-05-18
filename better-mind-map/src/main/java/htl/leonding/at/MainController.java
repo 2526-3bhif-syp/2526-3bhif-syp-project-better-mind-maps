@@ -43,7 +43,8 @@ public class MainController {
             if (newTab != null && newTab.getUserData() instanceof MindMap) {
                 MindMap map = (MindMap) newTab.getUserData();
                 currentNode = getRoot(map);
-                Pane canvas = (Pane) newTab.getContent();
+                Pane viewport = (Pane) newTab.getContent();
+                Pane canvas = (Pane) viewport.getChildren().get(0);
                 refreshCanvas(canvas, map);
             }
         });
@@ -61,7 +62,10 @@ public class MainController {
             Object content = selected.getContent();
             Object data = selected.getUserData();
             if (content instanceof Pane && data instanceof MindMap) {
-                handleKeyPress(e, (MindMap) data, (Pane) content);
+                Pane viewport = (Pane) content;
+                if (!viewport.getChildren().isEmpty() && viewport.getChildren().get(0) instanceof Pane) {
+                    handleKeyPress(e, (MindMap) data, (Pane) viewport.getChildren().get(0));
+                }
             }
         });
     }
@@ -274,24 +278,84 @@ public class MainController {
     }
 
     private void renderMindMap(MindMap map) {
-        Pane canvas = new Pane();
-        canvas.setFocusTraversable(true);
-        canvas.setOnMouseClicked(e -> canvas.requestFocus());
+        Pane viewport = new Pane();
+        viewport.setFocusTraversable(true);
+        viewport.setOnMouseClicked(e -> viewport.requestFocus());
+        viewport.setStyle("-fx-background-color: #f8f9fa;");
 
-        // Re-layout when canvas gets its actual size on first display
-        canvas.widthProperty().addListener((obs, oldW, newW) -> {
-            if (newW.doubleValue() > 10 && canvas.getHeight() > 10) {
+        Pane canvas = new Pane();
+        viewport.getChildren().add(canvas);
+
+        setupZoomAndPan(viewport, canvas);
+
+        // Re-layout when viewport gets its actual size on first display
+        viewport.widthProperty().addListener((obs, oldW, newW) -> {
+            if (newW.doubleValue() > 10 && viewport.getHeight() > 10) {
                 refreshCanvas(canvas, map);
             }
         });
 
         Tab tab = new Tab(map.getName());
-        tab.setContent(canvas);
+        tab.setContent(viewport);
         tab.setUserData(map);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
         refreshCanvas(canvas, map);
-        canvas.requestFocus();
+        viewport.requestFocus();
+    }
+
+    private void setupZoomAndPan(Pane viewport, Pane canvas) {
+        final double SCALE_DELTA = 1.1;
+
+        viewport.setOnScroll(event -> {
+            event.consume();
+            if (event.getDeltaY() == 0) return;
+
+            double scaleFactor = (event.getDeltaY() > 0) ? SCALE_DELTA : 1 / SCALE_DELTA;
+            double newScale = canvas.getScaleX() * scaleFactor;
+
+            if (newScale < 0.2 || newScale > 5.0) return;
+
+            double f = (scaleFactor - 1);
+            double dx = (event.getX() - (canvas.getBoundsInParent().getWidth() / 2 + canvas.getBoundsInParent().getMinX()));
+            double dy = (event.getY() - (canvas.getBoundsInParent().getHeight() / 2 + canvas.getBoundsInParent().getMinY()));
+
+            canvas.setScaleX(newScale);
+            canvas.setScaleY(newScale);
+            canvas.setTranslateX(canvas.getTranslateX() - f * dx);
+            canvas.setTranslateY(canvas.getTranslateY() - f * dy);
+        });
+
+        final double[] dragContext = new double[2];
+        final boolean[] isDragging = new boolean[1];
+
+        viewport.setOnMousePressed(event -> {
+            if (event.getTarget() == viewport || event.getTarget() == canvas) {
+                if (event.getButton() == MouseButton.PRIMARY || event.getButton() == MouseButton.SECONDARY) {
+                    dragContext[0] = event.getSceneX() - canvas.getTranslateX();
+                    dragContext[1] = event.getSceneY() - canvas.getTranslateY();
+                    viewport.setCursor(javafx.scene.Cursor.CLOSED_HAND);
+                    isDragging[0] = true;
+                    event.consume();
+                }
+            }
+        });
+
+        viewport.setOnMouseDragged(event -> {
+            if (isDragging[0]) {
+                canvas.setTranslateX(event.getSceneX() - dragContext[0]);
+                canvas.setTranslateY(event.getSceneY() - dragContext[1]);
+                event.consume();
+            }
+        });
+
+        viewport.setOnMouseReleased(event -> {
+            if (isDragging[0]) {
+                viewport.setCursor(javafx.scene.Cursor.DEFAULT);
+                isDragging[0] = false;
+                event.consume();
+            }
+        });
     }
 
     private void handleKeyPress(KeyEvent e, MindMap map, Pane canvas) {
@@ -439,10 +503,9 @@ public class MainController {
     // ── Layout ──────────────────────────────────────────────────────────────
 
     private void refreshCanvas(Pane canvas, MindMap map) {
-        double w = canvas.getWidth() > 0 ? canvas.getWidth()
-                : (canvas.getScene() != null ? canvas.getScene().getWidth() - 220 : 800);
-        double h = canvas.getHeight() > 0 ? canvas.getHeight()
-                : (canvas.getScene() != null ? canvas.getScene().getHeight() - 80 : 600);
+        Pane viewport = (Pane) canvas.getParent();
+        double w = (viewport != null && viewport.getWidth() > 0) ? viewport.getWidth() : 800;
+        double h = (viewport != null && viewport.getHeight() > 0) ? viewport.getHeight() : 600;
 
         // Layout only if root has no coordinates (e.g. initially)
         Node root = getRoot(map);
@@ -451,7 +514,7 @@ public class MainController {
         }
 
         canvas.getChildren().clear();
-        canvas.setStyle("-fx-background-color: #f8f9fa;");
+        canvas.setStyle("-fx-background-color: transparent;");
 
         // Edges (drawn first, appear behind nodes)
         drawLines(canvas, map);
