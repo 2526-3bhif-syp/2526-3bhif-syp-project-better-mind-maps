@@ -17,6 +17,7 @@
         <HBox styleClass="toolbar" alignment="CENTER_LEFT">
             <Button text="← Overview" onAction="#onBackToOverview" styleClass="btn-ghost"/>
             <Button text="+ New Mind Map" onAction="#onCreateNewMap" styleClass="btn-primary"/>
+            <Button text="✨ AI Assistant" onAction="#onOpenAiChat" styleClass="btn-secondary"/>
         </HBox>
     </top>
     <center>
