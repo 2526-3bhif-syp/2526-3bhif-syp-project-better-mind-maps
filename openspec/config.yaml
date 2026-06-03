@@ -1,20 +1,28 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Project: Better Mind Maps
+  Description: A lightweight, visual mind-mapping application designed for HTL Leonding students to organize complex technical topics, and for teachers to present them.
+  Tech Stack:
+    - Language: Java (Version 11 compiler, running on modern JVM)
+    - Framework: JavaFX (Version 21)
+    - Pattern: Model-View-Presenter (MVP) / Model-View-Controller (MVC)
+    - Build System: Maven
+    - Database: SQLite (via JDBC, local storage)
+    - Serialization: GSON for JSON imports/exports
+  Architecture:
+    - App.java: Main application entry point that initializes the database and loads overview-view.fxml.
+    - DatabaseManager.java: Manages SQLite database connection and schema creation.
+    - MindMapRepository.java: Handles database persistence and queries.
+    - MindMapService.java: Business logic layer.
+    - MainController.java: Controller for the mind-mapping workspace.
+    - Node.java: Data model representing a mind map node (text, position, parent relation).
+    - MindMap.java: Collection of nodes.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  specs:
+    - Use RFC 2119 keywords (SHALL, MUST, SHOULD, MAY) for all requirements.
+    - Include concrete Given/When/Then BDD test cases for functional features.
+    - Ensure all coordinates, styles, and relationship definitions are explicitly specified.
+  proposal:
+    - Always include a section on impact, dependencies, and potential breaking changes.
