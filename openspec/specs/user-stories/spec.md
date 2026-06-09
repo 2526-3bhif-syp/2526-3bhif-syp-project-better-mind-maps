@@ -17,8 +17,8 @@ The application SHALL satisfy the functional expectations defined by all 10 core
 
 #### Scenario: Verify US-3 Account registration
 - **GIVEN** a new student wants to register
-- **WHEN** the student provides a verified HTL Leonding email and password
-- **THEN** a user account is created and their data is local-segmented
+- **WHEN** the student provides a username and password
+- **THEN** a user account is created locally and their data is local-segmented
 
 #### Scenario: Verify US-4 Mind map deletion
 - **GIVEN** a student is on the overview dashboard

@@ -25,6 +25,12 @@ public class DatabaseManager {
              Statement stmt = conn.createStatement()) {
 
             stmt.execute(
+                    "CREATE TABLE IF NOT EXISTS users (" +
+                    "id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, " +
+                    "password_hash TEXT NOT NULL, salt TEXT NOT NULL)"
+            );
+
+            stmt.execute(
                     "CREATE TABLE IF NOT EXISTS mind_maps (" +
                     "id TEXT PRIMARY KEY, name TEXT NOT NULL)"
             );
@@ -36,6 +42,28 @@ public class DatabaseManager {
                     "x_coordinate REAL NOT NULL, y_coordinate REAL NOT NULL, " +
                     "FOREIGN KEY (mind_map_id) REFERENCES mind_maps(id))"
             );
+
+            // Check if user_id and sync_status columns exist in mind_maps
+            boolean hasUserId = false;
+            boolean hasSyncStatus = false;
+            try (java.sql.ResultSet rs = stmt.executeQuery("PRAGMA table_info(mind_maps)")) {
+                while (rs.next()) {
+                    String columnName = rs.getString("name");
+                    if ("user_id".equals(columnName)) {
+                        hasUserId = true;
+                    }
+                    if ("sync_status".equals(columnName)) {
+                        hasSyncStatus = true;
+                    }
+                }
+            }
+
+            if (!hasUserId) {
+                stmt.execute("ALTER TABLE mind_maps ADD COLUMN user_id TEXT");
+            }
+            if (!hasSyncStatus) {
+                stmt.execute("ALTER TABLE mind_maps ADD COLUMN sync_status TEXT DEFAULT 'PENDING'");
+            }
 
         } catch (SQLException e) {
             throw new RuntimeException("Failed to initialize database", e);

@@ -15,18 +15,30 @@ import java.util.Optional;
 public class OverviewController {
 
     @FXML private VBox cardsContainer;
+    @FXML private Label userLabel;
 
     private final MindMapRepository repository = new MindMapRepository();
     private final MindMapService service = new MindMapService(repository);
 
     @FXML
     public void initialize() {
+        if (SessionManager.getCurrentUser() != null) {
+            userLabel.setText("Active User: " + SessionManager.getCurrentUser().getUsername());
+        }
         loadMaps();
     }
 
     private void loadMaps() {
         cardsContainer.getChildren().clear();
-        List<MindMap> maps = repository.loadAll();
+        String userId = SessionManager.getCurrentUser() != null ? SessionManager.getCurrentUser().getId() : null;
+        if (userId == null) {
+            Label empty = new Label("No user logged in. Please sign in first.");
+            empty.getStyleClass().add("empty-label");
+            cardsContainer.getChildren().add(empty);
+            return;
+        }
+
+        List<MindMap> maps = repository.loadAll(userId);
 
         if (maps.isEmpty()) {
             Label empty = new Label("No mind maps yet. Click \"+ New Mind Map\" to get started.");
@@ -107,6 +119,19 @@ public class OverviewController {
             stage.setScene(scene);
         } catch (IOException e) {
             throw new RuntimeException("Failed to open editor", e);
+        }
+    }
+
+    @FXML
+    private void onLogout() {
+        SessionManager.logout();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("login-view.fxml"));
+            Scene scene = new Scene(loader.load(), 1024, 768);
+            Stage stage = (Stage) cardsContainer.getScene().getWindow();
+            stage.setScene(scene);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load login screen", e);
         }
     }
 }
