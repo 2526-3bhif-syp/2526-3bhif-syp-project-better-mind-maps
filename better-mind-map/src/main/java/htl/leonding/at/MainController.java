@@ -12,8 +12,11 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
 import javafx.scene.paint.CycleMethod;
+import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -332,7 +335,7 @@ public class MainController {
         Pane viewport = new Pane();
         viewport.setFocusTraversable(true);
         viewport.setOnMouseClicked(e -> viewport.requestFocus());
-        viewport.setStyle("-fx-background-color: #f8f9fa;");
+        viewport.setStyle("-fx-background-color: #f1f5f9;");
 
         Pane canvas = new Pane();
         viewport.getChildren().add(canvas);
@@ -569,17 +572,17 @@ public class MainController {
         if (viewport != null) {
             switch (currentPresentationTheme) {
                 case "DARK":
-                    viewport.setStyle("-fx-background-color: #1e272e;");
+                    viewport.setStyle("-fx-background-color: #0d1117;");
                     break;
                 case "SEPIA":
-                    viewport.setStyle("-fx-background-color: #f4eae1;");
+                    viewport.setStyle("-fx-background-color: #f5f0e8;");
                     break;
                 case "OCEAN":
-                    viewport.setStyle("-fx-background-color: #e3fafc;");
+                    viewport.setStyle("-fx-background-color: #e0f7ff;");
                     break;
                 case "LIGHT":
                 default:
-                    viewport.setStyle("-fx-background-color: #f8f9fa;");
+                    viewport.setStyle("-fx-background-color: #f1f5f9;");
                     break;
             }
         }
@@ -612,20 +615,20 @@ public class MainController {
     }
 
     private void drawLines(Pane canvas, MindMap map) {
-        Color lineColor = Color.web("#adb5bd");
+        Color lineColor;
         switch (currentPresentationTheme) {
             case "DARK":
-                lineColor = Color.web("#57606f");
+                lineColor = Color.web("#2a3245");
                 break;
             case "SEPIA":
-                lineColor = Color.web("#c8b3a0");
+                lineColor = Color.web("#c5b49a");
                 break;
             case "OCEAN":
-                lineColor = Color.web("#99e9f2");
+                lineColor = Color.web("#93c5fd");
                 break;
             case "LIGHT":
             default:
-                lineColor = Color.web("#adb5bd");
+                lineColor = Color.web("#cbd5e1");
                 break;
         }
 
@@ -642,7 +645,8 @@ public class MainController {
                         node.getXCoordinate(), node.getYCoordinate()
                 );
                 line.setStroke(lineColor);
-                line.setStrokeWidth(2);
+                line.setStrokeWidth(1.5);
+                line.setOpacity(0.8);
                 canvas.getChildren().add(index++, line);
             }
         }
@@ -723,45 +727,93 @@ public class MainController {
     private static final double NODE_H = 40;
     private static final double NODE_ARC = 10;
 
+    private Shape buildNodeShape(String shapeName, double nodeW, double nodeH) {
+        switch (shapeName) {
+            case "PILL": {
+                Rectangle r = new Rectangle(nodeW, nodeH);
+                r.setArcWidth(nodeH);
+                r.setArcHeight(nodeH);
+                return r;
+            }
+            case "ELLIPSE":
+                return new Ellipse(nodeW / 2, nodeH / 2);
+            case "DIAMOND":
+                return new Polygon(
+                    nodeW / 2, 0.0,
+                    nodeW,     nodeH / 2,
+                    nodeW / 2, nodeH,
+                    0.0,       nodeH / 2
+                );
+            default: { // ROUNDED_RECT
+                Rectangle r = new Rectangle(nodeW, nodeH);
+                r.setArcWidth(NODE_ARC * 2);
+                r.setArcHeight(NODE_ARC * 2);
+                return r;
+            }
+        }
+    }
+
     private StackPane createNodeView(Node node, MindMap map, Pane canvas,
                                      boolean isCurrent, boolean isRoot) {
         StackPane nodeView = new StackPane();
 
         double nodeW = getNodeWidth(node);
         double nodeH = getNodeHeight(node);
+        nodeView.setPrefSize(nodeW, nodeH);
+        nodeView.setMinSize(nodeW, nodeH);
+        nodeView.setMaxSize(nodeW, nodeH);
 
-        Rectangle rect = new Rectangle(nodeW, nodeH);
-        rect.setArcWidth(NODE_ARC * 2);
-        rect.setArcHeight(NODE_ARC * 2);
+        Shape rect = buildNodeShape(node.getShape(), nodeW, nodeH);
 
+        boolean isDarkCanvas = "DARK".equals(currentPresentationTheme);
         Color textColor;
+
         if (isRoot && (node.getColor() == null || node.getColor().equals("#ffffff"))) {
-            rect.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                    new Stop(0, Color.web("#3498db")),
-                    new Stop(1, Color.web("#2980b9"))));
-            rect.setStroke(isCurrent ? Color.web("#e74c3c") : Color.web("#1a6fa8"));
-            rect.setStrokeWidth(isCurrent ? 3 : 2);
+            // Root node: vivid indigo gradient
+            rect.setFill(new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+                    new Stop(0, Color.web("#6366f1")),
+                    new Stop(1, Color.web("#4338ca"))));
+            if (isCurrent) {
+                rect.setStroke(Color.web("#a5b4fc"));
+                rect.setStrokeWidth(2.5);
+                rect.setEffect(new javafx.scene.effect.DropShadow(18, 0, 4, Color.web("#6366f155")));
+            } else {
+                rect.setStroke(Color.web("#4338ca"));
+                rect.setStrokeWidth(1.5);
+                rect.setEffect(new javafx.scene.effect.DropShadow(12, 0, 3, Color.web("#6366f133")));
+            }
             textColor = Color.WHITE;
         } else {
             String colStr = node.getColor();
-            if (colStr == null || colStr.isEmpty()) colStr = "#ffffff";
-            rect.setFill(Color.web(colStr));
-            Color strokeColor = Color.web("#b2bec3");
-            if (isCurrent) {
-                if (colStr.equalsIgnoreCase("#e74c3c")) {
-                    strokeColor = Color.web("#2c3e50"); // Different outline color (dark slate) for red nodes
-                } else {
-                    strokeColor = Color.web("#e74c3c"); // Default red outline for other selected nodes
-                }
+            if (colStr == null || colStr.isEmpty()) colStr = isDarkCanvas ? "#1e2433" : "#ffffff";
+
+            if (isDarkCanvas && (colStr.equals("#ffffff") || colStr.equals("#1e2433"))) {
+                rect.setFill(Color.web("#1e2433"));
+            } else {
+                rect.setFill(Color.web(colStr));
             }
-            rect.setStroke(strokeColor);
-            rect.setStrokeWidth(isCurrent ? 3 : 1.5);
-            rect.setEffect(new javafx.scene.effect.DropShadow(4, 0, 2, Color.web("#00000018")));
-            textColor = getContrastColor(colStr);
+
+            if (isCurrent) {
+                rect.setStroke(Color.web("#6366f1"));
+                rect.setStrokeWidth(2.5);
+                rect.setEffect(new javafx.scene.effect.DropShadow(14, 0, 3, Color.web("#6366f144")));
+            } else {
+                Color borderColor = isDarkCanvas ? Color.web("#2a3245") : Color.web("#e2e8f0");
+                rect.setStroke(borderColor);
+                rect.setStrokeWidth(1.5);
+                rect.setEffect(new javafx.scene.effect.DropShadow(6, 0, 2, Color.web("#00000022")));
+            }
+            textColor = isDarkCanvas && (colStr.equals("#1e2433") || colStr.equals("#ffffff"))
+                    ? Color.web("#e2e8f0")
+                    : getContrastColor(colStr);
         }
 
         Label label = new Label(node.getText());
-        label.setMaxWidth(nodeW - 12);
+        String shapeName = node.getShape();
+        double labelMaxW = "DIAMOND".equals(shapeName) ? nodeW * 0.52
+                         : "ELLIPSE".equals(shapeName)  ? nodeW * 0.68
+                         : nodeW - 14;
+        label.setMaxWidth(labelMaxW);
         label.setWrapText(true);
         label.setTextFill(textColor);
         label.setStyle(
@@ -841,19 +893,40 @@ public class MainController {
     }
 
     private double getNodeWidth(Node node) {
-        double baseWidth = 110;
-        if (node.getTextSize() > 12) {
-            baseWidth += (node.getTextSize() - 12) * 5;
+        String text = node.getText() == null ? "" : node.getText();
+        double fontSize = node.getTextSize();
+        double avgCharW = fontSize * 0.57;
+        double textW = text.length() * avgCharW + 28;
+        double minW = 90 + Math.max(0, (fontSize - 12) * 4);
+        double maxW = 210;
+        // Diamond/Ellipse need more horizontal room for readable text
+        String shape = node.getShape();
+        if ("DIAMOND".equals(shape) || "ELLIPSE".equals(shape)) {
+            minW = Math.max(minW, 110);
+            maxW = 230;
+            textW *= 1.25;
         }
-        return baseWidth;
+        return Math.max(minW, Math.min(maxW, textW));
     }
 
     private double getNodeHeight(Node node) {
-        double baseHeight = 40;
-        if (node.getTextSize() > 12) {
-            baseHeight += (node.getTextSize() - 12) * 2.5;
-        }
-        return baseHeight;
+        String text = node.getText() == null ? "" : node.getText();
+        double fontSize = node.getTextSize();
+        double nodeW = getNodeWidth(node);
+        // Effective inner width depends on shape
+        String shape = node.getShape();
+        double innerW = "DIAMOND".equals(shape) ? nodeW * 0.5
+                      : "ELLIPSE".equals(shape)  ? nodeW * 0.65
+                      : nodeW - 20;
+        double avgCharW = fontSize * 0.57;
+        double charsPerLine = Math.max(1, innerW / avgCharW);
+        int lines = Math.max(1, (int) Math.ceil(text.length() / charsPerLine));
+        double lineH = fontSize + 5;
+        double minH = fontSize + 20;
+        // Diamond/Ellipse need extra vertical space
+        if ("DIAMOND".equals(shape)) minH = Math.max(minH, nodeW * 0.6);
+        if ("ELLIPSE".equals(shape))  minH = Math.max(minH, nodeW * 0.5);
+        return Math.max(minH, lines * lineH + 16);
     }
 
     private Color getContrastColor(String hexColor) {
@@ -1076,6 +1149,38 @@ public class MainController {
                     colorBox.getChildren().add(swatch);
                 }
                 nodeSection.getChildren().add(colorBox);
+
+                // Shape picker
+                HBox shapeBox = new HBox();
+                shapeBox.setSpacing(5);
+                shapeBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+                Label shapeLabel = new Label("Shape: ");
+                shapeLabel.getStyleClass().add("hud-label");
+                shapeBox.getChildren().add(shapeLabel);
+
+                String[][] shapes = {
+                    {"ROUNDED_RECT", "▭"},
+                    {"PILL",         "⬬"},
+                    {"ELLIPSE",      "⬭"},
+                    {"DIAMOND",      "◇"}
+                };
+                for (String[] s : shapes) {
+                    String shapeKey = s[0];
+                    Button shapeBtn = new Button(s[1]);
+                    shapeBtn.getStyleClass().add("btn-hud");
+                    shapeBtn.setStyle("-fx-font-size: 14px; -fx-padding: 3 8;" +
+                        (currentNode.getShape().equals(shapeKey)
+                            ? " -fx-border-color: #6366f1; -fx-text-fill: #a5b4fc;"
+                            : ""));
+                    shapeBtn.setOnAction(e -> {
+                        currentNode.setShape(shapeKey);
+                        repository.updateNode(currentNode);
+                        refreshCanvas(canvas, map);
+                    });
+                    shapeBox.getChildren().add(shapeBtn);
+                }
+                nodeSection.getChildren().add(shapeBox);
 
                 hud.getChildren().add(nodeSection);
             } else {

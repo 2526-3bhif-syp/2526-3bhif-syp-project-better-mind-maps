@@ -66,18 +66,16 @@ public class DatabaseManager {
                 stmt.execute("ALTER TABLE mind_maps ADD COLUMN theme TEXT DEFAULT 'LIGHT'");
             }
 
-            // Check if text_size and color columns exist in nodes
+            // Check which columns exist in nodes
             boolean hasTextSize = false;
             boolean hasColor = false;
+            boolean hasShape = false;
             try (java.sql.ResultSet rs = stmt.executeQuery("PRAGMA table_info(nodes)")) {
                 while (rs.next()) {
                     String columnName = rs.getString("name");
-                    if ("text_size".equals(columnName)) {
-                        hasTextSize = true;
-                    }
-                    if ("color".equals(columnName)) {
-                        hasColor = true;
-                    }
+                    if ("text_size".equals(columnName)) hasTextSize = true;
+                    if ("color".equals(columnName)) hasColor = true;
+                    if ("shape".equals(columnName)) hasShape = true;
                 }
             }
 
@@ -86,6 +84,9 @@ public class DatabaseManager {
             }
             if (!hasColor) {
                 stmt.execute("ALTER TABLE nodes ADD COLUMN color TEXT DEFAULT '#ffffff'");
+            }
+            if (!hasShape) {
+                stmt.execute("ALTER TABLE nodes ADD COLUMN shape TEXT DEFAULT 'ROUNDED_RECT'");
             }
 
         } catch (SQLException e) {
