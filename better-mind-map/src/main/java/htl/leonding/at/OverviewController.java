@@ -1,5 +1,6 @@
 package htl.leonding.at;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
@@ -369,7 +370,7 @@ public class OverviewController {
         Stage stage = (Stage) cardsFlow.getScene().getWindow();
         if (mainController != null) {
             stage.setScene(mainController.getRootScene());
-            stage.setMaximized(true);
+            Platform.runLater(() -> stage.setMaximized(true));
             mainController.openMapAsTab(map);
             return;
         }
@@ -379,7 +380,7 @@ public class OverviewController {
             MainController controller = loader.getController();
             controller.loadMindMap(map);
             stage.setScene(scene);
-            stage.setMaximized(true);
+            Platform.runLater(() -> stage.setMaximized(true));
         } catch (IOException e) {
             throw new RuntimeException("Failed to open editor", e);
         }
@@ -393,7 +394,7 @@ public class OverviewController {
             Scene scene = new Scene(loader.load(), 1024, 768);
             Stage stage = (Stage) cardsFlow.getScene().getWindow();
             stage.setScene(scene);
-            stage.setMaximized(true);
+            Platform.runLater(() -> stage.setMaximized(true));
         } catch (IOException e) {
             throw new RuntimeException("Failed to load login screen", e);
         }

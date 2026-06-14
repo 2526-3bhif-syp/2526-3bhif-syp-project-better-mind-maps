@@ -1,5 +1,6 @@
 package htl.leonding.at;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -156,7 +157,7 @@ public class MainController {
             controller.setMainController(this);
             Stage stage = (Stage) tabPane.getScene().getWindow();
             stage.setScene(scene);
-            stage.setMaximized(true);
+            Platform.runLater(() -> stage.setMaximized(true));
         } catch (IOException e) {
             throw new RuntimeException("Failed to open overview", e);
         }

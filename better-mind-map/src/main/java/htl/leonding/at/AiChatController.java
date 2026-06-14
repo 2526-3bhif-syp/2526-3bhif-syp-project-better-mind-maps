@@ -328,7 +328,7 @@ public class AiChatController {
             
             Stage stage = parentStage != null ? parentStage : (Stage) chatContainer.getScene().getWindow();
             stage.setScene(scene);
-            stage.setMaximized(true);
+            Platform.runLater(() -> stage.setMaximized(true));
 
             if (parentStage != null) {
                 ((Stage) chatContainer.getScene().getWindow()).close();
