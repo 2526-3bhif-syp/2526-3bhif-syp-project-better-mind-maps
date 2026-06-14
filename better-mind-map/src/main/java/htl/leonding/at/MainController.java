@@ -17,7 +17,11 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import java.io.IOException;
 import java.net.URI;
@@ -116,6 +120,12 @@ public class MainController {
         }
     }
 
+    private void applyTheme(Dialog<?> dialog) {
+        String css = getClass().getResource("styles.css").toExternalForm();
+        dialog.getDialogPane().getStylesheets().add(css);
+        dialog.getDialogPane().getStyleClass().add("dialog-pane");
+    }
+
     public void loadMindMap(MindMap map) {
         currentNode = getRoot(map);
         renderMindMap(map);
@@ -156,7 +166,8 @@ public class MainController {
         TextInputDialog dialog = new TextInputDialog("New Map");
         dialog.setTitle("New Mind Map");
         dialog.setHeaderText("Create a new Mind Map");
-        dialog.setContentText("Please enter the name:");
+        dialog.setContentText("Name:");
+        applyTheme(dialog);
 
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(name -> {
@@ -171,8 +182,9 @@ public class MainController {
         TextInputDialog dialog = new TextInputDialog("");
         dialog.setTitle("✨ AI Mindmap Assistant");
         dialog.setHeaderText("Worüber möchtest du eine Mindmap erstellen?");
-        dialog.setContentText("Prompt (z.B. 'Aktien', 'Programmieren', 'Geschichte'):");
+        dialog.setContentText("Thema (z.B. 'Aktien', 'Programmieren', 'Geschichte'):");
         dialog.getDialogPane().setPrefWidth(500);
+        applyTheme(dialog);
 
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(prompt -> {
@@ -190,8 +202,9 @@ public class MainController {
                     TextInputDialog keyDialog = new TextInputDialog();
                     keyDialog.setTitle("API Key benötigt");
                     keyDialog.setHeaderText("Google Gemini API Key");
-                    keyDialog.setContentText("Bitte gib deinen Gemini API Key ein:");
-                    keyDialog.getDialogPane().setPrefWidth(400);
+                    keyDialog.setContentText("Gemini API Key:");
+                    keyDialog.getDialogPane().setPrefWidth(420);
+                    applyTheme(keyDialog);
                     
                     Optional<String> keyResult = keyDialog.showAndWait();
                     if (keyResult.isPresent() && !keyResult.get().trim().isEmpty()) {
@@ -531,9 +544,10 @@ public class MainController {
 
     private void promptAddChild(MindMap map, Pane canvas, Node parent) {
         TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Add Child Node");
-        dialog.setHeaderText("Add a child to \"" + parent.getText() + "\"");
-        dialog.setContentText("Node text:");
+        dialog.setTitle("Add Node");
+        dialog.setHeaderText("Child von \"" + parent.getText() + "\"");
+        dialog.setContentText("Text:");
+        applyTheme(dialog);
         dialog.showAndWait().ifPresent(text -> {
             Node newNode = service.addNode(map, parent.getId(), text);
             currentNode = newNode;
@@ -544,9 +558,10 @@ public class MainController {
 
     private void promptEditNode(MindMap map, Pane canvas, Node node) {
         TextInputDialog dialog = new TextInputDialog(node.getText());
-        dialog.setTitle("Edit Node");
-        dialog.setHeaderText("Edit node text");
-        dialog.setContentText("New text:");
+        dialog.setTitle("Node bearbeiten");
+        dialog.setHeaderText("Text ändern");
+        dialog.setContentText("Neuer Text:");
+        applyTheme(dialog);
         dialog.showAndWait().ifPresent(text -> {
             service.updateNodeText(map, node, text);
             refreshCanvas(canvas, map);
@@ -827,6 +842,9 @@ public class MainController {
             if (e.getButton() == MouseButton.PRIMARY && !e.isConsumed()) {
                 currentNode = node;
                 refreshCanvas(canvas, map);
+                if (e.getClickCount() == 2) {
+                    showDescriptionPopup(node, canvas, map);
+                }
                 canvas.requestFocus();
             }
         });
@@ -884,7 +902,10 @@ public class MainController {
             }
         });
 
-        contextMenu.getItems().addAll(addChild, editText, deleteNode);
+        MenuItem editDesc = new MenuItem("📝  Beschreibung bearbeiten");
+        editDesc.setOnAction(e -> showEditDescriptionDialog(node, canvas, map));
+
+        contextMenu.getItems().addAll(addChild, editText, new SeparatorMenuItem(), editDesc, new SeparatorMenuItem(), deleteNode);
         nodeView.setOnContextMenuRequested(e ->
                 contextMenu.show(nodeView, e.getScreenX(), e.getScreenY())
         );
@@ -1365,5 +1386,141 @@ public class MainController {
             }
         };
         new Thread(task).start();
+    }
+
+    // ── Description popup (double-click) ─────────────────────────────────────
+
+    private void showDescriptionPopup(Node node, Pane canvas, MindMap map) {
+        Stage popup = new Stage();
+        popup.initStyle(StageStyle.TRANSPARENT);
+        popup.initOwner(rootPane.getScene().getWindow());
+
+        // Outer: transparent, provides space for dropshadow
+        StackPane outerRoot = new StackPane();
+        outerRoot.setStyle("-fx-background-color: transparent;");
+        outerRoot.setPadding(new Insets(16));
+
+        VBox card = new VBox(0);
+        card.getStyleClass().add("desc-popup-card");
+        card.setPrefWidth(460);
+        card.setMaxWidth(460);
+
+        // ── Header ──
+        HBox header = new HBox(10);
+        header.getStyleClass().add("desc-popup-header");
+        header.setAlignment(Pos.CENTER_LEFT);
+
+        Label icon = new Label(node.getDescription().isEmpty() ? "🗒" : "📝");
+        icon.setStyle("-fx-font-size: 15px;");
+
+        Label titleLabel = new Label(node.getText());
+        titleLabel.getStyleClass().add("desc-popup-title");
+        HBox.setHgrow(titleLabel, Priority.ALWAYS);
+        titleLabel.setMaxWidth(Double.MAX_VALUE);
+
+        Button closeBtn = new Button("✕");
+        closeBtn.getStyleClass().add("desc-close-btn");
+        closeBtn.setOnAction(e -> popup.close());
+
+        header.getChildren().addAll(icon, titleLabel, closeBtn);
+
+        // ── Body ──
+        ScrollPane scroll = new ScrollPane();
+        scroll.setFitToWidth(true);
+        scroll.getStyleClass().add("desc-scroll");
+        VBox.setVgrow(scroll, Priority.ALWAYS);
+
+        String desc = node.getDescription();
+        if (desc == null || desc.trim().isEmpty()) {
+            Label empty = new Label("Noch keine Beschreibung vorhanden.\n\nRechtsklick → \"Beschreibung bearbeiten\" um eine hinzuzufügen.");
+            empty.getStyleClass().add("desc-empty-label");
+            empty.setWrapText(true);
+            empty.setPadding(new Insets(12, 14, 12, 14));
+            scroll.setContent(empty);
+        } else {
+            Label body = new Label(desc);
+            body.getStyleClass().add("desc-body-label");
+            body.setWrapText(true);
+            body.setPadding(new Insets(12, 14, 12, 14));
+            scroll.setContent(body);
+        }
+
+        // ── Footer ──
+        HBox footer = new HBox(8);
+        footer.getStyleClass().add("desc-popup-footer");
+        footer.setAlignment(Pos.CENTER_RIGHT);
+
+        Button editBtn = new Button("✏  Bearbeiten");
+        editBtn.getStyleClass().add("btn-primary");
+        editBtn.setStyle("-fx-font-size: 12px; -fx-padding: 6 14;");
+        editBtn.setOnAction(e -> {
+            popup.close();
+            showEditDescriptionDialog(node, canvas, map);
+        });
+
+        Button closeFooterBtn = new Button("Schließen");
+        closeFooterBtn.getStyleClass().add("btn-ghost");
+        closeFooterBtn.setStyle("-fx-font-size: 12px; -fx-padding: 6 14;");
+        closeFooterBtn.setOnAction(e -> popup.close());
+
+        footer.getChildren().addAll(editBtn, closeFooterBtn);
+
+        card.getChildren().addAll(header, scroll, footer);
+        outerRoot.getChildren().add(card);
+
+        Scene scene = new Scene(outerRoot);
+        scene.setFill(Color.TRANSPARENT);
+        scene.getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
+        popup.setScene(scene);
+        popup.show();
+
+        // Draggable via header
+        final double[] dragOffset = {0, 0};
+        header.setCursor(javafx.scene.Cursor.MOVE);
+        header.setOnMousePressed(e -> {
+            dragOffset[0] = e.getScreenX() - popup.getX();
+            dragOffset[1] = e.getScreenY() - popup.getY();
+        });
+        header.setOnMouseDragged(e -> {
+            popup.setX(e.getScreenX() - dragOffset[0]);
+            popup.setY(e.getScreenY() - dragOffset[1]);
+        });
+
+        // Center on owner
+        javafx.application.Platform.runLater(() -> {
+            Stage owner = (Stage) rootPane.getScene().getWindow();
+            popup.setX(owner.getX() + (owner.getWidth()  - popup.getWidth())  / 2);
+            popup.setY(owner.getY() + (owner.getHeight() - popup.getHeight()) / 2);
+        });
+    }
+
+    private void showEditDescriptionDialog(Node node, Pane canvas, MindMap map) {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Beschreibung");
+        dialog.setHeaderText("Beschreibung für: " + node.getText());
+        applyTheme(dialog);
+        dialog.getDialogPane().setPrefWidth(500);
+
+        TextArea area = new TextArea(node.getDescription());
+        area.setPromptText("Notizen, Details oder eine Beschreibung für diesen Node...");
+        area.setPrefRowCount(10);
+        area.setWrapText(true);
+        area.getStyleClass().add("desc-textarea");
+        VBox.setVgrow(area, Priority.ALWAYS);
+
+        VBox content = new VBox(area);
+        content.setPadding(new Insets(4, 0, 0, 0));
+        dialog.getDialogPane().setContent(content);
+
+        ButtonType saveType   = new ButtonType("Speichern", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelType = new ButtonType("Abbrechen", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveType, cancelType);
+        dialog.setResultConverter(btn -> btn == saveType ? area.getText() : null);
+
+        dialog.showAndWait().ifPresent(desc -> {
+            node.setDescription(desc);
+            repository.updateNode(node);
+            refreshCanvas(canvas, map);
+        });
     }
 }

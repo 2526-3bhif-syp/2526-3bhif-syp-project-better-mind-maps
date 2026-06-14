@@ -85,8 +85,18 @@ public class DatabaseManager {
             if (!hasColor) {
                 stmt.execute("ALTER TABLE nodes ADD COLUMN color TEXT DEFAULT '#ffffff'");
             }
+            boolean hasDescription = false;
+            try (java.sql.ResultSet rs2 = stmt.executeQuery("PRAGMA table_info(nodes)")) {
+                while (rs2.next()) {
+                    if ("description".equals(rs2.getString("name"))) hasDescription = true;
+                }
+            }
+
             if (!hasShape) {
                 stmt.execute("ALTER TABLE nodes ADD COLUMN shape TEXT DEFAULT 'ROUNDED_RECT'");
+            }
+            if (!hasDescription) {
+                stmt.execute("ALTER TABLE nodes ADD COLUMN description TEXT DEFAULT ''");
             }
 
         } catch (SQLException e) {

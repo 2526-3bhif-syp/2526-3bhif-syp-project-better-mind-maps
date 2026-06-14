@@ -547,3 +547,151 @@
     -fx-border-color: #1e2433;
     -fx-border-width: 1 0 0 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DESCRIPTION POPUP  (floating card, double-click on node)
+   ═══════════════════════════════════════════════════════════════ */
+.desc-popup-card {
+    -fx-background-color: #161b22;
+    -fx-background-radius: 14;
+    -fx-border-color: #2a3245;
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.80), 36, 0.05, 0, 12);
+    -fx-min-height: 260;
+    -fx-pref-height: 320;
+}
+
+.desc-popup-header {
+    -fx-padding: 16 18 14 18;
+    -fx-background-color: #1e2433;
+    -fx-background-radius: 14 14 0 0;
+    -fx-border-color: #2a3245;
+    -fx-border-width: 0 0 1 0;
+}
+
+.desc-popup-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e2e8f0;
+}
+
+.desc-close-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #4a5568;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 3 7;
+    -fx-cursor: hand;
+    -fx-background-radius: 6;
+    -fx-border-width: 0;
+}
+.desc-close-btn:hover {
+    -fx-background-color: rgba(244,63,94,0.18);
+    -fx-text-fill: #f43f5e;
+}
+
+.desc-scroll {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 2 0;
+}
+.desc-scroll .viewport {
+    -fx-background-color: transparent;
+}
+.desc-scroll .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-pref-width: 8;
+}
+.desc-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: #2a3245;
+    -fx-background-radius: 4;
+}
+.desc-scroll .scroll-bar:vertical .track,
+.desc-scroll .scroll-bar:vertical .increment-button,
+.desc-scroll .scroll-bar:vertical .decrement-button {
+    -fx-background-color: transparent;
+}
+
+.desc-body-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #8b94a8;
+    -fx-line-spacing: 5;
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.desc-empty-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #4a5568;
+    -fx-font-style: italic;
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.desc-popup-footer {
+    -fx-padding: 12 16;
+    -fx-border-color: #1e2433;
+    -fx-border-width: 1 0 0 0;
+    -fx-background-color: #0d1117;
+    -fx-background-radius: 0 0 14 14;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DESCRIPTION TEXTAREA  (edit dialog)
+   ═══════════════════════════════════════════════════════════════ */
+.desc-textarea {
+    -fx-font-size: 13px;
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+    -fx-background-color: #0d1117;
+    -fx-background-radius: 8;
+    -fx-text-fill: #e2e8f0;
+    -fx-prompt-text-fill: #4a5568;
+    -fx-border-color: #2a3245;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 0;
+    -fx-highlight-fill: rgba(99,102,241,0.35);
+    -fx-highlight-text-fill: #e2e8f0;
+}
+.desc-textarea .content {
+    -fx-background-color: #0d1117;
+    -fx-background-radius: 8;
+    -fx-padding: 10 12;
+}
+.desc-textarea:focused {
+    -fx-border-color: #6366f1;
+    -fx-effect: dropshadow(gaussian, rgba(99,102,241,0.22), 8, 0, 0, 0);
+}
+.desc-textarea .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-pref-width: 8;
+}
+.desc-textarea .scroll-bar:vertical .thumb {
+    -fx-background-color: #2a3245;
+    -fx-background-radius: 4;
+}
+.desc-textarea .scroll-bar:vertical .track,
+.desc-textarea .scroll-bar:vertical .increment-button,
+.desc-textarea .scroll-bar:vertical .decrement-button {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+/* ── TextField in dialogs (Add Node, Edit, etc.) ── */
+.dialog-pane .text-field {
+    -fx-background-color: #0d1117;
+    -fx-text-fill: #e2e8f0;
+    -fx-prompt-text-fill: #4a5568;
+    -fx-border-color: #2a3245;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-background-radius: 6;
+    -fx-padding: 8 10;
+    -fx-font-size: 13px;
+    -fx-highlight-fill: rgba(99,102,241,0.35);
+    -fx-highlight-text-fill: #e2e8f0;
+}
+.dialog-pane .text-field:focused {
+    -fx-border-color: #6366f1;
+    -fx-effect: dropshadow(gaussian, rgba(99,102,241,0.22), 6, 0, 0, 0);
+}
