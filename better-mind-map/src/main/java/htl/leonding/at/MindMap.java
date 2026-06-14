@@ -8,11 +8,14 @@ public class MindMap {
     private String _id;
     private String _name;
     private List<Node> nodes;
+    private String userId;
+    private String syncStatus;
 
     public MindMap(String id, String name) {
         this._id = id;
         this._name = name;
         this.nodes = new ArrayList<Node>();
+        this.syncStatus = "PENDING";
     }
 
     public String getId() {
@@ -21,6 +24,22 @@ public class MindMap {
 
     public String getName() {
         return _name;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getSyncStatus() {
+        return syncStatus;
+    }
+
+    public void setSyncStatus(String syncStatus) {
+        this.syncStatus = syncStatus;
     }
 
     public void addNode(Node node) {

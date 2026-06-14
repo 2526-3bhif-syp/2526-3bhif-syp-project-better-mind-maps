@@ -8,6 +8,7 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
@@ -48,6 +49,9 @@
             <Label text="Navigate" styleClass="statusbar-desc"/>
             <Label text="Tab" styleClass="statusbar-key"/>
             <Label text="Cycle nodes" styleClass="statusbar-desc"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="syncStatusLabel" text="Cloud Sync: PENDING" style="-fx-font-size: 11px; -fx-text-fill: #2c3e50; -fx-font-weight: bold;"/>
+            <Button fx:id="syncBtn" text="Sync Now" onAction="#onSync" styleClass="btn-ghost" style="-fx-font-size: 10px; -fx-padding: 3 8;"/>
         </HBox>
     </bottom>
 </BorderPane>

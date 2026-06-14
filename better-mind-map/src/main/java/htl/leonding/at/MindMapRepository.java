@@ -7,11 +7,13 @@ import java.util.List;
 public class MindMapRepository {
 
     public void save(MindMap map) {
-        String sql = "INSERT OR REPLACE INTO mind_maps (id, name) VALUES (?, ?)";
+        String sql = "INSERT OR REPLACE INTO mind_maps (id, name, user_id, sync_status) VALUES (?, ?, ?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, map.getId());
             stmt.setString(2, map.getName());
+            stmt.setString(3, map.getUserId());
+            stmt.setString(4, map.getSyncStatus());
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save mind map", e);
@@ -41,11 +43,13 @@ public class MindMapRepository {
     }
 
     public void updateNode(Node node) {
-        String sql = "UPDATE nodes SET text = ? WHERE id = ?";
+        String sql = "UPDATE nodes SET text = ?, x_coordinate = ?, y_coordinate = ? WHERE id = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, node.getText());
-            stmt.setString(2, node.getId());
+            stmt.setDouble(2, node.getXCoordinate());
+            stmt.setDouble(3, node.getYCoordinate());
+            stmt.setString(4, node.getId());
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to update node", e);
@@ -78,34 +82,37 @@ public class MindMapRepository {
         }
     }
 
-    public List<MindMap> loadAll() {
+    public List<MindMap> loadAll(String userId) {
         List<MindMap> maps = new ArrayList<>();
-        String mapSql = "SELECT id, name FROM mind_maps";
+        String mapSql = "SELECT id, name, user_id, sync_status FROM mind_maps WHERE user_id = ?";
         String nodeSql = "SELECT id, text, parent_id, x_coordinate, y_coordinate " +
                          "FROM nodes WHERE mind_map_id = ?";
 
         try (Connection conn = DatabaseManager.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(mapSql)) {
+             PreparedStatement stmt = conn.prepareStatement(mapSql)) {
+            stmt.setString(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    MindMap map = new MindMap(rs.getString("id"), rs.getString("name"));
+                    map.setUserId(rs.getString("user_id"));
+                    map.setSyncStatus(rs.getString("sync_status"));
 
-            while (rs.next()) {
-                MindMap map = new MindMap(rs.getString("id"), rs.getString("name"));
-
-                try (PreparedStatement nodeStmt = conn.prepareStatement(nodeSql)) {
-                    nodeStmt.setString(1, map.getId());
-                    try (ResultSet nodeRs = nodeStmt.executeQuery()) {
-                        while (nodeRs.next()) {
-                            map.addNode(new Node(
-                                    nodeRs.getString("id"),
-                                    nodeRs.getString("text"),
-                                    nodeRs.getString("parent_id"),
-                                    nodeRs.getDouble("x_coordinate"),
-                                    nodeRs.getDouble("y_coordinate")
-                            ));
+                    try (PreparedStatement nodeStmt = conn.prepareStatement(nodeSql)) {
+                        nodeStmt.setString(1, map.getId());
+                        try (ResultSet nodeRs = nodeStmt.executeQuery()) {
+                            while (nodeRs.next()) {
+                                map.addNode(new Node(
+                                        nodeRs.getString("id"),
+                                        nodeRs.getString("text"),
+                                        nodeRs.getString("parent_id"),
+                                        nodeRs.getDouble("x_coordinate"),
+                                        nodeRs.getDouble("y_coordinate")
+                                ));
+                            }
                         }
                     }
+                    maps.add(map);
                 }
-                maps.add(map);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to load mind maps", e);

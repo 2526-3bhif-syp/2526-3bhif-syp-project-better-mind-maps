@@ -30,9 +30,12 @@ public class MainController {
     @FXML private TreeView<String> hierarchyTree;
     @FXML private TabPane tabPane;
     @FXML private HBox sidebarHeader;
+    @FXML private Label syncStatusLabel;
+    @FXML private Button syncBtn;
 
     private final MindMapRepository repository = new MindMapRepository();
     private final MindMapService service = new MindMapService(repository);
+    private final SyncService syncService = new LocalSimulatedSyncService();
 
     private Node currentNode = null;
     private String userApiKey = null;
@@ -46,6 +49,7 @@ public class MainController {
                 Pane viewport = (Pane) newTab.getContent();
                 Pane canvas = (Pane) viewport.getChildren().get(0);
                 refreshCanvas(canvas, map);
+                updateSyncStatusLabel(map);
             }
         });
 
@@ -83,6 +87,7 @@ public class MainController {
     public void loadMindMap(MindMap map) {
         currentNode = getRoot(map);
         renderMindMap(map);
+        updateSyncStatusLabel(map);
     }
 
     @FXML
@@ -530,6 +535,7 @@ public class MainController {
         }
 
         refreshTree(map);
+        updateSyncStatusLabel(map);
     }
 
     private void drawLines(Pane canvas, MindMap map) {
@@ -753,5 +759,45 @@ public class MainController {
             rootItem.setExpanded(true);
             hierarchyTree.setRoot(rootItem);
         }
+    }
+
+    private void updateSyncStatusLabel(MindMap map) {
+        if (syncStatusLabel != null) {
+            String status = map.getSyncStatus();
+            syncStatusLabel.setText("Cloud Sync: " + (status != null ? status : "PENDING"));
+        }
+    }
+
+    @FXML
+    private void onSync() {
+        Tab selected = tabPane.getSelectionModel().getSelectedItem();
+        if (selected == null || !(selected.getUserData() instanceof MindMap)) return;
+        MindMap map = (MindMap) selected.getUserData();
+
+        syncStatusLabel.setText("Cloud Sync: SYNCING...");
+        syncBtn.setDisable(true);
+
+        javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                Thread.sleep(1500);
+                syncService.syncMap(map.getId());
+                return null;
+            }
+
+            @Override
+            protected void succeeded() {
+                map.setSyncStatus("SYNCED");
+                syncStatusLabel.setText("Cloud Sync: SYNCED");
+                syncBtn.setDisable(false);
+            }
+
+            @Override
+            protected void failed() {
+                syncStatusLabel.setText("Cloud Sync: FAILED");
+                syncBtn.setDisable(false);
+            }
+        };
+        new Thread(task).start();
     }
 }

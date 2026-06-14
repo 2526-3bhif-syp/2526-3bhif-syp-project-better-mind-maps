@@ -17,6 +17,8 @@ public class MindMapService {
             throw new IllegalArgumentException("Name darf nicht leer sein");
         }
         MindMap mindMap = new MindMap(UUID.randomUUID().toString(), name);
+        String userId = SessionManager.getCurrentUser() != null ? SessionManager.getCurrentUser().getId() : null;
+        mindMap.setUserId(userId);
         Node root = new Node(UUID.randomUUID().toString(), name, null, 400, 300);
         mindMap.addNode(root);
         repository.save(mindMap);
@@ -65,6 +67,8 @@ public class MindMapService {
         Node node = new Node(UUID.randomUUID().toString(), text, parentId, candidateX, candidateY);
         map.addNode(node);
         repository.saveNode(map.getId(), node);
+        map.setSyncStatus("PENDING");
+        repository.save(map);
         return node;
     }
 
@@ -74,6 +78,8 @@ public class MindMapService {
         }
         node.setText(newText);
         repository.updateNode(node);
+        map.setSyncStatus("PENDING");
+        repository.save(map);
     }
 
     public void deleteNode(MindMap map, Node node) {
@@ -87,6 +93,8 @@ public class MindMapService {
             map.removeNode(id);
             repository.deleteNode(id);
         }
+        map.setSyncStatus("PENDING");
+        repository.save(map);
     }
 
     public void deleteMindMap(String mapId) {

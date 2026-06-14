@@ -1,7 +1,5 @@
-## Purpose
-Defines user profile creation, local segmentation, and secure cross-device synchronization of mind maps.
+## MODIFIED Requirements
 
-## Requirements
 ### Requirement: User Profile Management
 The system SHALL support creating user accounts locally using standard username and password credentials stored in SQLite, and segmenting local mind map data by the logged-in user authenticated via JWT.
 

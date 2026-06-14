@@ -20,7 +20,11 @@
                 <Label text="Organize your thoughts visually" styleClass="app-subtitle"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="+ New Mind Map" onAction="#onNewMap" styleClass="btn-primary"/>
+            <HBox spacing="14" alignment="CENTER">
+                <Label fx:id="userLabel" style="-fx-text-fill: #ecf0f1; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                <Button text="Logout" onAction="#onLogout" styleClass="btn-ghost"/>
+                <Button text="+ New Mind Map" onAction="#onNewMap" styleClass="btn-primary"/>
+            </HBox>
         </HBox>
     </top>
     <center>

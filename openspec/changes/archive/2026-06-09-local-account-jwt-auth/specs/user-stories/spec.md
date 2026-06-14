@@ -1,7 +1,5 @@
-## Purpose
-Maps all ten user stories of Better Mind Maps (creation, editing, accounts, management, presentation, zoom, arrange, connect, style, open) into Gherkin BDD scenarios.
+## MODIFIED Requirements
 
-## Requirements
 ### Requirement: User Stories Verification Suite
 The application SHALL satisfy the functional expectations defined by all 10 core user stories verified via testable BDD scenarios.
 
