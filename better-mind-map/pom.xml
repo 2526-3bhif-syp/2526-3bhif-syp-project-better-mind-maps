@@ -46,6 +46,10 @@
                 <version>0.0.8</version>
                 <configuration>
                     <mainClass>htl.leonding.at.App</mainClass>
+                    <options>
+                        <option>--add-opens=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED</option>
+                        <option>--enable-native-access=ALL-UNNAMED</option>
+                    </options>
                 </configuration>
             </plugin>
         </plugins>

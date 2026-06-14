@@ -157,7 +157,7 @@ public class MainController {
             controller.setMainController(this);
             Stage stage = (Stage) tabPane.getScene().getWindow();
             stage.setScene(scene);
-            Platform.runLater(() -> stage.setMaximized(true));
+            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
         } catch (IOException e) {
             throw new RuntimeException("Failed to open overview", e);
         }
@@ -165,19 +165,34 @@ public class MainController {
 
     @FXML
     public void onCreateNewMap() {
-        TextInputDialog dialog = new TextInputDialog("New Map");
-        dialog.setTitle("New Mind Map");
-        dialog.setHeaderText("Create a new Mind Map");
-        dialog.setContentText("Name:");
-        applyTheme(dialog);
+        // Step 1: map name
+        TextInputDialog nameDialog = new TextInputDialog();
+        nameDialog.setTitle("New Mind Map");
+        nameDialog.setHeaderText("Schritt 1 / 2 — Mind Map Name");
+        nameDialog.setContentText("Name der Mind Map:");
+        applyTheme(nameDialog);
+        Optional<String> nameResult = nameDialog.showAndWait();
+        if (nameResult.isEmpty() || nameResult.get().trim().isEmpty()) return;
+        String mapName = nameResult.get().trim();
 
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(name -> {
-            MindMap map = service.createMindMap(name);
-            currentNode = getRoot(map);
-            renderMindMap(map);
-        });
+        // Step 2: root node name
+        TextInputDialog rootDialog = new TextInputDialog(mapName);
+        rootDialog.setTitle("New Mind Map");
+        rootDialog.setHeaderText("Schritt 2 / 2 — Hauptknoten");
+        rootDialog.setContentText("Name des Hauptknotens:");
+        applyTheme(rootDialog);
+        Optional<String> rootResult = rootDialog.showAndWait();
+        if (rootResult.isEmpty() || rootResult.get().trim().isEmpty()) return;
+        String rootName = rootResult.get().trim();
+
+        MindMap map = service.createMindMap(mapName, rootName);
+        currentNode = getRoot(map);
+        renderMindMap(map);
     }
+
+    private static final String[] AI_PALETTE = {
+        "#4f46e5", "#0891b2", "#059669", "#d97706", "#dc2626", "#7c3aed", "#db2777", "#0284c7"
+    };
 
     @FXML
     public void onOpenAiChat() {
@@ -191,23 +206,23 @@ public class MainController {
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(prompt -> {
             if (prompt.trim().isEmpty()) return;
-            
+
             MindMap map = service.createMindMap("AI: " + prompt.substring(0, Math.min(prompt.length(), 20)));
             Node root = getRoot(map);
-            
+
             String apiKey = System.getenv("MINDMAP_AI_KEY");
-            
+
             if (apiKey == null || apiKey.trim().isEmpty()) {
                 if (userApiKey != null && !userApiKey.trim().isEmpty()) {
                     apiKey = userApiKey;
                 } else {
                     TextInputDialog keyDialog = new TextInputDialog();
                     keyDialog.setTitle("API Key benötigt");
-                    keyDialog.setHeaderText("Google Gemini API Key");
-                    keyDialog.setContentText("Gemini API Key:");
-                    keyDialog.getDialogPane().setPrefWidth(420);
+                    keyDialog.setHeaderText("Gemini oder Claude API Key eingeben");
+                    keyDialog.setContentText("API Key (Gemini oder sk-ant-... für Claude):");
+                    keyDialog.getDialogPane().setPrefWidth(480);
                     applyTheme(keyDialog);
-                    
+
                     Optional<String> keyResult = keyDialog.showAndWait();
                     if (keyResult.isPresent() && !keyResult.get().trim().isEmpty()) {
                         userApiKey = keyResult.get().trim();
@@ -215,29 +230,67 @@ public class MainController {
                     }
                 }
             }
-            
+
             if (apiKey != null && !apiKey.trim().isEmpty()) {
-                callGeminiApi(map, root, prompt, apiKey);
+                if (apiKey.startsWith("sk-ant-")) {
+                    callClaudeApi(map, root, prompt, apiKey);
+                } else {
+                    callGeminiApi(map, root, prompt, apiKey);
+                }
             } else {
-                System.out.println("Kein API Key gefunden oder eingegeben. Nutze lokale Mock-KI.");
                 generateSmarterMockAiMindMap(map, root, prompt);
             }
-            
+
             currentNode = root;
             renderMindMap(map);
         });
     }
 
+    private String buildAiPrompt(String topic) {
+        return "Du bist ein Mindmap-Experte. Erstelle zum Thema '" + topic + "' eine detaillierte Mindmap. " +
+               "WICHTIG: Antworte AUSSCHLIESSLICH im folgenden Format, OHNE Markdown, OHNE Text davor oder danach. " +
+               "Zeile 1 = Hauptthema. Dann Kategorien und Unterkategorien mit '- ' Prefix:\n" +
+               "Hauptthema\nKategorie 1\n- Unterkategorie 1.1\n- Unterkategorie 1.2\nKategorie 2\n- Unterkategorie 2.1";
+    }
+
+    private void applyAiStyling(MindMap map, Node root, String content) {
+        int paletteIdx = 0;
+        Node currentMain = null;
+        String currentColor = AI_PALETTE[0];
+        boolean isFirstLine = true;
+
+        for (String line : content.split("\n")) {
+            line = line.trim();
+            if (line.isEmpty() || line.startsWith("```") || line.toLowerCase().contains("hier ist die mindmap")) continue;
+
+            if (isFirstLine) {
+                service.updateNodeText(map, root, line);
+                isFirstLine = false;
+                continue;
+            }
+
+            if (line.startsWith("- ")) {
+                if (currentMain != null) {
+                    Node child = service.addNode(map, currentMain.getId(), line.substring(2).trim());
+                    child.setShape("ROUNDED_RECT");
+                    child.setColor(currentColor);
+                    repository.updateNode(child);
+                }
+            } else {
+                currentColor = AI_PALETTE[paletteIdx % AI_PALETTE.length];
+                paletteIdx++;
+                currentMain = service.addNode(map, root.getId(), line);
+                currentMain.setShape("PILL");
+                currentMain.setColor(currentColor);
+                repository.updateNode(currentMain);
+            }
+        }
+    }
+
     private void callGeminiApi(MindMap map, Node root, String prompt, String apiKey) {
         try {
-            String aiPrompt = "Du bist ein Mindmap-Experte. Erstelle zum Thema '" + prompt + "' eine extrem detaillierte und logisch strukturierte Mindmap mit den wichtigsten Begriffen. " +
-                    "WICHTIG: Antworte AUSSCHLIESSLICH im folgenden Format, OHNE Markdown, OHNE Text davor oder danach. " +
-                    "Zeile 1 MUSS das Hauptthema sein.\n" +
-                    "Zeile 2 und weiter für Kategorien und Unterkategorien:\n" +
-                    "Kategorie 1\n- Unterkategorie 1.1\n- Unterkategorie 1.2\nKategorie 2\n- Unterkategorie 2.1";
-
-            // Gemini API JSON (gemini-2.5-flash)
-            String jsonPayload = "{\"contents\": [{\"parts\": [{\"text\": \"" + aiPrompt.replace("\"", "\\\"") + "\"}]}]}";
+            String aiPrompt = buildAiPrompt(prompt);
+            String jsonPayload = "{\"contents\": [{\"parts\": [{\"text\": \"" + aiPrompt.replace("\"", "\\\"").replace("\n", "\\n") + "\"}]}]}";
 
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
@@ -249,47 +302,69 @@ public class MainController {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             String responseBody = response.body();
 
-            // Setze root Text schon mal auf den prompt, falls was schief geht
-            service.updateNodeText(map, root, prompt.substring(0, Math.min(prompt.length(), 20)));
+            service.updateNodeText(map, root, prompt.substring(0, Math.min(prompt.length(), 30)));
 
-            int textIndex = responseBody.indexOf("\"text\": \"");
-            if (textIndex > -1) {
-                int startIndex = textIndex + 9;
-                int endIndex = responseBody.indexOf("\"", startIndex);
-                if (endIndex == -1) endIndex = responseBody.length() - 1; // Fallback
-                
-                String content = responseBody.substring(startIndex, endIndex);
-                content = content.replace("\\n", "\n").replace("\\\"", "\"").replace("\\*", "");
-
-                Node currentMain = null;
-                boolean isFirstLine = true;
-                
-                for (String line : content.split("\n")) {
-                    line = line.trim();
-                    if (line.isEmpty() || line.startsWith("```") || line.toLowerCase().contains("hier ist die mindmap")) continue;
-                    
-                    if (isFirstLine) {
-                        service.updateNodeText(map, root, line);
-                        isFirstLine = false;
-                        continue;
-                    }
-                    
-                    if (line.startsWith("- ")) {
-                        if (currentMain != null) {
-                            service.addNode(map, currentMain.getId(), line.substring(2).trim());
-                        }
-                    } else {
-                        currentMain = service.addNode(map, root.getId(), line);
-                    }
-                }
+            String content = extractTextFromJson(responseBody);
+            if (content != null) {
+                applyAiStyling(map, root, content);
             } else {
-                System.out.println("Konnte API Response nicht lesen. Nutze Fallback.");
                 generateSmarterMockAiMindMap(map, root, prompt);
             }
         } catch (Exception e) {
             e.printStackTrace();
             generateSmarterMockAiMindMap(map, root, prompt);
         }
+    }
+
+    private void callClaudeApi(MindMap map, Node root, String prompt, String apiKey) {
+        try {
+            String aiPrompt = buildAiPrompt(prompt);
+            String escapedPrompt = aiPrompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
+            String jsonBody = "{\"model\":\"claude-haiku-4-5-20251001\",\"max_tokens\":2048," +
+                              "\"messages\":[{\"role\":\"user\",\"content\":\"" + escapedPrompt + "\"}]}";
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.anthropic.com/v1/messages"))
+                    .header("Content-Type", "application/json")
+                    .header("x-api-key", apiKey)
+                    .header("anthropic-version", "2023-06-01")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            String responseBody = response.body();
+
+            service.updateNodeText(map, root, prompt.substring(0, Math.min(prompt.length(), 30)));
+
+            String content = extractTextFromJson(responseBody);
+            if (content != null) {
+                applyAiStyling(map, root, content);
+            } else {
+                generateSmarterMockAiMindMap(map, root, prompt);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            generateSmarterMockAiMindMap(map, root, prompt);
+        }
+    }
+
+    private String extractTextFromJson(String json) {
+        int idx = json.indexOf("\"text\": \"");
+        if (idx == -1) idx = json.indexOf("\"text\":\"");
+        if (idx == -1) return null;
+        int start = json.indexOf("\"", idx + 7) + 1;
+        int end = start;
+        while (end < json.length()) {
+            if (json.charAt(end) == '"' && json.charAt(end - 1) != '\\') break;
+            end++;
+        }
+        if (end >= json.length()) return null;
+        return json.substring(start, end)
+                   .replace("\\n", "\n")
+                   .replace("\\\"", "\"")
+                   .replace("\\\\", "\\")
+                   .replace("\\*", "");
     }
 
     private void generateSmarterMockAiMindMap(MindMap map, Node root, String prompt) {
