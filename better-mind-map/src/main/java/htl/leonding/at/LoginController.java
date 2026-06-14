@@ -128,6 +128,7 @@ public class LoginController {
             Scene scene = new Scene(loader.load(), 1024, 768);
             Stage stage = (Stage) usernameField.getScene().getWindow();
             stage.setScene(scene);
+            stage.setMaximized(true);
         } catch (IOException e) {
             messageLabel.setText("Failed to load overview: " + e.getMessage());
             messageLabel.setStyle("-fx-text-fill: #e74c3c;");

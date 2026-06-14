@@ -156,6 +156,7 @@ public class MainController {
             controller.setMainController(this);
             Stage stage = (Stage) tabPane.getScene().getWindow();
             stage.setScene(scene);
+            stage.setMaximized(true);
         } catch (IOException e) {
             throw new RuntimeException("Failed to open overview", e);
         }
