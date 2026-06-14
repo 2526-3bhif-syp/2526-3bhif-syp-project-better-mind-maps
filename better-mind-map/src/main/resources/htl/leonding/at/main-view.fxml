@@ -3,28 +3,33 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="htl.leonding.at.MainController"
             stylesheets="@styles.css">
     <top>
-        <HBox styleClass="toolbar" alignment="CENTER_LEFT">
+        <HBox fx:id="toolbar" styleClass="toolbar" alignment="CENTER_LEFT" spacing="8">
             <Button text="← Overview" onAction="#onBackToOverview" styleClass="btn-ghost"/>
-            <Button text="+ New Mind Map" onAction="#onCreateNewMap" styleClass="btn-primary"/>
-            <Button text="✨ AI Assistant" onAction="#onOpenAiChat" styleClass="btn-secondary"/>
+            <Separator orientation="VERTICAL" style="-fx-background-color: #1e2433; -fx-pref-width: 1; -fx-pref-height: 24;"/>
+            <Button text="+ New Map" onAction="#onCreateNewMap" styleClass="btn-primary"/>
+            <Button text="✨ AI Generate" onAction="#onOpenAiChat" styleClass="btn-secondary"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="▶  Present" onAction="#onTogglePresentationMode" styleClass="btn-blue"/>
         </HBox>
     </top>
     <center>
         <HBox>
-            <!-- Sidebar: header + tree on the same level as tabs -->
-            <VBox prefWidth="200" minWidth="200" maxWidth="200"
-                  style="-fx-border-color: #dee2e6; -fx-border-width: 0 1 0 0;">
+            <!-- Sidebar: structure tree -->
+            <VBox fx:id="sidebar" prefWidth="210" minWidth="210" maxWidth="210"
+                  style="-fx-background-color: #0d1117; -fx-border-color: #1e2433; -fx-border-width: 0 1 0 0;">
                 <HBox fx:id="sidebarHeader" styleClass="sidebar-header" alignment="CENTER_LEFT">
                     <Label text="STRUCTURE" styleClass="sidebar-label"/>
                 </HBox>
@@ -33,21 +38,28 @@
             <!-- Editor: TabPane fills remaining space -->
             <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE"
                      HBox.hgrow="ALWAYS"
-                     style="-fx-background-color: #f8f9fa;"/>
+                     style="-fx-background-color: #0d1117;"/>
         </HBox>
     </center>
     <bottom>
-        <HBox styleClass="statusbar" alignment="CENTER_LEFT">
-            <Label text="Enter / Ins" styleClass="statusbar-key"/>
+        <HBox fx:id="statusbar" styleClass="statusbar" alignment="CENTER_LEFT">
+            <Label text="Enter" styleClass="statusbar-key"/>
             <Label text="Add child" styleClass="statusbar-desc"/>
             <Label text="F2" styleClass="statusbar-key"/>
             <Label text="Edit" styleClass="statusbar-desc"/>
             <Label text="Del" styleClass="statusbar-key"/>
             <Label text="Delete" styleClass="statusbar-desc"/>
-            <Label text="Arrow keys" styleClass="statusbar-key"/>
+            <Label text="↑ ↓ ← →" styleClass="statusbar-key"/>
             <Label text="Navigate" styleClass="statusbar-desc"/>
             <Label text="Tab" styleClass="statusbar-key"/>
-            <Label text="Cycle nodes" styleClass="statusbar-desc"/>
+            <Label text="Cycle" styleClass="statusbar-desc"/>
+            <Label text="Scroll" styleClass="statusbar-key"/>
+            <Label text="Zoom" styleClass="statusbar-desc"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="syncStatusLabel" text="● Pending sync"
+                   style="-fx-font-size: 11px; -fx-text-fill: #f59e0b; -fx-font-weight: bold;"/>
+            <Button fx:id="syncBtn" text="Sync" onAction="#onSync" styleClass="btn-ghost"
+                    style="-fx-font-size: 10px; -fx-padding: 4 10;"/>
         </HBox>
     </bottom>
 </BorderPane>

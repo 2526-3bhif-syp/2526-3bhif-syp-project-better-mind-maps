@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="htl.leonding.at.LoginController"
+      stylesheets="@styles.css"
+      alignment="CENTER"
+      spacing="20"
+      style="-fx-background-color: #f0f4f8; -fx-pref-width: 1024; -fx-pref-height: 768;">
+    
+    <VBox alignment="CENTER" spacing="25" 
+          style="-fx-background-color: white; -fx-background-radius: 12; -fx-border-radius: 12; 
+                 -fx-border-color: #e3e8ef; -fx-border-width: 1; -fx-padding: 40;
+                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 5);
+                 -fx-max-width: 400;">
+        
+        <VBox alignment="CENTER" spacing="6">
+            <Label text="Better Mind Maps" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+            <Label text="Sign in or register a new local profile" style="-fx-font-size: 13px; -fx-text-fill: #7f8c8d;"/>
+        </VBox>
+        
+        <VBox spacing="14" alignment="CENTER_LEFT">
+            <VBox spacing="6">
+                <Label text="Username" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #34495e;"/>
+                <TextField fx:id="usernameField" promptText="Enter your username"
+                           style="-fx-font-size: 14px; -fx-padding: 8; -fx-background-radius: 6; -fx-border-radius: 6; -fx-border-color: #bdc3c7; -fx-border-width: 1;"/>
+            </VBox>
+            
+            <VBox spacing="6">
+                <Label text="Password" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #34495e;"/>
+                <PasswordField fx:id="passwordField" promptText="Enter your password"
+                               style="-fx-font-size: 14px; -fx-padding: 8; -fx-background-radius: 6; -fx-border-radius: 6; -fx-border-color: #bdc3c7; -fx-border-width: 1;"/>
+            </VBox>
+        </VBox>
+        
+        <Label fx:id="messageLabel" wrapText="true" textAlignment="CENTER"
+               style="-fx-font-size: 13px; -fx-text-fill: #e74c3c;"/>
+        
+        <HBox spacing="14" alignment="CENTER">
+            <Button text="Sign In" onAction="#onLogin" styleClass="btn-blue" style="-fx-min-width: 120;"/>
+            <Button text="Register" onAction="#onRegister" styleClass="btn-ghost" style="-fx-min-width: 120;"/>
+        </HBox>
+        
+    </VBox>
+</VBox>
