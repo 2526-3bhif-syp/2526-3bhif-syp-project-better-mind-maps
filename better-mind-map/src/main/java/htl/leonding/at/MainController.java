@@ -47,6 +47,8 @@ public class MainController {
 
     private Node currentNode = null;
     private String userApiKey = null;
+    private final Map<TreeItem<String>, String> treeItemToNodeId = new HashMap<>();
+    private boolean suppressTreeSelection = false;
 
     @FXML
     public void initialize() {
@@ -58,6 +60,24 @@ public class MainController {
                 Pane canvas = (Pane) viewport.getChildren().get(0);
                 refreshCanvas(canvas, map);
                 updateSyncStatusLabel(map);
+            }
+        });
+
+        hierarchyTree.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
+            if (suppressTreeSelection || newItem == null) return;
+            String nodeId = treeItemToNodeId.get(newItem);
+            if (nodeId == null) return;
+            Tab selected = tabPane.getSelectionModel().getSelectedItem();
+            if (selected == null || !(selected.getUserData() instanceof MindMap)) return;
+            MindMap map = (MindMap) selected.getUserData();
+            Node node = map.getNodes().stream()
+                    .filter(n -> n.getId().equals(nodeId))
+                    .findFirst().orElse(null);
+            if (node == null || node == currentNode) return;
+            currentNode = node;
+            Pane viewport = (Pane) selected.getContent();
+            if (!viewport.getChildren().isEmpty()) {
+                refreshCanvas((Pane) viewport.getChildren().get(0), map);
             }
         });
 
@@ -1055,13 +1075,17 @@ public class MainController {
     // ── Hierarchy tree ───────────────────────────────────────────────────────
 
     private void refreshTree(MindMap map) {
+        treeItemToNodeId.clear();
         Map<String, TreeItem<String>> itemMap = new HashMap<>();
         TreeItem<String> rootItem = null;
+        TreeItem<String> currentItem = null;
 
         for (Node node : map.getNodes()) {
             TreeItem<String> item = new TreeItem<>(node.getText());
             itemMap.put(node.getId(), item);
+            treeItemToNodeId.put(item, node.getId());
             if (node.getParentId() == null) rootItem = item;
+            if (node == currentNode) currentItem = item;
         }
 
         for (Node node : map.getNodes()) {
@@ -1076,7 +1100,12 @@ public class MainController {
 
         if (rootItem != null) {
             rootItem.setExpanded(true);
+            suppressTreeSelection = true;
             hierarchyTree.setRoot(rootItem);
+            if (currentItem != null) {
+                hierarchyTree.getSelectionModel().select(currentItem);
+            }
+            javafx.application.Platform.runLater(() -> suppressTreeSelection = false);
         }
     }
 
