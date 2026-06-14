@@ -692,7 +692,15 @@ public class MainController {
             String colStr = node.getColor();
             if (colStr == null || colStr.isEmpty()) colStr = "#ffffff";
             rect.setFill(Color.web(colStr));
-            rect.setStroke(isCurrent ? Color.web("#e74c3c") : Color.web("#b2bec3"));
+            Color strokeColor = Color.web("#b2bec3");
+            if (isCurrent) {
+                if (colStr.equalsIgnoreCase("#e74c3c")) {
+                    strokeColor = Color.web("#2c3e50"); // Different outline color (dark slate) for red nodes
+                } else {
+                    strokeColor = Color.web("#e74c3c"); // Default red outline for other selected nodes
+                }
+            }
+            rect.setStroke(strokeColor);
             rect.setStrokeWidth(isCurrent ? 3 : 1.5);
             rect.setEffect(new javafx.scene.effect.DropShadow(4, 0, 2, Color.web("#00000018")));
             textColor = getContrastColor(colStr);
