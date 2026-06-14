@@ -1,5 +1,6 @@
 package htl.leonding.at;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -12,9 +13,16 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
 import javafx.scene.paint.CycleMethod;
+import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import java.io.IOException;
 import java.net.URI;
@@ -113,6 +121,12 @@ public class MainController {
         }
     }
 
+    private void applyTheme(Dialog<?> dialog) {
+        String css = getClass().getResource("styles.css").toExternalForm();
+        dialog.getDialogPane().getStylesheets().add(css);
+        dialog.getDialogPane().getStyleClass().add("dialog-pane");
+    }
+
     public void loadMindMap(MindMap map) {
         currentNode = getRoot(map);
         renderMindMap(map);
@@ -143,6 +157,7 @@ public class MainController {
             controller.setMainController(this);
             Stage stage = (Stage) tabPane.getScene().getWindow();
             stage.setScene(scene);
+            Platform.runLater(() -> stage.setMaximized(true));
         } catch (IOException e) {
             throw new RuntimeException("Failed to open overview", e);
         }
@@ -153,7 +168,8 @@ public class MainController {
         TextInputDialog dialog = new TextInputDialog("New Map");
         dialog.setTitle("New Mind Map");
         dialog.setHeaderText("Create a new Mind Map");
-        dialog.setContentText("Please enter the name:");
+        dialog.setContentText("Name:");
+        applyTheme(dialog);
 
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(name -> {
@@ -168,8 +184,9 @@ public class MainController {
         TextInputDialog dialog = new TextInputDialog("");
         dialog.setTitle("✨ AI Mindmap Assistant");
         dialog.setHeaderText("Worüber möchtest du eine Mindmap erstellen?");
-        dialog.setContentText("Prompt (z.B. 'Aktien', 'Programmieren', 'Geschichte'):");
+        dialog.setContentText("Thema (z.B. 'Aktien', 'Programmieren', 'Geschichte'):");
         dialog.getDialogPane().setPrefWidth(500);
+        applyTheme(dialog);
 
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(prompt -> {
@@ -187,8 +204,9 @@ public class MainController {
                     TextInputDialog keyDialog = new TextInputDialog();
                     keyDialog.setTitle("API Key benötigt");
                     keyDialog.setHeaderText("Google Gemini API Key");
-                    keyDialog.setContentText("Bitte gib deinen Gemini API Key ein:");
-                    keyDialog.getDialogPane().setPrefWidth(400);
+                    keyDialog.setContentText("Gemini API Key:");
+                    keyDialog.getDialogPane().setPrefWidth(420);
+                    applyTheme(keyDialog);
                     
                     Optional<String> keyResult = keyDialog.showAndWait();
                     if (keyResult.isPresent() && !keyResult.get().trim().isEmpty()) {
@@ -332,7 +350,7 @@ public class MainController {
         Pane viewport = new Pane();
         viewport.setFocusTraversable(true);
         viewport.setOnMouseClicked(e -> viewport.requestFocus());
-        viewport.setStyle("-fx-background-color: #f8f9fa;");
+        viewport.setStyle("-fx-background-color: #f1f5f9;");
 
         Pane canvas = new Pane();
         viewport.getChildren().add(canvas);
@@ -528,9 +546,10 @@ public class MainController {
 
     private void promptAddChild(MindMap map, Pane canvas, Node parent) {
         TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Add Child Node");
-        dialog.setHeaderText("Add a child to \"" + parent.getText() + "\"");
-        dialog.setContentText("Node text:");
+        dialog.setTitle("Add Node");
+        dialog.setHeaderText("Child von \"" + parent.getText() + "\"");
+        dialog.setContentText("Text:");
+        applyTheme(dialog);
         dialog.showAndWait().ifPresent(text -> {
             Node newNode = service.addNode(map, parent.getId(), text);
             currentNode = newNode;
@@ -541,9 +560,10 @@ public class MainController {
 
     private void promptEditNode(MindMap map, Pane canvas, Node node) {
         TextInputDialog dialog = new TextInputDialog(node.getText());
-        dialog.setTitle("Edit Node");
-        dialog.setHeaderText("Edit node text");
-        dialog.setContentText("New text:");
+        dialog.setTitle("Node bearbeiten");
+        dialog.setHeaderText("Text ändern");
+        dialog.setContentText("Neuer Text:");
+        applyTheme(dialog);
         dialog.showAndWait().ifPresent(text -> {
             service.updateNodeText(map, node, text);
             refreshCanvas(canvas, map);
@@ -569,17 +589,17 @@ public class MainController {
         if (viewport != null) {
             switch (currentPresentationTheme) {
                 case "DARK":
-                    viewport.setStyle("-fx-background-color: #1e272e;");
+                    viewport.setStyle("-fx-background-color: #0d1117;");
                     break;
                 case "SEPIA":
-                    viewport.setStyle("-fx-background-color: #f4eae1;");
+                    viewport.setStyle("-fx-background-color: #f5f0e8;");
                     break;
                 case "OCEAN":
-                    viewport.setStyle("-fx-background-color: #e3fafc;");
+                    viewport.setStyle("-fx-background-color: #e0f7ff;");
                     break;
                 case "LIGHT":
                 default:
-                    viewport.setStyle("-fx-background-color: #f8f9fa;");
+                    viewport.setStyle("-fx-background-color: #f1f5f9;");
                     break;
             }
         }
@@ -612,20 +632,20 @@ public class MainController {
     }
 
     private void drawLines(Pane canvas, MindMap map) {
-        Color lineColor = Color.web("#adb5bd");
+        Color lineColor;
         switch (currentPresentationTheme) {
             case "DARK":
-                lineColor = Color.web("#57606f");
+                lineColor = Color.web("#2a3245");
                 break;
             case "SEPIA":
-                lineColor = Color.web("#c8b3a0");
+                lineColor = Color.web("#c5b49a");
                 break;
             case "OCEAN":
-                lineColor = Color.web("#99e9f2");
+                lineColor = Color.web("#93c5fd");
                 break;
             case "LIGHT":
             default:
-                lineColor = Color.web("#adb5bd");
+                lineColor = Color.web("#cbd5e1");
                 break;
         }
 
@@ -642,7 +662,8 @@ public class MainController {
                         node.getXCoordinate(), node.getYCoordinate()
                 );
                 line.setStroke(lineColor);
-                line.setStrokeWidth(2);
+                line.setStrokeWidth(1.5);
+                line.setOpacity(0.8);
                 canvas.getChildren().add(index++, line);
             }
         }
@@ -723,45 +744,93 @@ public class MainController {
     private static final double NODE_H = 40;
     private static final double NODE_ARC = 10;
 
+    private Shape buildNodeShape(String shapeName, double nodeW, double nodeH) {
+        switch (shapeName) {
+            case "PILL": {
+                Rectangle r = new Rectangle(nodeW, nodeH);
+                r.setArcWidth(nodeH);
+                r.setArcHeight(nodeH);
+                return r;
+            }
+            case "ELLIPSE":
+                return new Ellipse(nodeW / 2, nodeH / 2);
+            case "DIAMOND":
+                return new Polygon(
+                    nodeW / 2, 0.0,
+                    nodeW,     nodeH / 2,
+                    nodeW / 2, nodeH,
+                    0.0,       nodeH / 2
+                );
+            default: { // ROUNDED_RECT
+                Rectangle r = new Rectangle(nodeW, nodeH);
+                r.setArcWidth(NODE_ARC * 2);
+                r.setArcHeight(NODE_ARC * 2);
+                return r;
+            }
+        }
+    }
+
     private StackPane createNodeView(Node node, MindMap map, Pane canvas,
                                      boolean isCurrent, boolean isRoot) {
         StackPane nodeView = new StackPane();
 
         double nodeW = getNodeWidth(node);
         double nodeH = getNodeHeight(node);
+        nodeView.setPrefSize(nodeW, nodeH);
+        nodeView.setMinSize(nodeW, nodeH);
+        nodeView.setMaxSize(nodeW, nodeH);
 
-        Rectangle rect = new Rectangle(nodeW, nodeH);
-        rect.setArcWidth(NODE_ARC * 2);
-        rect.setArcHeight(NODE_ARC * 2);
+        Shape rect = buildNodeShape(node.getShape(), nodeW, nodeH);
 
+        boolean isDarkCanvas = "DARK".equals(currentPresentationTheme);
         Color textColor;
+
         if (isRoot && (node.getColor() == null || node.getColor().equals("#ffffff"))) {
-            rect.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                    new Stop(0, Color.web("#3498db")),
-                    new Stop(1, Color.web("#2980b9"))));
-            rect.setStroke(isCurrent ? Color.web("#e74c3c") : Color.web("#1a6fa8"));
-            rect.setStrokeWidth(isCurrent ? 3 : 2);
+            // Root node: vivid indigo gradient
+            rect.setFill(new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+                    new Stop(0, Color.web("#6366f1")),
+                    new Stop(1, Color.web("#4338ca"))));
+            if (isCurrent) {
+                rect.setStroke(Color.web("#a5b4fc"));
+                rect.setStrokeWidth(2.5);
+                rect.setEffect(new javafx.scene.effect.DropShadow(18, 0, 4, Color.web("#6366f155")));
+            } else {
+                rect.setStroke(Color.web("#4338ca"));
+                rect.setStrokeWidth(1.5);
+                rect.setEffect(new javafx.scene.effect.DropShadow(12, 0, 3, Color.web("#6366f133")));
+            }
             textColor = Color.WHITE;
         } else {
             String colStr = node.getColor();
-            if (colStr == null || colStr.isEmpty()) colStr = "#ffffff";
-            rect.setFill(Color.web(colStr));
-            Color strokeColor = Color.web("#b2bec3");
-            if (isCurrent) {
-                if (colStr.equalsIgnoreCase("#e74c3c")) {
-                    strokeColor = Color.web("#2c3e50"); // Different outline color (dark slate) for red nodes
-                } else {
-                    strokeColor = Color.web("#e74c3c"); // Default red outline for other selected nodes
-                }
+            if (colStr == null || colStr.isEmpty()) colStr = isDarkCanvas ? "#1e2433" : "#ffffff";
+
+            if (isDarkCanvas && (colStr.equals("#ffffff") || colStr.equals("#1e2433"))) {
+                rect.setFill(Color.web("#1e2433"));
+            } else {
+                rect.setFill(Color.web(colStr));
             }
-            rect.setStroke(strokeColor);
-            rect.setStrokeWidth(isCurrent ? 3 : 1.5);
-            rect.setEffect(new javafx.scene.effect.DropShadow(4, 0, 2, Color.web("#00000018")));
-            textColor = getContrastColor(colStr);
+
+            if (isCurrent) {
+                rect.setStroke(Color.web("#6366f1"));
+                rect.setStrokeWidth(2.5);
+                rect.setEffect(new javafx.scene.effect.DropShadow(14, 0, 3, Color.web("#6366f144")));
+            } else {
+                Color borderColor = isDarkCanvas ? Color.web("#2a3245") : Color.web("#e2e8f0");
+                rect.setStroke(borderColor);
+                rect.setStrokeWidth(1.5);
+                rect.setEffect(new javafx.scene.effect.DropShadow(6, 0, 2, Color.web("#00000022")));
+            }
+            textColor = isDarkCanvas && (colStr.equals("#1e2433") || colStr.equals("#ffffff"))
+                    ? Color.web("#e2e8f0")
+                    : getContrastColor(colStr);
         }
 
         Label label = new Label(node.getText());
-        label.setMaxWidth(nodeW - 12);
+        String shapeName = node.getShape();
+        double labelMaxW = "DIAMOND".equals(shapeName) ? nodeW * 0.52
+                         : "ELLIPSE".equals(shapeName)  ? nodeW * 0.68
+                         : nodeW - 14;
+        label.setMaxWidth(labelMaxW);
         label.setWrapText(true);
         label.setTextFill(textColor);
         label.setStyle(
@@ -775,6 +844,9 @@ public class MainController {
             if (e.getButton() == MouseButton.PRIMARY && !e.isConsumed()) {
                 currentNode = node;
                 refreshCanvas(canvas, map);
+                if (e.getClickCount() == 2) {
+                    showDescriptionPopup(node, canvas, map);
+                }
                 canvas.requestFocus();
             }
         });
@@ -832,7 +904,10 @@ public class MainController {
             }
         });
 
-        contextMenu.getItems().addAll(addChild, editText, deleteNode);
+        MenuItem editDesc = new MenuItem("📝  Beschreibung bearbeiten");
+        editDesc.setOnAction(e -> showEditDescriptionDialog(node, canvas, map));
+
+        contextMenu.getItems().addAll(addChild, editText, new SeparatorMenuItem(), editDesc, new SeparatorMenuItem(), deleteNode);
         nodeView.setOnContextMenuRequested(e ->
                 contextMenu.show(nodeView, e.getScreenX(), e.getScreenY())
         );
@@ -841,19 +916,40 @@ public class MainController {
     }
 
     private double getNodeWidth(Node node) {
-        double baseWidth = 110;
-        if (node.getTextSize() > 12) {
-            baseWidth += (node.getTextSize() - 12) * 5;
+        String text = node.getText() == null ? "" : node.getText();
+        double fontSize = node.getTextSize();
+        double avgCharW = fontSize * 0.57;
+        double textW = text.length() * avgCharW + 28;
+        double minW = 90 + Math.max(0, (fontSize - 12) * 4);
+        double maxW = 210;
+        // Diamond/Ellipse need more horizontal room for readable text
+        String shape = node.getShape();
+        if ("DIAMOND".equals(shape) || "ELLIPSE".equals(shape)) {
+            minW = Math.max(minW, 110);
+            maxW = 230;
+            textW *= 1.25;
         }
-        return baseWidth;
+        return Math.max(minW, Math.min(maxW, textW));
     }
 
     private double getNodeHeight(Node node) {
-        double baseHeight = 40;
-        if (node.getTextSize() > 12) {
-            baseHeight += (node.getTextSize() - 12) * 2.5;
-        }
-        return baseHeight;
+        String text = node.getText() == null ? "" : node.getText();
+        double fontSize = node.getTextSize();
+        double nodeW = getNodeWidth(node);
+        // Effective inner width depends on shape
+        String shape = node.getShape();
+        double innerW = "DIAMOND".equals(shape) ? nodeW * 0.5
+                      : "ELLIPSE".equals(shape)  ? nodeW * 0.65
+                      : nodeW - 20;
+        double avgCharW = fontSize * 0.57;
+        double charsPerLine = Math.max(1, innerW / avgCharW);
+        int lines = Math.max(1, (int) Math.ceil(text.length() / charsPerLine));
+        double lineH = fontSize + 5;
+        double minH = fontSize + 20;
+        // Diamond/Ellipse need extra vertical space
+        if ("DIAMOND".equals(shape)) minH = Math.max(minH, nodeW * 0.6);
+        if ("ELLIPSE".equals(shape))  minH = Math.max(minH, nodeW * 0.5);
+        return Math.max(minH, lines * lineH + 16);
     }
 
     private Color getContrastColor(String hexColor) {
@@ -1077,6 +1173,38 @@ public class MainController {
                 }
                 nodeSection.getChildren().add(colorBox);
 
+                // Shape picker
+                HBox shapeBox = new HBox();
+                shapeBox.setSpacing(5);
+                shapeBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+                Label shapeLabel = new Label("Shape: ");
+                shapeLabel.getStyleClass().add("hud-label");
+                shapeBox.getChildren().add(shapeLabel);
+
+                String[][] shapes = {
+                    {"ROUNDED_RECT", "▭"},
+                    {"PILL",         "⬬"},
+                    {"ELLIPSE",      "⬭"},
+                    {"DIAMOND",      "◇"}
+                };
+                for (String[] s : shapes) {
+                    String shapeKey = s[0];
+                    Button shapeBtn = new Button(s[1]);
+                    shapeBtn.getStyleClass().add("btn-hud");
+                    shapeBtn.setStyle("-fx-font-size: 14px; -fx-padding: 3 8;" +
+                        (currentNode.getShape().equals(shapeKey)
+                            ? " -fx-border-color: #6366f1; -fx-text-fill: #a5b4fc;"
+                            : ""));
+                    shapeBtn.setOnAction(e -> {
+                        currentNode.setShape(shapeKey);
+                        repository.updateNode(currentNode);
+                        refreshCanvas(canvas, map);
+                    });
+                    shapeBox.getChildren().add(shapeBtn);
+                }
+                nodeSection.getChildren().add(shapeBox);
+
                 hud.getChildren().add(nodeSection);
             } else {
                 Label noSelectLabel = new Label("Select a node to style it");
@@ -1260,5 +1388,141 @@ public class MainController {
             }
         };
         new Thread(task).start();
+    }
+
+    // ── Description popup (double-click) ─────────────────────────────────────
+
+    private void showDescriptionPopup(Node node, Pane canvas, MindMap map) {
+        Stage popup = new Stage();
+        popup.initStyle(StageStyle.TRANSPARENT);
+        popup.initOwner(rootPane.getScene().getWindow());
+
+        // Outer: transparent, provides space for dropshadow
+        StackPane outerRoot = new StackPane();
+        outerRoot.setStyle("-fx-background-color: transparent;");
+        outerRoot.setPadding(new Insets(16));
+
+        VBox card = new VBox(0);
+        card.getStyleClass().add("desc-popup-card");
+        card.setPrefWidth(460);
+        card.setMaxWidth(460);
+
+        // ── Header ──
+        HBox header = new HBox(10);
+        header.getStyleClass().add("desc-popup-header");
+        header.setAlignment(Pos.CENTER_LEFT);
+
+        Label icon = new Label(node.getDescription().isEmpty() ? "🗒" : "📝");
+        icon.setStyle("-fx-font-size: 15px;");
+
+        Label titleLabel = new Label(node.getText());
+        titleLabel.getStyleClass().add("desc-popup-title");
+        HBox.setHgrow(titleLabel, Priority.ALWAYS);
+        titleLabel.setMaxWidth(Double.MAX_VALUE);
+
+        Button closeBtn = new Button("✕");
+        closeBtn.getStyleClass().add("desc-close-btn");
+        closeBtn.setOnAction(e -> popup.close());
+
+        header.getChildren().addAll(icon, titleLabel, closeBtn);
+
+        // ── Body ──
+        ScrollPane scroll = new ScrollPane();
+        scroll.setFitToWidth(true);
+        scroll.getStyleClass().add("desc-scroll");
+        VBox.setVgrow(scroll, Priority.ALWAYS);
+
+        String desc = node.getDescription();
+        if (desc == null || desc.trim().isEmpty()) {
+            Label empty = new Label("Noch keine Beschreibung vorhanden.\n\nRechtsklick → \"Beschreibung bearbeiten\" um eine hinzuzufügen.");
+            empty.getStyleClass().add("desc-empty-label");
+            empty.setWrapText(true);
+            empty.setPadding(new Insets(12, 14, 12, 14));
+            scroll.setContent(empty);
+        } else {
+            Label body = new Label(desc);
+            body.getStyleClass().add("desc-body-label");
+            body.setWrapText(true);
+            body.setPadding(new Insets(12, 14, 12, 14));
+            scroll.setContent(body);
+        }
+
+        // ── Footer ──
+        HBox footer = new HBox(8);
+        footer.getStyleClass().add("desc-popup-footer");
+        footer.setAlignment(Pos.CENTER_RIGHT);
+
+        Button editBtn = new Button("✏  Bearbeiten");
+        editBtn.getStyleClass().add("btn-primary");
+        editBtn.setStyle("-fx-font-size: 12px; -fx-padding: 6 14;");
+        editBtn.setOnAction(e -> {
+            popup.close();
+            showEditDescriptionDialog(node, canvas, map);
+        });
+
+        Button closeFooterBtn = new Button("Schließen");
+        closeFooterBtn.getStyleClass().add("btn-ghost");
+        closeFooterBtn.setStyle("-fx-font-size: 12px; -fx-padding: 6 14;");
+        closeFooterBtn.setOnAction(e -> popup.close());
+
+        footer.getChildren().addAll(editBtn, closeFooterBtn);
+
+        card.getChildren().addAll(header, scroll, footer);
+        outerRoot.getChildren().add(card);
+
+        Scene scene = new Scene(outerRoot);
+        scene.setFill(Color.TRANSPARENT);
+        scene.getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
+        popup.setScene(scene);
+        popup.show();
+
+        // Draggable via header
+        final double[] dragOffset = {0, 0};
+        header.setCursor(javafx.scene.Cursor.MOVE);
+        header.setOnMousePressed(e -> {
+            dragOffset[0] = e.getScreenX() - popup.getX();
+            dragOffset[1] = e.getScreenY() - popup.getY();
+        });
+        header.setOnMouseDragged(e -> {
+            popup.setX(e.getScreenX() - dragOffset[0]);
+            popup.setY(e.getScreenY() - dragOffset[1]);
+        });
+
+        // Center on owner
+        javafx.application.Platform.runLater(() -> {
+            Stage owner = (Stage) rootPane.getScene().getWindow();
+            popup.setX(owner.getX() + (owner.getWidth()  - popup.getWidth())  / 2);
+            popup.setY(owner.getY() + (owner.getHeight() - popup.getHeight()) / 2);
+        });
+    }
+
+    private void showEditDescriptionDialog(Node node, Pane canvas, MindMap map) {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Beschreibung");
+        dialog.setHeaderText("Beschreibung für: " + node.getText());
+        applyTheme(dialog);
+        dialog.getDialogPane().setPrefWidth(500);
+
+        TextArea area = new TextArea(node.getDescription());
+        area.setPromptText("Notizen, Details oder eine Beschreibung für diesen Node...");
+        area.setPrefRowCount(10);
+        area.setWrapText(true);
+        area.getStyleClass().add("desc-textarea");
+        VBox.setVgrow(area, Priority.ALWAYS);
+
+        VBox content = new VBox(area);
+        content.setPadding(new Insets(4, 0, 0, 0));
+        dialog.getDialogPane().setContent(content);
+
+        ButtonType saveType   = new ButtonType("Speichern", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelType = new ButtonType("Abbrechen", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveType, cancelType);
+        dialog.setResultConverter(btn -> btn == saveType ? area.getText() : null);
+
+        dialog.showAndWait().ifPresent(desc -> {
+            node.setDescription(desc);
+            repository.updateNode(node);
+            refreshCanvas(canvas, map);
+        });
     }
 }

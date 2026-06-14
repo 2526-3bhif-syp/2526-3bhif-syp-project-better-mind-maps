@@ -1,5 +1,6 @@
 package htl.leonding.at;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -128,6 +129,7 @@ public class LoginController {
             Scene scene = new Scene(loader.load(), 1024, 768);
             Stage stage = (Stage) usernameField.getScene().getWindow();
             stage.setScene(scene);
+            Platform.runLater(() -> stage.setMaximized(true));
         } catch (IOException e) {
             messageLabel.setText("Failed to load overview: " + e.getMessage());
             messageLabel.setStyle("-fx-text-fill: #e74c3c;");
