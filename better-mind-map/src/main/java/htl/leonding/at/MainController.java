@@ -33,6 +33,14 @@ public class MainController {
     @FXML private Label syncStatusLabel;
     @FXML private Button syncBtn;
 
+    @FXML private HBox toolbar;
+    @FXML private VBox sidebar;
+    @FXML private HBox statusbar;
+
+    private boolean isPresentationModeActive = false;
+    private VBox activeHud = null;
+    private String currentPresentationTheme = "LIGHT"; // LIGHT, DARK, SEPIA, OCEAN
+
     private final MindMapRepository repository = new MindMapRepository();
     private final MindMapService service = new MindMapService(repository);
     private final SyncService syncService = new LocalSimulatedSyncService();
@@ -518,6 +526,24 @@ public class MainController {
             layoutMindMap(map, w, h);
         }
 
+        if (viewport != null) {
+            switch (currentPresentationTheme) {
+                case "DARK":
+                    viewport.setStyle("-fx-background-color: #1e272e;");
+                    break;
+                case "SEPIA":
+                    viewport.setStyle("-fx-background-color: #f4eae1;");
+                    break;
+                case "OCEAN":
+                    viewport.setStyle("-fx-background-color: #e3fafc;");
+                    break;
+                case "LIGHT":
+                default:
+                    viewport.setStyle("-fx-background-color: #f8f9fa;");
+                    break;
+            }
+        }
+
         canvas.getChildren().clear();
         canvas.setStyle("-fx-background-color: transparent;");
 
@@ -529,9 +555,16 @@ public class MainController {
             boolean isCurrent = node == currentNode;
             boolean isRoot = node.getParentId() == null;
             StackPane nodeView = createNodeView(node, map, canvas, isCurrent, isRoot);
-            nodeView.setLayoutX(node.getXCoordinate() - NODE_W / 2);
-            nodeView.setLayoutY(node.getYCoordinate() - NODE_H / 2);
+            double nodeW = getNodeWidth(node);
+            double nodeH = getNodeHeight(node);
+            nodeView.setLayoutX(node.getXCoordinate() - nodeW / 2);
+            nodeView.setLayoutY(node.getYCoordinate() - nodeH / 2);
             canvas.getChildren().add(nodeView);
+        }
+
+        // Always show the floating HUD overlay
+        if (viewport != null) {
+            showPresentationHud(viewport, canvas, map);
         }
 
         refreshTree(map);
@@ -539,6 +572,23 @@ public class MainController {
     }
 
     private void drawLines(Pane canvas, MindMap map) {
+        Color lineColor = Color.web("#adb5bd");
+        switch (currentPresentationTheme) {
+            case "DARK":
+                lineColor = Color.web("#57606f");
+                break;
+            case "SEPIA":
+                lineColor = Color.web("#c8b3a0");
+                break;
+            case "OCEAN":
+                lineColor = Color.web("#99e9f2");
+                break;
+            case "LIGHT":
+            default:
+                lineColor = Color.web("#adb5bd");
+                break;
+        }
+
         canvas.getChildren().removeIf(n -> n instanceof Line);
         int index = 0;
         for (Node node : map.getNodes()) {
@@ -551,7 +601,7 @@ public class MainController {
                         parent.getXCoordinate(), parent.getYCoordinate(),
                         node.getXCoordinate(), node.getYCoordinate()
                 );
-                line.setStroke(Color.web("#adb5bd"));
+                line.setStroke(lineColor);
                 line.setStrokeWidth(2);
                 canvas.getChildren().add(index++, line);
             }
@@ -637,29 +687,38 @@ public class MainController {
                                      boolean isCurrent, boolean isRoot) {
         StackPane nodeView = new StackPane();
 
-        Rectangle rect = new Rectangle(NODE_W, NODE_H);
+        double nodeW = getNodeWidth(node);
+        double nodeH = getNodeHeight(node);
+
+        Rectangle rect = new Rectangle(nodeW, nodeH);
         rect.setArcWidth(NODE_ARC * 2);
         rect.setArcHeight(NODE_ARC * 2);
 
-        if (isRoot) {
+        Color textColor;
+        if (isRoot && (node.getColor() == null || node.getColor().equals("#ffffff"))) {
             rect.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
                     new Stop(0, Color.web("#3498db")),
                     new Stop(1, Color.web("#2980b9"))));
             rect.setStroke(isCurrent ? Color.web("#e74c3c") : Color.web("#1a6fa8"));
             rect.setStrokeWidth(isCurrent ? 3 : 2);
+            textColor = Color.WHITE;
         } else {
-            rect.setFill(Color.WHITE);
+            String colStr = node.getColor();
+            if (colStr == null || colStr.isEmpty()) colStr = "#ffffff";
+            rect.setFill(Color.web(colStr));
             rect.setStroke(isCurrent ? Color.web("#e74c3c") : Color.web("#b2bec3"));
             rect.setStrokeWidth(isCurrent ? 3 : 1.5);
             rect.setEffect(new javafx.scene.effect.DropShadow(4, 0, 2, Color.web("#00000018")));
+            textColor = getContrastColor(colStr);
         }
 
         Label label = new Label(node.getText());
-        label.setMaxWidth(NODE_W - 12);
+        label.setMaxWidth(nodeW - 12);
         label.setWrapText(true);
+        label.setTextFill(textColor);
         label.setStyle(
-            "-fx-font-size: 12px; -fx-text-alignment: center; -fx-alignment: center;" +
-            (isRoot ? " -fx-text-fill: white; -fx-font-weight: bold;" : " -fx-text-fill: #2c3e50;")
+            "-fx-font-size: " + node.getTextSize() + "px; -fx-text-alignment: center; -fx-alignment: center;" +
+            (isRoot && (node.getColor() == null || node.getColor().equals("#ffffff")) ? " -fx-font-weight: bold;" : "")
         );
 
         nodeView.getChildren().addAll(rect, label);
@@ -688,8 +747,8 @@ public class MainController {
                 double newY = e.getSceneY() + dragDelta[1];
                 nodeView.setLayoutX(newX);
                 nodeView.setLayoutY(newY);
-                node.setXCoordinate(newX + NODE_W / 2);
-                node.setYCoordinate(newY + NODE_H / 2);
+                node.setXCoordinate(newX + nodeW / 2);
+                node.setYCoordinate(newY + nodeH / 2);
                 
                 drawLines(canvas, map);
                 e.consume();
@@ -731,6 +790,272 @@ public class MainController {
         );
 
         return nodeView;
+    }
+
+    private double getNodeWidth(Node node) {
+        double baseWidth = 110;
+        if (node.getTextSize() > 12) {
+            baseWidth += (node.getTextSize() - 12) * 5;
+        }
+        return baseWidth;
+    }
+
+    private double getNodeHeight(Node node) {
+        double baseHeight = 40;
+        if (node.getTextSize() > 12) {
+            baseHeight += (node.getTextSize() - 12) * 2.5;
+        }
+        return baseHeight;
+    }
+
+    private Color getContrastColor(String hexColor) {
+        if (hexColor == null || hexColor.isEmpty() || hexColor.equals("#ffffff")) {
+            return Color.web("#2c3e50");
+        }
+        try {
+            Color color = Color.web(hexColor);
+            double brightness = 0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue();
+            return brightness < 0.5 ? Color.WHITE : Color.web("#2c3e50");
+        } catch (Exception e) {
+            return Color.web("#2c3e50");
+        }
+    }
+
+    @FXML
+    public void onTogglePresentationMode() {
+        Stage stage = (Stage) rootPane.getScene().getWindow();
+        if (!isPresentationModeActive) {
+            enterPresentationMode(stage);
+        } else {
+            exitPresentationMode(stage);
+        }
+    }
+
+    private void enterPresentationMode(Stage stage) {
+        isPresentationModeActive = true;
+        stage.setFullScreen(true);
+
+        // Hide toolbar, sidebar, statusbar
+        toolbar.setVisible(false);
+        toolbar.setManaged(false);
+        sidebar.setVisible(false);
+        sidebar.setManaged(false);
+        statusbar.setVisible(false);
+        statusbar.setManaged(false);
+
+        // Add CSS class to tabPane
+        tabPane.getStyleClass().add("presentation-mode");
+
+        // Listen for ESC key or window loss of focus/fullscreen change
+        stage.fullScreenProperty().addListener(new javafx.beans.value.ChangeListener<Boolean>() {
+            @Override
+            public void changed(javafx.beans.value.ObservableValue<? extends Boolean> obs, Boolean wasFS, Boolean isFS) {
+                if (!isFS && isPresentationModeActive) {
+                    exitPresentationMode(stage);
+                    stage.fullScreenProperty().removeListener(this);
+                }
+            }
+        });
+
+        // Re-render current tab's canvas to draw HUD
+        Tab selected = tabPane.getSelectionModel().getSelectedItem();
+        if (selected != null && selected.getUserData() instanceof MindMap) {
+            MindMap map = (MindMap) selected.getUserData();
+            Pane viewport = (Pane) selected.getContent();
+            Pane canvas = (Pane) viewport.getChildren().get(0);
+            refreshCanvas(canvas, map);
+        }
+    }
+
+    private void exitPresentationMode(Stage stage) {
+        isPresentationModeActive = false;
+        if (stage.isFullScreen()) {
+            stage.setFullScreen(false);
+        }
+
+        // Show toolbar, sidebar, statusbar
+        toolbar.setVisible(true);
+        toolbar.setManaged(true);
+        sidebar.setVisible(true);
+        sidebar.setManaged(true);
+        statusbar.setVisible(true);
+        statusbar.setManaged(true);
+
+        // Remove CSS class from tabPane
+        tabPane.getStyleClass().remove("presentation-mode");
+
+        // Remove active HUD
+        if (activeHud != null) {
+            Pane parent = (Pane) activeHud.getParent();
+            if (parent != null) {
+                parent.getChildren().remove(activeHud);
+            }
+            activeHud = null;
+        }
+
+        // Re-render current tab's canvas
+        Tab selected = tabPane.getSelectionModel().getSelectedItem();
+        if (selected != null && selected.getUserData() instanceof MindMap) {
+            MindMap map = (MindMap) selected.getUserData();
+            Pane viewport = (Pane) selected.getContent();
+            Pane canvas = (Pane) viewport.getChildren().get(0);
+            refreshCanvas(canvas, map);
+        }
+    }
+
+    private void showPresentationHud(Pane viewport, Pane canvas, MindMap map) {
+        if (activeHud != null) {
+            viewport.getChildren().remove(activeHud);
+        }
+
+        VBox hud = new VBox();
+        hud.getStyleClass().add("presentation-hud");
+
+        // Title
+        Label title = new Label(isPresentationModeActive ? "PRESENTATION CONTROLS" : "NODE STYLING");
+        title.getStyleClass().add("hud-title");
+        hud.getChildren().add(title);
+
+        // Selected Node Section
+        if (currentNode != null) {
+            VBox nodeSection = new VBox();
+            nodeSection.getStyleClass().add("hud-section");
+            
+            Label selectedLabel = new Label("Selected Node: " + currentNode.getText());
+            selectedLabel.getStyleClass().add("hud-label");
+            selectedLabel.setStyle("-fx-font-weight: bold;");
+            nodeSection.getChildren().add(selectedLabel);
+
+            // Font Size Controls
+            HBox sizeBox = new HBox();
+            sizeBox.setSpacing(10);
+            sizeBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            
+            Label sizeLabel = new Label("Text Size: " + (int) currentNode.getTextSize() + "px");
+            sizeLabel.getStyleClass().add("hud-label");
+            
+            Button btnMinus = new Button("A-");
+            btnMinus.getStyleClass().add("btn-hud");
+            btnMinus.setOnAction(e -> {
+                double newSize = Math.max(8.0, currentNode.getTextSize() - 2.0);
+                currentNode.setTextSize(newSize);
+                repository.updateNode(currentNode);
+                refreshCanvas(canvas, map);
+            });
+
+            Button btnPlus = new Button("A+");
+            btnPlus.getStyleClass().add("btn-hud");
+            btnPlus.setOnAction(e -> {
+                double newSize = Math.min(36.0, currentNode.getTextSize() + 2.0);
+                currentNode.setTextSize(newSize);
+                repository.updateNode(currentNode);
+                refreshCanvas(canvas, map);
+            });
+
+            sizeBox.getChildren().addAll(btnMinus, btnPlus, sizeLabel);
+            nodeSection.getChildren().add(sizeBox);
+
+            // Color preset swatches
+            HBox colorBox = new HBox();
+            colorBox.setSpacing(6);
+            colorBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            
+            Label colorLabel = new Label("Color: ");
+            colorLabel.getStyleClass().add("hud-label");
+            colorBox.getChildren().add(colorLabel);
+
+            String[] colorPresets = {"#ffffff", "#3498db", "#2ecc71", "#f1c40f", "#e67e22", "#e74c3c", "#9b59b6"};
+            for (String col : colorPresets) {
+                Button swatch = new Button();
+                swatch.getStyleClass().add("color-swatch");
+                swatch.setStyle("-fx-background-color: " + col + ";");
+                swatch.setOnAction(e -> {
+                    currentNode.setColor(col);
+                    repository.updateNode(currentNode);
+                    refreshCanvas(canvas, map);
+                });
+                colorBox.getChildren().add(swatch);
+            }
+            nodeSection.getChildren().add(colorBox);
+
+            hud.getChildren().add(nodeSection);
+        } else {
+            Label noSelectLabel = new Label("Select a node to style it");
+            noSelectLabel.getStyleClass().add("hud-label");
+            noSelectLabel.setStyle("-fx-font-style: italic; -fx-text-fill: #a5b1c2;");
+            hud.getChildren().add(noSelectLabel);
+        }
+
+        // Separator
+        Separator sep = new Separator();
+        sep.setStyle("-fx-background-color: rgba(255,255,255,0.1);");
+        hud.getChildren().add(sep);
+
+        // Global Canvas Theme Section
+        VBox themeSection = new VBox();
+        themeSection.getStyleClass().add("hud-section");
+        
+        Label themeLabel = new Label("Canvas Theme:");
+        themeLabel.getStyleClass().add("hud-label");
+        themeSection.getChildren().add(themeLabel);
+
+        HBox themeBtnBox = new HBox();
+        themeBtnBox.setSpacing(6);
+        
+        Button btnLight = new Button("Light");
+        btnLight.getStyleClass().add("btn-hud");
+        if (currentPresentationTheme.equals("LIGHT")) btnLight.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
+        btnLight.setOnAction(e -> {
+            currentPresentationTheme = "LIGHT";
+            refreshCanvas(canvas, map);
+        });
+
+        Button btnDark = new Button("Dark");
+        btnDark.getStyleClass().add("btn-hud");
+        if (currentPresentationTheme.equals("DARK")) btnDark.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
+        btnDark.setOnAction(e -> {
+            currentPresentationTheme = "DARK";
+            refreshCanvas(canvas, map);
+        });
+
+        Button btnSepia = new Button("Sepia");
+        btnSepia.getStyleClass().add("btn-hud");
+        if (currentPresentationTheme.equals("SEPIA")) btnSepia.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
+        btnSepia.setOnAction(e -> {
+            currentPresentationTheme = "SEPIA";
+            refreshCanvas(canvas, map);
+        });
+
+        Button btnOcean = new Button("Ocean");
+        btnOcean.getStyleClass().add("btn-hud");
+        if (currentPresentationTheme.equals("OCEAN")) btnOcean.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
+        btnOcean.setOnAction(e -> {
+            currentPresentationTheme = "OCEAN";
+            refreshCanvas(canvas, map);
+        });
+
+        themeBtnBox.getChildren().addAll(btnLight, btnDark, btnSepia, btnOcean);
+        themeSection.getChildren().add(themeBtnBox);
+        hud.getChildren().add(themeSection);
+
+        // Exit Button (only in presentation mode)
+        if (isPresentationModeActive) {
+            Button btnExit = new Button("Exit Presentation");
+            btnExit.getStyleClass().add("btn-hud-danger");
+            btnExit.setMaxWidth(Double.MAX_VALUE);
+            btnExit.setOnAction(e -> {
+                Stage stage = (Stage) viewport.getScene().getWindow();
+                exitPresentationMode(stage);
+            });
+            hud.getChildren().add(btnExit);
+        }
+
+        // Bind layout to keep HUD in top-right corner
+        hud.layoutXProperty().bind(viewport.widthProperty().subtract(hud.widthProperty()).subtract(20));
+        hud.setLayoutY(20);
+
+        viewport.getChildren().add(hud);
+        activeHud = hud;
     }
 
     // ── Hierarchy tree ───────────────────────────────────────────────────────

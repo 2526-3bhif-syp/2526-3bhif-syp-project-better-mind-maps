@@ -15,16 +15,18 @@
             fx:controller="htl.leonding.at.MainController"
             stylesheets="@styles.css">
     <top>
-        <HBox styleClass="toolbar" alignment="CENTER_LEFT">
+        <HBox fx:id="toolbar" styleClass="toolbar" alignment="CENTER_LEFT">
             <Button text="← Overview" onAction="#onBackToOverview" styleClass="btn-ghost"/>
             <Button text="+ New Mind Map" onAction="#onCreateNewMap" styleClass="btn-primary"/>
             <Button text="✨ AI Assistant" onAction="#onOpenAiChat" styleClass="btn-secondary"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="📺 Present" onAction="#onTogglePresentationMode" styleClass="btn-blue"/>
         </HBox>
     </top>
     <center>
         <HBox>
             <!-- Sidebar: header + tree on the same level as tabs -->
-            <VBox prefWidth="200" minWidth="200" maxWidth="200"
+            <VBox fx:id="sidebar" prefWidth="200" minWidth="200" maxWidth="200"
                   style="-fx-border-color: #dee2e6; -fx-border-width: 0 1 0 0;">
                 <HBox fx:id="sidebarHeader" styleClass="sidebar-header" alignment="CENTER_LEFT">
                     <Label text="STRUCTURE" styleClass="sidebar-label"/>
@@ -38,7 +40,7 @@
         </HBox>
     </center>
     <bottom>
-        <HBox styleClass="statusbar" alignment="CENTER_LEFT">
+        <HBox fx:id="statusbar" styleClass="statusbar" alignment="CENTER_LEFT">
             <Label text="Enter / Ins" styleClass="statusbar-key"/>
             <Label text="Add child" styleClass="statusbar-desc"/>
             <Label text="F2" styleClass="statusbar-key"/>

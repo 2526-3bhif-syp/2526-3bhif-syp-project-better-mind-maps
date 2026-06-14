@@ -65,6 +65,28 @@ public class DatabaseManager {
                 stmt.execute("ALTER TABLE mind_maps ADD COLUMN sync_status TEXT DEFAULT 'PENDING'");
             }
 
+            // Check if text_size and color columns exist in nodes
+            boolean hasTextSize = false;
+            boolean hasColor = false;
+            try (java.sql.ResultSet rs = stmt.executeQuery("PRAGMA table_info(nodes)")) {
+                while (rs.next()) {
+                    String columnName = rs.getString("name");
+                    if ("text_size".equals(columnName)) {
+                        hasTextSize = true;
+                    }
+                    if ("color".equals(columnName)) {
+                        hasColor = true;
+                    }
+                }
+            }
+
+            if (!hasTextSize) {
+                stmt.execute("ALTER TABLE nodes ADD COLUMN text_size REAL DEFAULT 12.0");
+            }
+            if (!hasColor) {
+                stmt.execute("ALTER TABLE nodes ADD COLUMN color TEXT DEFAULT '#ffffff'");
+            }
+
         } catch (SQLException e) {
             throw new RuntimeException("Failed to initialize database", e);
         }

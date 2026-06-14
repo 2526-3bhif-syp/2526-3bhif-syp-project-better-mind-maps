@@ -26,8 +26,8 @@ public class MindMapRepository {
 
     public void saveNode(String mapId, Node node) {
         String sql = "INSERT OR REPLACE INTO nodes " +
-                     "(id, mind_map_id, text, parent_id, x_coordinate, y_coordinate) " +
-                     "VALUES (?, ?, ?, ?, ?, ?)";
+                     "(id, mind_map_id, text, parent_id, x_coordinate, y_coordinate, text_size, color) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, node.getId());
@@ -36,6 +36,8 @@ public class MindMapRepository {
             stmt.setString(4, node.getParentId());
             stmt.setDouble(5, node.getXCoordinate());
             stmt.setDouble(6, node.getYCoordinate());
+            stmt.setDouble(7, node.getTextSize());
+            stmt.setString(8, node.getColor());
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save node", e);
@@ -43,13 +45,15 @@ public class MindMapRepository {
     }
 
     public void updateNode(Node node) {
-        String sql = "UPDATE nodes SET text = ?, x_coordinate = ?, y_coordinate = ? WHERE id = ?";
+        String sql = "UPDATE nodes SET text = ?, x_coordinate = ?, y_coordinate = ?, text_size = ?, color = ? WHERE id = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, node.getText());
             stmt.setDouble(2, node.getXCoordinate());
             stmt.setDouble(3, node.getYCoordinate());
-            stmt.setString(4, node.getId());
+            stmt.setDouble(4, node.getTextSize());
+            stmt.setString(5, node.getColor());
+            stmt.setString(6, node.getId());
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to update node", e);
@@ -85,7 +89,7 @@ public class MindMapRepository {
     public List<MindMap> loadAll(String userId) {
         List<MindMap> maps = new ArrayList<>();
         String mapSql = "SELECT id, name, user_id, sync_status FROM mind_maps WHERE user_id = ?";
-        String nodeSql = "SELECT id, text, parent_id, x_coordinate, y_coordinate " +
+        String nodeSql = "SELECT id, text, parent_id, x_coordinate, y_coordinate, text_size, color " +
                          "FROM nodes WHERE mind_map_id = ?";
 
         try (Connection conn = DatabaseManager.getConnection();
@@ -106,7 +110,9 @@ public class MindMapRepository {
                                         nodeRs.getString("text"),
                                         nodeRs.getString("parent_id"),
                                         nodeRs.getDouble("x_coordinate"),
-                                        nodeRs.getDouble("y_coordinate")
+                                        nodeRs.getDouble("y_coordinate"),
+                                        nodeRs.getDouble("text_size"),
+                                        nodeRs.getString("color")
                                 ));
                             }
                         }
