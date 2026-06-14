@@ -17,7 +17,12 @@ public class OverviewController {
     @FXML private VBox cardsContainer;
     @FXML private Label userLabel;
 
+    private MainController mainController;
     private final MindMapRepository repository = new MindMapRepository();
+
+    public void setMainController(MainController mainController) {
+        this.mainController = mainController;
+    }
     private final MindMapService service = new MindMapService(repository);
 
     @FXML
@@ -110,12 +115,17 @@ public class OverviewController {
     }
 
     private void openEditor(MindMap map) {
+        Stage stage = (Stage) cardsContainer.getScene().getWindow();
+        if (mainController != null) {
+            stage.setScene(mainController.getRootScene());
+            mainController.openMapAsTab(map);
+            return;
+        }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("main-view.fxml"));
             Scene scene = new Scene(loader.load(), 1024, 768);
             MainController controller = loader.getController();
             controller.loadMindMap(map);
-            Stage stage = (Stage) cardsContainer.getScene().getWindow();
             stage.setScene(scene);
         } catch (IOException e) {
             throw new RuntimeException("Failed to open editor", e);

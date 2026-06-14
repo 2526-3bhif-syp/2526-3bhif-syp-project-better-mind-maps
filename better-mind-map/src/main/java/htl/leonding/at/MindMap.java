@@ -10,6 +10,7 @@ public class MindMap {
     private List<Node> nodes;
     private String userId;
     private String syncStatus;
+    private String theme = "LIGHT";
 
     public MindMap(String id, String name) {
         this._id = id;
@@ -40,6 +41,14 @@ public class MindMap {
 
     public void setSyncStatus(String syncStatus) {
         this.syncStatus = syncStatus;
+    }
+
+    public String getTheme() {
+        return theme != null ? theme : "LIGHT";
+    }
+
+    public void setTheme(String theme) {
+        this.theme = theme;
     }
 
     public void addNode(Node node) {

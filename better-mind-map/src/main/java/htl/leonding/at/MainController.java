@@ -49,6 +49,7 @@ public class MainController {
     private String userApiKey = null;
     private final Map<TreeItem<String>, String> treeItemToNodeId = new HashMap<>();
     private boolean suppressTreeSelection = false;
+    private final Set<String> expandedNodeIds = new HashSet<>();
 
     @FXML
     public void initialize() {
@@ -118,11 +119,28 @@ public class MainController {
         updateSyncStatusLabel(map);
     }
 
+    public Scene getRootScene() {
+        return rootPane.getScene();
+    }
+
+    public void openMapAsTab(MindMap map) {
+        for (Tab tab : tabPane.getTabs()) {
+            if (tab.getUserData() instanceof MindMap && ((MindMap) tab.getUserData()).getId().equals(map.getId())) {
+                tabPane.getSelectionModel().select(tab);
+                return;
+            }
+        }
+        currentNode = getRoot(map);
+        renderMindMap(map);
+    }
+
     @FXML
     private void onBackToOverview() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("overview-view.fxml"));
             Scene scene = new Scene(loader.load(), 1024, 768);
+            OverviewController controller = loader.getController();
+            controller.setMainController(this);
             Stage stage = (Stage) tabPane.getScene().getWindow();
             stage.setScene(scene);
         } catch (IOException e) {
@@ -331,6 +349,20 @@ public class MainController {
         Tab tab = new Tab(map.getName());
         tab.setContent(viewport);
         tab.setUserData(map);
+        tab.setClosable(true);
+        tab.setOnCloseRequest(e -> {
+            e.consume();
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("Mind Map löschen");
+            confirm.setHeaderText("\"" + map.getName() + "\" löschen?");
+            confirm.setContentText("Die Mind Map wird dauerhaft gelöscht und kann nicht wiederhergestellt werden.");
+            confirm.showAndWait().ifPresent(btn -> {
+                if (btn == ButtonType.OK) {
+                    tabPane.getTabs().remove(tab);
+                    repository.deleteMindMap(map.getId());
+                }
+            });
+        });
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
         refreshCanvas(canvas, map);
@@ -522,6 +554,8 @@ public class MainController {
     // ── Layout ──────────────────────────────────────────────────────────────
 
     private void refreshCanvas(Pane canvas, MindMap map) {
+        currentPresentationTheme = map.getTheme();
+
         Pane viewport = (Pane) canvas.getParent();
         double w = (viewport != null && viewport.getWidth() > 0) ? viewport.getWidth() : 800;
         double h = (viewport != null && viewport.getHeight() > 0) ? viewport.getHeight() : 600;
@@ -871,14 +905,36 @@ public class MainController {
             }
         });
 
-        // Re-render current tab's canvas to draw HUD
+        // Re-render current tab's canvas to draw HUD, then center the diagram
         Tab selected = tabPane.getSelectionModel().getSelectedItem();
         if (selected != null && selected.getUserData() instanceof MindMap) {
             MindMap map = (MindMap) selected.getUserData();
             Pane viewport = (Pane) selected.getContent();
             Pane canvas = (Pane) viewport.getChildren().get(0);
             refreshCanvas(canvas, map);
+            // Double runLater to wait for fullscreen layout to settle
+            javafx.application.Platform.runLater(() ->
+                javafx.application.Platform.runLater(() ->
+                    centerCanvasInViewport(viewport, canvas, map)
+                )
+            );
         }
+    }
+
+    private void centerCanvasInViewport(Pane viewport, Pane canvas, MindMap map) {
+        if (map.getNodes().isEmpty() || viewport.getWidth() <= 0 || viewport.getHeight() <= 0) return;
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+        for (Node n : map.getNodes()) {
+            minX = Math.min(minX, n.getXCoordinate());
+            minY = Math.min(minY, n.getYCoordinate());
+            maxX = Math.max(maxX, n.getXCoordinate());
+            maxY = Math.max(maxY, n.getYCoordinate());
+        }
+        double contentCenterX = (minX + maxX) / 2;
+        double contentCenterY = (minY + maxY) / 2;
+        canvas.setTranslateX(viewport.getWidth()  / 2 - contentCenterX * canvas.getScaleX());
+        canvas.setTranslateY(viewport.getHeight() / 2 - contentCenterY * canvas.getScaleY());
     }
 
     private void exitPresentationMode(Stage stage) {
@@ -907,19 +963,47 @@ public class MainController {
             activeHud = null;
         }
 
-        // Re-render current tab's canvas
+        // Re-render current tab's canvas, then re-center once the viewport has settled
         Tab selected = tabPane.getSelectionModel().getSelectedItem();
         if (selected != null && selected.getUserData() instanceof MindMap) {
             MindMap map = (MindMap) selected.getUserData();
             Pane viewport = (Pane) selected.getContent();
             Pane canvas = (Pane) viewport.getChildren().get(0);
             refreshCanvas(canvas, map);
+
+            // stage.setFullScreen(false) is async — wait for the viewport to actually resize
+            final boolean[] centered = {false};
+            final java.util.concurrent.atomic.AtomicReference<javafx.beans.value.ChangeListener<Number>> ref =
+                    new java.util.concurrent.atomic.AtomicReference<>();
+            javafx.beans.value.ChangeListener<Number> listener = (obs, oldW, newW) -> {
+                if (!centered[0]) {
+                    centered[0] = true;
+                    viewport.widthProperty().removeListener(ref.get());
+                    javafx.application.Platform.runLater(() -> centerCanvasInViewport(viewport, canvas, map));
+                }
+            };
+            ref.set(listener);
+            viewport.widthProperty().addListener(listener);
+            // Fallback: center after layout passes if viewport width never changed
+            javafx.application.Platform.runLater(() ->
+                javafx.application.Platform.runLater(() ->
+                    javafx.application.Platform.runLater(() -> {
+                        viewport.widthProperty().removeListener(ref.get());
+                        if (!centered[0]) {
+                            centered[0] = true;
+                            centerCanvasInViewport(viewport, canvas, map);
+                        }
+                    })
+                )
+            );
         }
     }
 
     private void showPresentationHud(Pane viewport, Pane canvas, MindMap map) {
         if (activeHud != null) {
-            viewport.getChildren().remove(activeHud);
+            Pane parent = (Pane) activeHud.getParent();
+            if (parent != null) parent.getChildren().remove(activeHud);
+            activeHud = null;
         }
 
         VBox hud = new VBox();
@@ -930,74 +1014,76 @@ public class MainController {
         title.getStyleClass().add("hud-title");
         hud.getChildren().add(title);
 
-        // Selected Node Section
-        if (currentNode != null) {
-            VBox nodeSection = new VBox();
-            nodeSection.getStyleClass().add("hud-section");
-            
-            Label selectedLabel = new Label("Selected Node: " + currentNode.getText());
-            selectedLabel.getStyleClass().add("hud-label");
-            selectedLabel.setStyle("-fx-font-weight: bold;");
-            nodeSection.getChildren().add(selectedLabel);
+        // Selected Node Section — only visible outside presentation mode
+        if (!isPresentationModeActive) {
+            if (currentNode != null) {
+                VBox nodeSection = new VBox();
+                nodeSection.getStyleClass().add("hud-section");
 
-            // Font Size Controls
-            HBox sizeBox = new HBox();
-            sizeBox.setSpacing(10);
-            sizeBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-            
-            Label sizeLabel = new Label("Text Size: " + (int) currentNode.getTextSize() + "px");
-            sizeLabel.getStyleClass().add("hud-label");
-            
-            Button btnMinus = new Button("A-");
-            btnMinus.getStyleClass().add("btn-hud");
-            btnMinus.setOnAction(e -> {
-                double newSize = Math.max(8.0, currentNode.getTextSize() - 2.0);
-                currentNode.setTextSize(newSize);
-                repository.updateNode(currentNode);
-                refreshCanvas(canvas, map);
-            });
+                Label selectedLabel = new Label("Selected Node: " + currentNode.getText());
+                selectedLabel.getStyleClass().add("hud-label");
+                selectedLabel.setStyle("-fx-font-weight: bold;");
+                nodeSection.getChildren().add(selectedLabel);
 
-            Button btnPlus = new Button("A+");
-            btnPlus.getStyleClass().add("btn-hud");
-            btnPlus.setOnAction(e -> {
-                double newSize = Math.min(36.0, currentNode.getTextSize() + 2.0);
-                currentNode.setTextSize(newSize);
-                repository.updateNode(currentNode);
-                refreshCanvas(canvas, map);
-            });
+                // Font Size Controls
+                HBox sizeBox = new HBox();
+                sizeBox.setSpacing(10);
+                sizeBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
-            sizeBox.getChildren().addAll(btnMinus, btnPlus, sizeLabel);
-            nodeSection.getChildren().add(sizeBox);
+                Label sizeLabel = new Label("Text Size: " + (int) currentNode.getTextSize() + "px");
+                sizeLabel.getStyleClass().add("hud-label");
 
-            // Color preset swatches
-            HBox colorBox = new HBox();
-            colorBox.setSpacing(6);
-            colorBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-            
-            Label colorLabel = new Label("Color: ");
-            colorLabel.getStyleClass().add("hud-label");
-            colorBox.getChildren().add(colorLabel);
-
-            String[] colorPresets = {"#ffffff", "#3498db", "#2ecc71", "#f1c40f", "#e67e22", "#e74c3c", "#9b59b6"};
-            for (String col : colorPresets) {
-                Button swatch = new Button();
-                swatch.getStyleClass().add("color-swatch");
-                swatch.setStyle("-fx-background-color: " + col + ";");
-                swatch.setOnAction(e -> {
-                    currentNode.setColor(col);
+                Button btnMinus = new Button("A-");
+                btnMinus.getStyleClass().add("btn-hud");
+                btnMinus.setOnAction(e -> {
+                    double newSize = Math.max(8.0, currentNode.getTextSize() - 2.0);
+                    currentNode.setTextSize(newSize);
                     repository.updateNode(currentNode);
                     refreshCanvas(canvas, map);
                 });
-                colorBox.getChildren().add(swatch);
-            }
-            nodeSection.getChildren().add(colorBox);
 
-            hud.getChildren().add(nodeSection);
-        } else {
-            Label noSelectLabel = new Label("Select a node to style it");
-            noSelectLabel.getStyleClass().add("hud-label");
-            noSelectLabel.setStyle("-fx-font-style: italic; -fx-text-fill: #a5b1c2;");
-            hud.getChildren().add(noSelectLabel);
+                Button btnPlus = new Button("A+");
+                btnPlus.getStyleClass().add("btn-hud");
+                btnPlus.setOnAction(e -> {
+                    double newSize = Math.min(36.0, currentNode.getTextSize() + 2.0);
+                    currentNode.setTextSize(newSize);
+                    repository.updateNode(currentNode);
+                    refreshCanvas(canvas, map);
+                });
+
+                sizeBox.getChildren().addAll(btnMinus, btnPlus, sizeLabel);
+                nodeSection.getChildren().add(sizeBox);
+
+                // Color preset swatches
+                HBox colorBox = new HBox();
+                colorBox.setSpacing(6);
+                colorBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+                Label colorLabel = new Label("Color: ");
+                colorLabel.getStyleClass().add("hud-label");
+                colorBox.getChildren().add(colorLabel);
+
+                String[] colorPresets = {"#ffffff", "#3498db", "#2ecc71", "#f1c40f", "#e67e22", "#e74c3c", "#9b59b6"};
+                for (String col : colorPresets) {
+                    Button swatch = new Button();
+                    swatch.getStyleClass().add("color-swatch");
+                    swatch.setStyle("-fx-background-color: " + col + ";");
+                    swatch.setOnAction(e -> {
+                        currentNode.setColor(col);
+                        repository.updateNode(currentNode);
+                        refreshCanvas(canvas, map);
+                    });
+                    colorBox.getChildren().add(swatch);
+                }
+                nodeSection.getChildren().add(colorBox);
+
+                hud.getChildren().add(nodeSection);
+            } else {
+                Label noSelectLabel = new Label("Select a node to style it");
+                noSelectLabel.getStyleClass().add("hud-label");
+                noSelectLabel.setStyle("-fx-font-style: italic; -fx-text-fill: #a5b1c2;");
+                hud.getChildren().add(noSelectLabel);
+            }
         }
 
         // Separator
@@ -1020,7 +1106,8 @@ public class MainController {
         btnLight.getStyleClass().add("btn-hud");
         if (currentPresentationTheme.equals("LIGHT")) btnLight.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
         btnLight.setOnAction(e -> {
-            currentPresentationTheme = "LIGHT";
+            map.setTheme("LIGHT");
+            repository.updateTheme(map.getId(), "LIGHT");
             refreshCanvas(canvas, map);
         });
 
@@ -1028,7 +1115,8 @@ public class MainController {
         btnDark.getStyleClass().add("btn-hud");
         if (currentPresentationTheme.equals("DARK")) btnDark.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
         btnDark.setOnAction(e -> {
-            currentPresentationTheme = "DARK";
+            map.setTheme("DARK");
+            repository.updateTheme(map.getId(), "DARK");
             refreshCanvas(canvas, map);
         });
 
@@ -1036,7 +1124,8 @@ public class MainController {
         btnSepia.getStyleClass().add("btn-hud");
         if (currentPresentationTheme.equals("SEPIA")) btnSepia.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
         btnSepia.setOnAction(e -> {
-            currentPresentationTheme = "SEPIA";
+            map.setTheme("SEPIA");
+            repository.updateTheme(map.getId(), "SEPIA");
             refreshCanvas(canvas, map);
         });
 
@@ -1044,7 +1133,8 @@ public class MainController {
         btnOcean.getStyleClass().add("btn-hud");
         if (currentPresentationTheme.equals("OCEAN")) btnOcean.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
         btnOcean.setOnAction(e -> {
-            currentPresentationTheme = "OCEAN";
+            map.setTheme("OCEAN");
+            repository.updateTheme(map.getId(), "OCEAN");
             refreshCanvas(canvas, map);
         });
 
@@ -1075,6 +1165,11 @@ public class MainController {
     // ── Hierarchy tree ───────────────────────────────────────────────────────
 
     private void refreshTree(MindMap map) {
+        // Save expansion state before rebuilding (uses treeItemToNodeId while still valid)
+        if (hierarchyTree.getRoot() != null) {
+            saveExpansionState(hierarchyTree.getRoot());
+        }
+
         treeItemToNodeId.clear();
         Map<String, TreeItem<String>> itemMap = new HashMap<>();
         TreeItem<String> rootItem = null;
@@ -1099,13 +1194,31 @@ public class MainController {
         }
 
         if (rootItem != null) {
+            // Restore expansion: root always expanded, others only if previously expanded
             rootItem.setExpanded(true);
+            for (Map.Entry<String, TreeItem<String>> entry : itemMap.entrySet()) {
+                if (expandedNodeIds.contains(entry.getKey())) {
+                    entry.getValue().setExpanded(true);
+                }
+            }
+
             suppressTreeSelection = true;
             hierarchyTree.setRoot(rootItem);
             if (currentItem != null) {
                 hierarchyTree.getSelectionModel().select(currentItem);
             }
             javafx.application.Platform.runLater(() -> suppressTreeSelection = false);
+        }
+    }
+
+    private void saveExpansionState(TreeItem<String> item) {
+        String id = treeItemToNodeId.get(item);
+        if (id != null) {
+            if (item.isExpanded()) expandedNodeIds.add(id);
+            else expandedNodeIds.remove(id);
+        }
+        for (TreeItem<String> child : item.getChildren()) {
+            saveExpansionState(child);
         }
     }
 

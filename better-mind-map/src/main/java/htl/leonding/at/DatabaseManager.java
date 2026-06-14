@@ -43,18 +43,16 @@ public class DatabaseManager {
                     "FOREIGN KEY (mind_map_id) REFERENCES mind_maps(id))"
             );
 
-            // Check if user_id and sync_status columns exist in mind_maps
+            // Check which columns exist in mind_maps
             boolean hasUserId = false;
             boolean hasSyncStatus = false;
+            boolean hasTheme = false;
             try (java.sql.ResultSet rs = stmt.executeQuery("PRAGMA table_info(mind_maps)")) {
                 while (rs.next()) {
                     String columnName = rs.getString("name");
-                    if ("user_id".equals(columnName)) {
-                        hasUserId = true;
-                    }
-                    if ("sync_status".equals(columnName)) {
-                        hasSyncStatus = true;
-                    }
+                    if ("user_id".equals(columnName)) hasUserId = true;
+                    if ("sync_status".equals(columnName)) hasSyncStatus = true;
+                    if ("theme".equals(columnName)) hasTheme = true;
                 }
             }
 
@@ -63,6 +61,9 @@ public class DatabaseManager {
             }
             if (!hasSyncStatus) {
                 stmt.execute("ALTER TABLE mind_maps ADD COLUMN sync_status TEXT DEFAULT 'PENDING'");
+            }
+            if (!hasTheme) {
+                stmt.execute("ALTER TABLE mind_maps ADD COLUMN theme TEXT DEFAULT 'LIGHT'");
             }
 
             // Check if text_size and color columns exist in nodes
