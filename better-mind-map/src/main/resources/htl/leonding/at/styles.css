@@ -677,6 +677,169 @@
     -fx-border-width: 0;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   OVERVIEW — Hero Banner
+   ═══════════════════════════════════════════════════════════════ */
+.overview-hero {
+    -fx-background-color: linear-gradient(to right, #0d1117, #161b22);
+    -fx-padding: 26 32 24 32;
+    -fx-border-color: #1e2433;
+    -fx-border-width: 0 0 1 0;
+    -fx-spacing: 0;
+}
+
+.hero-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e2e8f0;
+}
+
+.hero-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #4a5568;
+}
+
+.hero-user {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #6366f1;
+    -fx-background-color: rgba(99,102,241,0.1);
+    -fx-background-radius: 20;
+    -fx-padding: 4 12;
+    -fx-border-color: rgba(99,102,241,0.25);
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   OVERVIEW — Search Bar
+   ═══════════════════════════════════════════════════════════════ */
+.overview-search-bar {
+    -fx-background-color: #0d1117;
+    -fx-padding: 12 32;
+    -fx-border-color: #1e2433;
+    -fx-border-width: 0 0 1 0;
+}
+
+.search-field {
+    -fx-background-color: #161b22;
+    -fx-text-fill: #e2e8f0;
+    -fx-prompt-text-fill: #4a5568;
+    -fx-border-color: #2a3245;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 10 14;
+    -fx-font-size: 13px;
+    -fx-pref-height: 42px;
+    -fx-highlight-fill: rgba(99,102,241,0.35);
+    -fx-highlight-text-fill: #e2e8f0;
+}
+.search-field:focused {
+    -fx-border-color: #6366f1;
+    -fx-effect: dropshadow(gaussian, rgba(99,102,241,0.2), 8, 0, 0, 0);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   OVERVIEW — ScrollPane & Section
+   ═══════════════════════════════════════════════════════════════ */
+.overview-scroll {
+    -fx-background-color: #0d1117;
+    -fx-background: #0d1117;
+    -fx-border-width: 0;
+}
+.overview-scroll .viewport {
+    -fx-background-color: #0d1117;
+}
+
+.overview-section-label {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #4a5568;
+    -fx-padding: 0 0 4 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   OVERVIEW — Map Card
+   ═══════════════════════════════════════════════════════════════ */
+.overview-card {
+    -fx-background-color: #161b22;
+    -fx-background-radius: 12;
+    -fx-border-color: #2a3245;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 12, 0, 0, 3);
+}
+
+.overview-card-hover {
+    -fx-border-color: #6366f1;
+    -fx-effect: dropshadow(gaussian, rgba(99,102,241,0.35), 22, 0.1, 0, 5);
+}
+
+.card-thumb-overlay {
+    -fx-background-color: rgba(13,17,23,0.65);
+    -fx-background-radius: 12 12 0 0;
+    -fx-alignment: center;
+}
+
+.card-info {
+    -fx-padding: 12 14 14 14;
+    -fx-background-color: #161b22;
+    -fx-background-radius: 0 0 12 12;
+}
+
+.card-name {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e2e8f0;
+}
+
+.card-badge {
+    -fx-background-color: #1e2433;
+    -fx-background-radius: 5;
+    -fx-padding: 3 8;
+    -fx-font-size: 10px;
+    -fx-text-fill: #8b94a8;
+    -fx-border-color: #2a3245;
+    -fx-border-radius: 5;
+    -fx-border-width: 1;
+}
+
+.card-meta {
+    -fx-font-size: 11px;
+    -fx-text-fill: #4a5568;
+}
+
+.card-delete-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #4a5568;
+    -fx-font-size: 13px;
+    -fx-padding: 2 6;
+    -fx-cursor: hand;
+    -fx-background-radius: 5;
+    -fx-border-width: 0;
+}
+.card-delete-btn:hover {
+    -fx-background-color: rgba(244,63,94,0.15);
+    -fx-text-fill: #f43f5e;
+}
+
+/* "Create new" dashed card */
+.overview-card-create {
+    -fx-background-color: transparent;
+    -fx-border-style: segments(8, 6) line-cap round;
+    -fx-border-width: 2;
+    -fx-border-color: #2a3245;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-effect: none;
+    -fx-min-height: 240;
+}
+.overview-card-create.overview-card-hover {
+    -fx-border-color: #6366f1;
+    -fx-effect: dropshadow(gaussian, rgba(99,102,241,0.2), 16, 0.05, 0, 3);
+}
+
 /* ── TextField in dialogs (Add Node, Edit, etc.) ── */
 .dialog-pane .text-field {
     -fx-background-color: #0d1117;
