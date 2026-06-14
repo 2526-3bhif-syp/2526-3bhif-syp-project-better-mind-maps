@@ -43,11 +43,13 @@ public class MindMapRepository {
     }
 
     public void updateNode(Node node) {
-        String sql = "UPDATE nodes SET text = ? WHERE id = ?";
+        String sql = "UPDATE nodes SET text = ?, x_coordinate = ?, y_coordinate = ? WHERE id = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, node.getText());
-            stmt.setString(2, node.getId());
+            stmt.setDouble(2, node.getXCoordinate());
+            stmt.setDouble(3, node.getYCoordinate());
+            stmt.setString(4, node.getId());
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to update node", e);
