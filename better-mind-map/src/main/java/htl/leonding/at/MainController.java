@@ -392,47 +392,8 @@ public class MainController {
             refreshCanvas(canvas, map);
             e.consume();
 
-        } else if (code == KeyCode.RIGHT) {
-            if (isOnLeftSide(map, currentNode)) {
-                navigateToParent(map, canvas);
-            } else {
-                List<Node> children = getChildren(map, currentNode);
-                if (!children.isEmpty()) {
-                    currentNode = children.get(0);
-                    refreshCanvas(canvas, map);
-                }
-            }
-            e.consume();
-
-        } else if (code == KeyCode.LEFT) {
-            if (currentNode.getParentId() == null) {
-                // Root: go to left-side children
-                List<Node> all = getChildren(map, currentNode);
-                int rightCount = (all.size() + 1) / 2;
-                List<Node> leftChildren = all.subList(rightCount, all.size());
-                if (!leftChildren.isEmpty()) {
-                    currentNode = leftChildren.get(0);
-                    refreshCanvas(canvas, map);
-                }
-            } else if (isOnLeftSide(map, currentNode)) {
-                // Left-side node: go deeper to children
-                List<Node> children = getChildren(map, currentNode);
-                if (!children.isEmpty()) {
-                    currentNode = children.get(0);
-                    refreshCanvas(canvas, map);
-                }
-            } else {
-                // Right-side node: go to parent
-                navigateToParent(map, canvas);
-            }
-            e.consume();
-
-        } else if (code == KeyCode.UP) {
-            navigateSibling(map, canvas, -1);
-            e.consume();
-
-        } else if (code == KeyCode.DOWN) {
-            navigateSibling(map, canvas, 1);
+        } else if (code == KeyCode.RIGHT || code == KeyCode.LEFT || code == KeyCode.UP || code == KeyCode.DOWN) {
+            navigateSpatial(map, canvas, code);
             e.consume();
 
         } else if (code == KeyCode.F2) {
@@ -454,38 +415,63 @@ public class MainController {
         }
     }
 
-    private void navigateSibling(MindMap map, Pane canvas, int direction) {
-        if (currentNode.getParentId() == null) return;
-        boolean onLeft = isOnLeftSide(map, currentNode);
-        List<Node> siblings = map.getNodes().stream()
-                .filter(n -> currentNode.getParentId().equals(n.getParentId()))
-                .filter(n -> isOnLeftSide(map, n) == onLeft)
-                .collect(Collectors.toList());
-        int idx = siblings.indexOf(currentNode);
-        if (idx >= 0) {
-            int newIdx = idx + direction;
-            if (newIdx >= 0 && newIdx < siblings.size()) {
-                currentNode = siblings.get(newIdx);
-                refreshCanvas(canvas, map);
+    private void navigateSpatial(MindMap map, Pane canvas, KeyCode code) {
+        if (currentNode == null) return;
+
+        double ax = currentNode.getXCoordinate();
+        double ay = currentNode.getYCoordinate();
+
+        Node bestCandidate = null;
+        double bestScore = Double.MAX_VALUE;
+
+        // Weight factor to penalize orthogonal deviation
+        double k = 2.0;
+
+        for (Node node : map.getNodes()) {
+            if (node == currentNode) continue;
+
+            double bx = node.getXCoordinate();
+            double by = node.getYCoordinate();
+
+            double dx = bx - ax;
+            double dy = by - ay;
+            double score = Double.MAX_VALUE;
+
+            switch (code) {
+                case RIGHT:
+                    if (dx > 5.0) {
+                        score = dx + k * Math.abs(dy);
+                    }
+                    break;
+                case LEFT:
+                    if (dx < -5.0) {
+                        score = -dx + k * Math.abs(dy);
+                    }
+                    break;
+                case DOWN:
+                    if (dy > 5.0) {
+                        score = dy + k * Math.abs(dx);
+                    }
+                    break;
+                case UP:
+                    if (dy < -5.0) {
+                        score = -dy + k * Math.abs(dx);
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            if (score < bestScore) {
+                bestScore = score;
+                bestCandidate = node;
             }
         }
-    }
 
-    private void navigateToParent(MindMap map, Pane canvas) {
-        if (currentNode.getParentId() == null) return;
-        map.getNodes().stream()
-                .filter(n -> n.getId().equals(currentNode.getParentId()))
-                .findFirst()
-                .ifPresent(parent -> {
-                    currentNode = parent;
-                    refreshCanvas(canvas, map);
-                });
-    }
-
-    private boolean isOnLeftSide(MindMap map, Node node) {
-        if (node.getParentId() == null) return false;
-        Node root = getRoot(map);
-        return root != null && node.getXCoordinate() < root.getXCoordinate();
+        if (bestCandidate != null) {
+            currentNode = bestCandidate;
+            refreshCanvas(canvas, map);
+        }
     }
 
     private void promptAddChild(MindMap map, Pane canvas, Node parent) {
