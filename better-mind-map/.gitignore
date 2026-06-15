@@ -6,7 +6,7 @@ target/
 data/mindmaps.db
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
+.idea/modules.xmlaestT
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
