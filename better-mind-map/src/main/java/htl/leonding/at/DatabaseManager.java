@@ -99,6 +99,18 @@ public class DatabaseManager {
                 stmt.execute("ALTER TABLE nodes ADD COLUMN description TEXT DEFAULT ''");
             }
 
+            // icon + badge columns (added in ki-testing feature)
+            boolean hasIcon = false, hasBadge = false;
+            try (java.sql.ResultSet rs3 = stmt.executeQuery("PRAGMA table_info(nodes)")) {
+                while (rs3.next()) {
+                    String col = rs3.getString("name");
+                    if ("icon".equals(col))  hasIcon  = true;
+                    if ("badge".equals(col)) hasBadge = true;
+                }
+            }
+            if (!hasIcon)  stmt.execute("ALTER TABLE nodes ADD COLUMN icon TEXT DEFAULT ''");
+            if (!hasBadge) stmt.execute("ALTER TABLE nodes ADD COLUMN badge TEXT DEFAULT ''");
+
         } catch (SQLException e) {
             throw new RuntimeException("Failed to initialize database", e);
         }

@@ -10,6 +10,8 @@ public class Node {
     private String _color;
     private String _shape;
     private String _description;
+    private String _icon;
+    private String _badge;
 
     public Node(String id, String text, String parentId, double xCoordinate, double yCoordinate) {
         this(id, text, parentId, xCoordinate, yCoordinate, 12.0, "#ffffff");
@@ -25,6 +27,8 @@ public class Node {
         _color = (color == null || color.isEmpty()) ? "#ffffff" : color;
         _shape = "ROUNDED_RECT";
         _description = "";
+        _icon = "";
+        _badge = "";
     }
 
     public String getId() { return _id; }
@@ -43,4 +47,8 @@ public class Node {
     public void setShape(String shape) { _shape = shape; }
     public String getDescription() { return _description == null ? "" : _description; }
     public void setDescription(String description) { _description = description; }
+    public String getIcon() { return _icon == null ? "" : _icon; }
+    public void setIcon(String icon) { _icon = icon == null ? "" : icon; }
+    public String getBadge() { return _badge == null ? "" : _badge; }
+    public void setBadge(String badge) { _badge = badge == null ? "" : badge; }
 }

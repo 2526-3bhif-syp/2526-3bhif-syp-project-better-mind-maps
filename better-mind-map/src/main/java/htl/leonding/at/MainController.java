@@ -849,26 +849,49 @@ public class MainController {
     private static final double NODE_ARC = 10;
 
     private Shape buildNodeShape(String shapeName, double nodeW, double nodeH) {
+        if (shapeName == null) shapeName = "ROUNDED_RECT";
         switch (shapeName) {
             case "PILL": {
                 Rectangle r = new Rectangle(nodeW, nodeH);
-                r.setArcWidth(nodeH);
-                r.setArcHeight(nodeH);
+                r.setArcWidth(nodeH); r.setArcHeight(nodeH);
                 return r;
             }
             case "ELLIPSE":
                 return new Ellipse(nodeW / 2, nodeH / 2);
             case "DIAMOND":
+                return new Polygon(nodeW/2,0, nodeW,nodeH/2, nodeW/2,nodeH, 0,nodeH/2);
+            case "HEXAGON": {
+                double q = nodeH * 0.26;
                 return new Polygon(
-                    nodeW / 2, 0.0,
-                    nodeW,     nodeH / 2,
-                    nodeW / 2, nodeH,
-                    0.0,       nodeH / 2
-                );
+                    nodeW*0.5,0, nodeW,q, nodeW,nodeH-q,
+                    nodeW*0.5,nodeH, 0,nodeH-q, 0,q);
+            }
+            case "STAR": {
+                double[] pts = new double[20];
+                double cx = nodeW/2, cy = nodeH/2;
+                double outer = Math.min(nodeW, nodeH)/2 * 0.9;
+                double inner = outer * 0.42;
+                for (int i = 0; i < 10; i++) {
+                    double a = Math.PI * i / 5 - Math.PI / 2;
+                    double r = (i % 2 == 0) ? outer : inner;
+                    pts[i*2] = cx + r * Math.cos(a);
+                    pts[i*2+1] = cy + r * Math.sin(a);
+                }
+                return new Polygon(pts);
+            }
+            case "PARALLELOGRAM": {
+                double sk = nodeH * 0.28;
+                return new Polygon(sk,0, nodeW,0, nodeW-sk,nodeH, 0,nodeH);
+            }
+            case "OCTAGON": {
+                double cut = Math.min(nodeW, nodeH) * 0.22;
+                return new Polygon(
+                    cut,0, nodeW-cut,0, nodeW,cut, nodeW,nodeH-cut,
+                    nodeW-cut,nodeH, cut,nodeH, 0,nodeH-cut, 0,cut);
+            }
             default: { // ROUNDED_RECT
                 Rectangle r = new Rectangle(nodeW, nodeH);
-                r.setArcWidth(NODE_ARC * 2);
-                r.setArcHeight(NODE_ARC * 2);
+                r.setArcWidth(NODE_ARC * 2); r.setArcHeight(NODE_ARC * 2);
                 return r;
             }
         }
@@ -929,11 +952,16 @@ public class MainController {
                     : getContrastColor(colStr);
         }
 
-        Label label = new Label(node.getText());
         String shapeName = node.getShape();
         double labelMaxW = "DIAMOND".equals(shapeName) ? nodeW * 0.52
                          : "ELLIPSE".equals(shapeName)  ? nodeW * 0.68
-                         : nodeW - 14;
+                         : nodeW - 16;
+
+        // Icon prefix
+        String icon = node.getIcon();
+        String displayText = (icon != null && !icon.isEmpty()) ? icon + "  " + node.getText() : node.getText();
+
+        Label label = new Label(displayText);
         label.setMaxWidth(labelMaxW);
         label.setWrapText(true);
         label.setTextFill(textColor);
@@ -943,6 +971,20 @@ public class MainController {
         );
 
         nodeView.getChildren().addAll(rect, label);
+
+        // Badge overlay (top-right corner)
+        String badge = node.getBadge();
+        if (badge != null && !badge.isEmpty()) {
+            String[] bd = findBadge(badge);
+            if (bd != null) {
+                Label badgeLbl = new Label(bd[0]);
+                badgeLbl.setStyle("-fx-font-size: 11px; -fx-padding: 1 4; -fx-background-radius: 6;"
+                        + " -fx-background-color: " + bd[2] + "; -fx-text-fill: white;");
+                StackPane.setAlignment(badgeLbl, Pos.TOP_RIGHT);
+                StackPane.setMargin(badgeLbl, new Insets(-6, -6, 0, 0));
+                nodeView.getChildren().add(badgeLbl);
+            }
+        }
 
         nodeView.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && !e.isConsumed()) {
@@ -1011,7 +1053,35 @@ public class MainController {
         MenuItem editDesc = new MenuItem("📝  Beschreibung bearbeiten");
         editDesc.setOnAction(e -> showEditDescriptionDialog(node, canvas, map));
 
-        contextMenu.getItems().addAll(addChild, editText, new SeparatorMenuItem(), editDesc, new SeparatorMenuItem(), deleteNode);
+        MenuItem styleNode = new MenuItem("🎨  Stil bearbeiten");
+        styleNode.setOnAction(e -> NodeStyleEditor.show(node, repository,
+                () -> refreshCanvas(canvas, map), canvas.getScene().getWindow()));
+
+        MenuItem duplicate = new MenuItem("📋  Duplizieren");
+        duplicate.setOnAction(e -> {
+            if (node.getParentId() != null) {
+                Node dup = service.addNode(map, node.getParentId(), node.getText());
+                dup.setShape(node.getShape());
+                dup.setColor(node.getColor());
+                dup.setTextSize(node.getTextSize());
+                dup.setIcon(node.getIcon());
+                dup.setBadge(node.getBadge());
+                dup.setDescription(node.getDescription());
+                repository.updateNode(dup);
+                currentNode = dup;
+                refreshCanvas(canvas, map);
+            }
+        });
+
+        contextMenu.getItems().addAll(
+            addChild, editText,
+            new SeparatorMenuItem(),
+            styleNode,
+            new SeparatorMenuItem(),
+            editDesc, duplicate,
+            new SeparatorMenuItem(),
+            deleteNode
+        );
         nodeView.setOnContextMenuRequested(e ->
                 contextMenu.show(nodeView, e.getScreenX(), e.getScreenY())
         );
@@ -1026,12 +1096,14 @@ public class MainController {
         double textW = text.length() * avgCharW + 28;
         double minW = 90 + Math.max(0, (fontSize - 12) * 4);
         double maxW = 210;
-        // Diamond/Ellipse need more horizontal room for readable text
-        String shape = node.getShape();
-        if ("DIAMOND".equals(shape) || "ELLIPSE".equals(shape)) {
-            minW = Math.max(minW, 110);
-            maxW = 230;
-            textW *= 1.25;
+        String shape = node.getShape() == null ? "ROUNDED_RECT" : node.getShape();
+        switch (shape) {
+            case "DIAMOND": case "ELLIPSE": case "HEXAGON": case "OCTAGON":
+                minW = Math.max(minW, 110); maxW = 230; textW *= 1.25; break;
+            case "STAR":
+                minW = Math.max(minW, 110); maxW = 200; break;
+            case "PARALLELOGRAM":
+                minW = Math.max(minW, 100); maxW = 220; textW *= 1.1; break;
         }
         return Math.max(minW, Math.min(maxW, textW));
     }
@@ -1040,20 +1112,29 @@ public class MainController {
         String text = node.getText() == null ? "" : node.getText();
         double fontSize = node.getTextSize();
         double nodeW = getNodeWidth(node);
-        // Effective inner width depends on shape
-        String shape = node.getShape();
+        String shape = node.getShape() == null ? "ROUNDED_RECT" : node.getShape();
         double innerW = "DIAMOND".equals(shape) ? nodeW * 0.5
                       : "ELLIPSE".equals(shape)  ? nodeW * 0.65
+                      : "STAR".equals(shape)     ? nodeW * 0.45
+                      : "HEXAGON".equals(shape)  ? nodeW * 0.70
                       : nodeW - 20;
         double avgCharW = fontSize * 0.57;
         double charsPerLine = Math.max(1, innerW / avgCharW);
         int lines = Math.max(1, (int) Math.ceil(text.length() / charsPerLine));
         double lineH = fontSize + 5;
         double minH = fontSize + 20;
-        // Diamond/Ellipse need extra vertical space
-        if ("DIAMOND".equals(shape)) minH = Math.max(minH, nodeW * 0.6);
-        if ("ELLIPSE".equals(shape))  minH = Math.max(minH, nodeW * 0.5);
+        if ("DIAMOND".equals(shape))       minH = Math.max(minH, nodeW * 0.6);
+        if ("ELLIPSE".equals(shape))        minH = Math.max(minH, nodeW * 0.5);
+        if ("STAR".equals(shape))           minH = Math.max(minH, nodeW * 0.9);
+        if ("HEXAGON".equals(shape))        minH = Math.max(minH, nodeW * 0.6);
         return Math.max(minH, lines * lineH + 16);
+    }
+
+    private String[] findBadge(String key) {
+        for (String[] b : NodeStyleEditor.BADGES) {
+            if (b[1].equals(key)) return b;
+        }
+        return null;
     }
 
     private Color getContrastColor(String hexColor) {
