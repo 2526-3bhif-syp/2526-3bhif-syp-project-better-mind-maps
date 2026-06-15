@@ -131,6 +131,15 @@ public class MainController {
         currentNode = getRoot(map);
         renderMindMap(map);
         updateSyncStatusLabel(map);
+
+        // Attach tutorial when navigated from overview (no pre-existing mainController)
+        if (TutorialManager.isActive()) {
+            Platform.runLater(() -> {
+                if (rootPane.getScene() != null)
+                    TutorialManager.attachToEditorScene(
+                        (javafx.scene.layout.Pane) rootPane.getScene().getRoot());
+            });
+        }
     }
 
     public Scene getRootScene() {
