@@ -146,6 +146,12 @@ public class MainController {
         return rootPane.getScene();
     }
 
+    public javafx.scene.Parent getRootNode() {
+        // Remove from tutorial wrapper if still inside one
+        if (rootPane.getParent() instanceof Pane p) p.getChildren().remove(rootPane);
+        return rootPane;
+    }
+
     public void openMapAsTab(MindMap map) {
         for (Tab tab : tabPane.getTabs()) {
             if (tab.getUserData() instanceof MindMap && ((MindMap) tab.getUserData()).getId().equals(map.getId())) {
@@ -170,12 +176,12 @@ public class MainController {
     private void onBackToOverview() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("overview-view.fxml"));
-            Scene scene = new Scene(loader.load(), 1024, 768);
+            javafx.scene.Parent root = loader.load();
             OverviewController controller = loader.getController();
             controller.setMainController(this);
             Stage stage = (Stage) tabPane.getScene().getWindow();
-            stage.setScene(scene);
-            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
+            stage.getScene().setRoot(root);
+            WindowsDarkMode.applyToAllWindows();
         } catch (IOException e) {
             throw new RuntimeException("Failed to open overview", e);
         }
@@ -221,16 +227,15 @@ public class MainController {
 
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("ai-chat-view.fxml"));
-            Scene chatScene = new Scene(loader.load(), 1280, 800);
+            javafx.scene.Parent chatRoot = loader.load();
             AiChatController chatCtrl = loader.getController();
             chatCtrl.loadExistingMap(activeMap);
             if (userApiKey != null) chatCtrl.setApiKey(userApiKey);
 
-            Scene currentScene = rootPane.getScene();
             Stage stage = (Stage) rootPane.getScene().getWindow();
             final MindMap mapRef = activeMap;
 
-            chatCtrl.setReturnScene(currentScene, () -> Platform.runLater(() -> {
+            chatCtrl.setReturnScene(rootPane.getScene(), () -> Platform.runLater(() -> {
                 // Rebuild the tab so the updated map is re-rendered
                 tabPane.getTabs().removeIf(t ->
                     t.getUserData() instanceof MindMap &&
@@ -239,8 +244,8 @@ public class MainController {
                 renderMindMap(mapRef);
             }));
 
-            stage.setScene(chatScene);
-            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
+            stage.getScene().setRoot(chatRoot);
+            WindowsDarkMode.applyToAllWindows();
         } catch (IOException e) {
             e.printStackTrace();
         }

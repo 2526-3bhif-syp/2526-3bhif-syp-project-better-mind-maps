@@ -415,18 +415,18 @@ public class OverviewController {
     private void openEditor(MindMap map) {
         Stage stage = (Stage) cardsFlow.getScene().getWindow();
         if (mainController != null) {
-            stage.setScene(mainController.getRootScene());
-            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
+            stage.getScene().setRoot(mainController.getRootNode());
+            WindowsDarkMode.applyToAllWindows();
             mainController.openMapAsTab(map);
             return;
         }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("main-view.fxml"));
-            Scene scene = new Scene(loader.load(), 1280, 800);
+            javafx.scene.Parent mainRoot = loader.load();
             MainController controller = loader.getController();
             controller.loadMindMap(map);
-            stage.setScene(scene);
-            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
+            stage.getScene().setRoot(mainRoot);
+            WindowsDarkMode.applyToAllWindows();
         } catch (IOException e) {
             throw new RuntimeException("Failed to open editor", e);
         }
@@ -437,10 +437,9 @@ public class OverviewController {
         SessionManager.logout();
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("login-view.fxml"));
-            Scene scene = new Scene(loader.load(), 1024, 768);
             Stage stage = (Stage) cardsFlow.getScene().getWindow();
-            stage.setScene(scene);
-            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
+            stage.getScene().setRoot(loader.load());
+            WindowsDarkMode.applyToAllWindows();
         } catch (IOException e) {
             throw new RuntimeException("Failed to load login screen", e);
         }

@@ -202,7 +202,7 @@ public class TutorialManager {
 
         FadeTransition ft = new FadeTransition(Duration.millis(250), ol);
         ft.setToValue(0);
-        ft.setOnFinished(e -> { wr.getChildren().remove(or); sc.setRoot(or); });
+        ft.setOnFinished(e -> { wr.getChildren().remove(or); if (sc.getRoot() == wr) sc.setRoot(or); });
         ft.play();
     }
 
@@ -237,7 +237,7 @@ public class TutorialManager {
 
         FadeTransition ft = new FadeTransition(Duration.millis(250), ol);
         ft.setToValue(0);
-        ft.setOnFinished(e -> { wr.getChildren().remove(or); sc.setRoot(or); });
+        ft.setOnFinished(e -> { wr.getChildren().remove(or); if (sc.getRoot() == wr) sc.setRoot(or); });
         ft.play();
     }
 
