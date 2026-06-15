@@ -1298,101 +1298,45 @@ public class MainController {
         // Selected Node Section — only visible outside presentation mode
         if (!isPresentationModeActive) {
             if (currentNode != null) {
-                VBox nodeSection = new VBox();
+                VBox nodeSection = new VBox(10);
                 nodeSection.getStyleClass().add("hud-section");
 
-                Label selectedLabel = new Label("Selected Node: " + currentNode.getText());
+                Label selectedLabel = new Label(currentNode.getText());
                 selectedLabel.getStyleClass().add("hud-label");
-                selectedLabel.setStyle("-fx-font-weight: bold;");
-                nodeSection.getChildren().add(selectedLabel);
+                selectedLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #f1f5f9; -fx-font-size: 13px;");
+                selectedLabel.setMaxWidth(200);
+                selectedLabel.setWrapText(true);
 
-                // Font Size Controls
-                HBox sizeBox = new HBox();
-                sizeBox.setSpacing(10);
-                sizeBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-
-                Label sizeLabel = new Label("Text Size: " + (int) currentNode.getTextSize() + "px");
-                sizeLabel.getStyleClass().add("hud-label");
-
-                Button btnMinus = new Button("A-");
-                btnMinus.getStyleClass().add("btn-hud");
-                btnMinus.setOnAction(e -> {
-                    double newSize = Math.max(8.0, currentNode.getTextSize() - 2.0);
-                    currentNode.setTextSize(newSize);
-                    repository.updateNode(currentNode);
-                    refreshCanvas(canvas, map);
-                });
-
-                Button btnPlus = new Button("A+");
-                btnPlus.getStyleClass().add("btn-hud");
-                btnPlus.setOnAction(e -> {
-                    double newSize = Math.min(36.0, currentNode.getTextSize() + 2.0);
-                    currentNode.setTextSize(newSize);
-                    repository.updateNode(currentNode);
-                    refreshCanvas(canvas, map);
-                });
-
-                sizeBox.getChildren().addAll(btnMinus, btnPlus, sizeLabel);
-                nodeSection.getChildren().add(sizeBox);
-
-                // Color preset swatches
-                HBox colorBox = new HBox();
-                colorBox.setSpacing(6);
-                colorBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-
-                Label colorLabel = new Label("Color: ");
-                colorLabel.getStyleClass().add("hud-label");
-                colorBox.getChildren().add(colorLabel);
-
-                String[] colorPresets = {"#ffffff", "#3498db", "#2ecc71", "#f1c40f", "#e67e22", "#e74c3c", "#9b59b6"};
-                for (String col : colorPresets) {
-                    Button swatch = new Button();
-                    swatch.getStyleClass().add("color-swatch");
-                    swatch.setStyle("-fx-background-color: " + col + ";");
-                    swatch.setOnAction(e -> {
-                        currentNode.setColor(col);
+                // Color preview strip (read-only, opens full editor on click)
+                HBox colorStrip = new HBox(4);
+                colorStrip.setAlignment(Pos.CENTER_LEFT);
+                for (String hex : NodeStyleEditor.PRESETS) {
+                    javafx.scene.shape.Rectangle sw = new javafx.scene.shape.Rectangle(14, 14);
+                    sw.setArcWidth(4); sw.setArcHeight(4);
+                    sw.setFill(javafx.scene.paint.Color.web(hex));
+                    sw.setCursor(javafx.scene.Cursor.HAND);
+                    sw.setOnMouseClicked(e -> {
+                        currentNode.setColor(hex);
                         repository.updateNode(currentNode);
                         refreshCanvas(canvas, map);
                     });
-                    colorBox.getChildren().add(swatch);
+                    colorStrip.getChildren().add(sw);
                 }
-                nodeSection.getChildren().add(colorBox);
 
-                // Shape picker
-                HBox shapeBox = new HBox();
-                shapeBox.setSpacing(5);
-                shapeBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                Button openEditor = new Button("🎨  Vollständig bearbeiten");
+                openEditor.setStyle("-fx-background-color: #6366f1; -fx-text-fill: white; "
+                        + "-fx-font-size: 12px; -fx-padding: 7 14; -fx-background-radius: 8; "
+                        + "-fx-cursor: hand; -fx-border-width: 0;");
+                final Node capturedNode = currentNode;
+                openEditor.setOnAction(e -> NodeStyleEditor.show(
+                        capturedNode, repository,
+                        () -> refreshCanvas(canvas, map),
+                        canvas.getScene().getWindow()));
 
-                Label shapeLabel = new Label("Shape: ");
-                shapeLabel.getStyleClass().add("hud-label");
-                shapeBox.getChildren().add(shapeLabel);
-
-                String[][] shapes = {
-                    {"ROUNDED_RECT", "▭"},
-                    {"PILL",         "⬬"},
-                    {"ELLIPSE",      "⬭"},
-                    {"DIAMOND",      "◇"}
-                };
-                for (String[] s : shapes) {
-                    String shapeKey = s[0];
-                    Button shapeBtn = new Button(s[1]);
-                    shapeBtn.getStyleClass().add("btn-hud");
-                    shapeBtn.setStyle("-fx-font-size: 14px; -fx-padding: 3 8;" +
-                        (currentNode.getShape().equals(shapeKey)
-                            ? " -fx-border-color: #6366f1; -fx-text-fill: #a5b4fc;"
-                            : ""));
-                    shapeBtn.setOnAction(e -> {
-                        currentNode.setShape(shapeKey);
-                        repository.updateNode(currentNode);
-                        refreshCanvas(canvas, map);
-                    });
-                    shapeBox.getChildren().add(shapeBtn);
-                }
-                nodeSection.getChildren().add(shapeBox);
-
+                nodeSection.getChildren().addAll(selectedLabel, colorStrip, openEditor);
                 hud.getChildren().add(nodeSection);
             } else {
-                Label noSelectLabel = new Label("Select a node to style it");
+                Label noSelectLabel = new Label("Node auswählen um Stil zu bearbeiten");
                 noSelectLabel.getStyleClass().add("hud-label");
                 noSelectLabel.setStyle("-fx-font-style: italic; -fx-text-fill: #a5b1c2;");
                 hud.getChildren().add(noSelectLabel);
