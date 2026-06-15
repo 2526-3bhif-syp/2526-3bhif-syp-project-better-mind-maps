@@ -76,6 +76,18 @@ public class MindMapRepository {
         }
     }
 
+    public void updateMapName(String mapId, String newName) {
+        String sql = "UPDATE mind_maps SET name = ? WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, newName);
+            stmt.setString(2, mapId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update map name", e);
+        }
+    }
+
     public void updateTheme(String mapId, String theme) {
         String sql = "UPDATE mind_maps SET theme = ? WHERE id = ?";
         try (Connection conn = DatabaseManager.getConnection();

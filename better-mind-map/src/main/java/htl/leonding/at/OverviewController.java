@@ -132,17 +132,24 @@ public class OverviewController {
         info.getStyleClass().add("card-info");
 
         // Title row
-        HBox titleRow = new HBox(8);
+        HBox titleRow = new HBox(6);
         titleRow.setAlignment(Pos.CENTER_LEFT);
         Label nameLabel = new Label(map.getName());
         nameLabel.getStyleClass().add("card-name");
-        nameLabel.setMaxWidth(190);
+        nameLabel.setMaxWidth(160);
         HBox.setHgrow(nameLabel, Priority.ALWAYS);
+
+        Button renameBtn = new Button("✏");
+        renameBtn.getStyleClass().add("card-delete-btn");
+        renameBtn.setStyle("-fx-text-fill: #6366f1;");
+        renameBtn.setOnAction(e -> { onRenameMap(map, nameLabel); e.consume(); });
+        renameBtn.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_CLICKED,
+            javafx.event.Event::consume);
 
         String theme = map.getTheme() == null ? "LIGHT" : map.getTheme();
         Label themeBadge = new Label(themeIcon(theme) + " " + capitalize(theme));
         themeBadge.getStyleClass().add("card-badge");
-        titleRow.getChildren().addAll(nameLabel, themeBadge);
+        titleRow.getChildren().addAll(nameLabel, renameBtn, themeBadge);
 
         // Meta row
         HBox metaRow = new HBox(10);
@@ -354,23 +361,37 @@ public class OverviewController {
 
     @FXML
     private void onNewMap() {
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("New Mind Map");
-        dialog.setHeaderText("Neue Mind Map erstellen");
+        TextInputDialog nameDialog = new TextInputDialog();
+        nameDialog.setTitle("New Mind Map");
+        nameDialog.setHeaderText("Neue Mind Map erstellen");
+        nameDialog.setContentText("Name der Mind Map:");
+        applyTheme(nameDialog);
+        Optional<String> nameResult = nameDialog.showAndWait();
+        if (nameResult.isEmpty() || nameResult.get().trim().isEmpty()) return;
+        MindMap map = service.createMindMap(nameResult.get().trim());
+        openEditor(map);
+    }
+
+    private void onRenameMap(MindMap map, Label nameLabel) {
+        TextInputDialog dialog = new TextInputDialog(map.getName());
+        dialog.setTitle("Mind Map umbenennen");
+        dialog.setHeaderText("Neuer Name für \"" + map.getName() + "\"");
         dialog.setContentText("Name:");
         applyTheme(dialog);
-        Optional<String> result = dialog.showAndWait();
-        result.map(String::trim).filter(s -> !s.isEmpty()).ifPresent(name -> {
-            MindMap map = service.createMindMap(name);
-            openEditor(map);
-        });
+        dialog.showAndWait()
+            .map(String::trim).filter(s -> !s.isEmpty())
+            .ifPresent(newName -> {
+                map.setName(newName);
+                repository.updateMapName(map.getId(), newName);
+                nameLabel.setText(newName);
+            });
     }
 
     private void openEditor(MindMap map) {
         Stage stage = (Stage) cardsFlow.getScene().getWindow();
         if (mainController != null) {
             stage.setScene(mainController.getRootScene());
-            Platform.runLater(() -> stage.setMaximized(true));
+            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
             mainController.openMapAsTab(map);
             return;
         }
@@ -380,7 +401,7 @@ public class OverviewController {
             MainController controller = loader.getController();
             controller.loadMindMap(map);
             stage.setScene(scene);
-            Platform.runLater(() -> stage.setMaximized(true));
+            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
         } catch (IOException e) {
             throw new RuntimeException("Failed to open editor", e);
         }
@@ -394,7 +415,7 @@ public class OverviewController {
             Scene scene = new Scene(loader.load(), 1024, 768);
             Stage stage = (Stage) cardsFlow.getScene().getWindow();
             stage.setScene(scene);
-            Platform.runLater(() -> stage.setMaximized(true));
+            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
         } catch (IOException e) {
             throw new RuntimeException("Failed to load login screen", e);
         }

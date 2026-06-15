@@ -13,13 +13,18 @@ public class MindMapService {
     }
 
     public MindMap createMindMap(String name) {
-        if (name == null || name.trim().isEmpty()) {
+        return createMindMap(name, name);
+    }
+
+    public MindMap createMindMap(String mapName, String rootName) {
+        if (mapName == null || mapName.trim().isEmpty()) {
             throw new IllegalArgumentException("Name darf nicht leer sein");
         }
-        MindMap mindMap = new MindMap(UUID.randomUUID().toString(), name);
+        if (rootName == null || rootName.trim().isEmpty()) rootName = mapName;
+        MindMap mindMap = new MindMap(UUID.randomUUID().toString(), mapName);
         String userId = SessionManager.getCurrentUser() != null ? SessionManager.getCurrentUser().getId() : null;
         mindMap.setUserId(userId);
-        Node root = new Node(UUID.randomUUID().toString(), name, null, 400, 300);
+        Node root = new Node(UUID.randomUUID().toString(), rootName, null, 400, 300);
         mindMap.addNode(root);
         repository.save(mindMap);
         return mindMap;

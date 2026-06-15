@@ -27,6 +27,10 @@ public class MindMap {
         return _name;
     }
 
+    public void setName(String name) {
+        this._name = name;
+    }
+
     public String getUserId() {
         return userId;
     }
