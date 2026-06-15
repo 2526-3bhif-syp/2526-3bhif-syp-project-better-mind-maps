@@ -393,6 +393,7 @@ public class OverviewController {
         Optional<String> nameResult = nameDialog.showAndWait();
         if (nameResult.isEmpty() || nameResult.get().trim().isEmpty()) return;
         MindMap map = service.createMindMap(nameResult.get().trim());
+        TutorialManager.onAction(TutorialManager.TutorialAction.MAP_CREATED);
         openEditor(map);
     }
 

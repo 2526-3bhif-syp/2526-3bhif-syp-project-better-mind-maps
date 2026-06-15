@@ -146,6 +146,15 @@ public class MainController {
         }
         currentNode = getRoot(map);
         renderMindMap(map);
+
+        // Attach tutorial overlay to editor scene for interactive steps
+        if (TutorialManager.isActive()) {
+            Platform.runLater(() -> {
+                if (tabPane.getScene() != null)
+                    TutorialManager.attachToEditorScene(
+                        (javafx.scene.layout.Pane) tabPane.getScene().getRoot());
+            });
+        }
     }
 
     @FXML
@@ -659,6 +668,7 @@ public class MainController {
             currentNode = newNode;
             refreshCanvas(canvas, map);
             canvas.requestFocus();
+            TutorialManager.onAction(TutorialManager.TutorialAction.NODE_ADDED);
         });
     }
 
@@ -1055,7 +1065,10 @@ public class MainController {
 
         MenuItem styleNode = new MenuItem("🎨  Stil bearbeiten");
         styleNode.setOnAction(e -> NodeStyleEditor.show(node, repository,
-                () -> refreshCanvas(canvas, map), canvas.getScene().getWindow()));
+                () -> {
+                    refreshCanvas(canvas, map);
+                    TutorialManager.onAction(TutorialManager.TutorialAction.NODE_STYLED);
+                }, canvas.getScene().getWindow()));
 
         MenuItem duplicate = new MenuItem("📋  Duplizieren");
         duplicate.setOnAction(e -> {
