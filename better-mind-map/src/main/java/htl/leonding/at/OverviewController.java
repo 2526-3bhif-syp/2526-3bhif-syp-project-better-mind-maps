@@ -361,27 +361,14 @@ public class OverviewController {
 
     @FXML
     private void onNewMap() {
-        // Step 1: Map name
         TextInputDialog nameDialog = new TextInputDialog();
         nameDialog.setTitle("New Mind Map");
-        nameDialog.setHeaderText("Schritt 1 / 2 — Mind Map Name");
+        nameDialog.setHeaderText("Neue Mind Map erstellen");
         nameDialog.setContentText("Name der Mind Map:");
         applyTheme(nameDialog);
         Optional<String> nameResult = nameDialog.showAndWait();
         if (nameResult.isEmpty() || nameResult.get().trim().isEmpty()) return;
-        String mapName = nameResult.get().trim();
-
-        // Step 2: Root node name
-        TextInputDialog rootDialog = new TextInputDialog(mapName);
-        rootDialog.setTitle("New Mind Map");
-        rootDialog.setHeaderText("Schritt 2 / 2 — Hauptknoten");
-        rootDialog.setContentText("Name des Hauptknotens:");
-        applyTheme(rootDialog);
-        Optional<String> rootResult = rootDialog.showAndWait();
-        if (rootResult.isEmpty() || rootResult.get().trim().isEmpty()) return;
-        String rootName = rootResult.get().trim();
-
-        MindMap map = service.createMindMap(mapName, rootName);
+        MindMap map = service.createMindMap(nameResult.get().trim());
         openEditor(map);
     }
 

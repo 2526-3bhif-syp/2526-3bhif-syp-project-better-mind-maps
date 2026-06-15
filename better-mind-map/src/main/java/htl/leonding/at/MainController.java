@@ -165,27 +165,14 @@ public class MainController {
 
     @FXML
     public void onCreateNewMap() {
-        // Step 1: map name
         TextInputDialog nameDialog = new TextInputDialog();
         nameDialog.setTitle("New Mind Map");
-        nameDialog.setHeaderText("Schritt 1 / 2 — Mind Map Name");
+        nameDialog.setHeaderText("Neue Mind Map");
         nameDialog.setContentText("Name der Mind Map:");
         applyTheme(nameDialog);
         Optional<String> nameResult = nameDialog.showAndWait();
         if (nameResult.isEmpty() || nameResult.get().trim().isEmpty()) return;
-        String mapName = nameResult.get().trim();
-
-        // Step 2: root node name
-        TextInputDialog rootDialog = new TextInputDialog(mapName);
-        rootDialog.setTitle("New Mind Map");
-        rootDialog.setHeaderText("Schritt 2 / 2 — Hauptknoten");
-        rootDialog.setContentText("Name des Hauptknotens:");
-        applyTheme(rootDialog);
-        Optional<String> rootResult = rootDialog.showAndWait();
-        if (rootResult.isEmpty() || rootResult.get().trim().isEmpty()) return;
-        String rootName = rootResult.get().trim();
-
-        MindMap map = service.createMindMap(mapName, rootName);
+        MindMap map = service.createMindMap(nameResult.get().trim());
         currentNode = getRoot(map);
         renderMindMap(map);
     }
@@ -196,54 +183,66 @@ public class MainController {
 
     @FXML
     public void onOpenAiChat() {
-        TextInputDialog dialog = new TextInputDialog("");
-        dialog.setTitle("✨ AI Mindmap Assistant");
-        dialog.setHeaderText("Worüber möchtest du eine Mindmap erstellen?");
-        dialog.setContentText("Thema (z.B. 'Aktien', 'Programmieren', 'Geschichte'):");
-        dialog.getDialogPane().setPrefWidth(500);
-        applyTheme(dialog);
+        // Use the currently open map; if none, create a new one
+        Tab activeTab = tabPane.getSelectionModel().getSelectedItem();
+        MindMap activeMap;
+        if (activeTab != null && activeTab.getUserData() instanceof MindMap) {
+            activeMap = (MindMap) activeTab.getUserData();
+        } else {
+            TextInputDialog nameDialog = new TextInputDialog();
+            nameDialog.setTitle("New Mind Map");
+            nameDialog.setHeaderText("Zuerst eine Mind Map erstellen");
+            nameDialog.setContentText("Name der Mind Map:");
+            applyTheme(nameDialog);
+            Optional<String> r = nameDialog.showAndWait();
+            if (r.isEmpty() || r.get().trim().isEmpty()) return;
+            activeMap = service.createMindMap(r.get().trim());
+            currentNode = getRoot(activeMap);
+            renderMindMap(activeMap);
+        }
 
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(prompt -> {
-            if (prompt.trim().isEmpty()) return;
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("ai-chat-view.fxml"));
+            Scene chatScene = new Scene(loader.load(), 1280, 800);
+            AiChatController chatCtrl = loader.getController();
+            chatCtrl.loadExistingMap(activeMap);
+            if (userApiKey != null) chatCtrl.setApiKey(userApiKey);
 
-            MindMap map = service.createMindMap("AI: " + prompt.substring(0, Math.min(prompt.length(), 20)));
-            Node root = getRoot(map);
+            Scene currentScene = rootPane.getScene();
+            Stage stage = (Stage) rootPane.getScene().getWindow();
+            final MindMap mapRef = activeMap;
 
-            String apiKey = System.getenv("MINDMAP_AI_KEY");
+            chatCtrl.setReturnScene(currentScene, () -> Platform.runLater(() -> {
+                // Rebuild the tab so the updated map is re-rendered
+                tabPane.getTabs().removeIf(t ->
+                    t.getUserData() instanceof MindMap &&
+                    ((MindMap) t.getUserData()).getId().equals(mapRef.getId()));
+                currentNode = getRoot(mapRef);
+                renderMindMap(mapRef);
+            }));
 
-            if (apiKey == null || apiKey.trim().isEmpty()) {
-                if (userApiKey != null && !userApiKey.trim().isEmpty()) {
-                    apiKey = userApiKey;
-                } else {
-                    TextInputDialog keyDialog = new TextInputDialog();
-                    keyDialog.setTitle("API Key benötigt");
-                    keyDialog.setHeaderText("Gemini oder Claude API Key eingeben");
-                    keyDialog.setContentText("API Key (Gemini oder sk-ant-... für Claude):");
-                    keyDialog.getDialogPane().setPrefWidth(480);
-                    applyTheme(keyDialog);
+            stage.setScene(chatScene);
+            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-                    Optional<String> keyResult = keyDialog.showAndWait();
-                    if (keyResult.isPresent() && !keyResult.get().trim().isEmpty()) {
-                        userApiKey = keyResult.get().trim();
-                        apiKey = userApiKey;
-                    }
-                }
+    private static String escapeJson(String s) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : s.toCharArray()) {
+            switch (c) {
+                case '"':  sb.append("\\\""); break;
+                case '\\': sb.append("\\\\"); break;
+                case '\n': sb.append("\\n");  break;
+                case '\r': sb.append("\\r");  break;
+                case '\t': sb.append("\\t");  break;
+                default:
+                    if (c < 0x20) sb.append(String.format("\\u%04x", (int) c));
+                    else sb.append(c);
             }
-
-            if (apiKey != null && !apiKey.trim().isEmpty()) {
-                if (apiKey.startsWith("sk-ant-")) {
-                    callClaudeApi(map, root, prompt, apiKey);
-                } else {
-                    callGeminiApi(map, root, prompt, apiKey);
-                }
-            } else {
-                generateSmarterMockAiMindMap(map, root, prompt);
-            }
-
-            currentNode = root;
-            renderMindMap(map);
-        });
+        }
+        return sb.toString();
     }
 
     private String buildAiPrompt(String topic) {
@@ -290,7 +289,7 @@ public class MainController {
     private void callGeminiApi(MindMap map, Node root, String prompt, String apiKey) {
         try {
             String aiPrompt = buildAiPrompt(prompt);
-            String jsonPayload = "{\"contents\": [{\"parts\": [{\"text\": \"" + aiPrompt.replace("\"", "\\\"").replace("\n", "\\n") + "\"}]}]}";
+            String jsonPayload = "{\"contents\":[{\"parts\":[{\"text\":\"" + escapeJson(aiPrompt) + "\"}]}]}";
 
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
@@ -325,7 +324,7 @@ public class MainController {
     private void callClaudeApi(MindMap map, Node root, String prompt, String apiKey) {
         try {
             String aiPrompt = buildAiPrompt(prompt);
-            String escaped = aiPrompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
+            String escaped = escapeJson(aiPrompt);
 
             HttpClient client = HttpClient.newHttpClient();
             String responseBody = "";
@@ -334,6 +333,8 @@ public class MainController {
             for (String model : CLAUDE_MODELS) {
                 String jsonBody = "{\"model\":\"" + model + "\",\"max_tokens\":2048," +
                                   "\"messages\":[{\"role\":\"user\",\"content\":\"" + escaped + "\"}]}";
+                System.out.println("=== Claude request (model=" + model + ") ===");
+                System.out.println(jsonBody);
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(URI.create("https://api.anthropic.com/v1/messages"))
                         .header("Content-Type", "application/json")
@@ -345,6 +346,7 @@ public class MainController {
                 statusCode = response.statusCode();
                 responseBody = response.body();
                 System.out.println("Claude model " + model + " → " + statusCode);
+                System.out.println("Claude response: " + responseBody);
                 if (statusCode == 200) break;
             }
 
