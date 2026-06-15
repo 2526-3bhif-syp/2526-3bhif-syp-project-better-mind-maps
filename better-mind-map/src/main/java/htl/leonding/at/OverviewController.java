@@ -48,13 +48,27 @@ public class OverviewController {
         }
         loadMaps();
 
-        // Show first-time tutorial after scene is ready
+        // Show first-time tutorial after scene and layout are ready
         Platform.runLater(() -> {
             SessionManager.User u = SessionManager.getCurrentUser();
-            if (u != null && cardsFlow.getScene() != null) {
-                TutorialManager.showIfNeeded(
-                    (javafx.scene.layout.Pane) cardsFlow.getScene().getRoot(), u.getId());
-            }
+            if (u == null || cardsFlow.getScene() == null) return;
+
+            // Target nodes: index matches STEPS[] in TutorialManager
+            // 0=Welcome  1=Dashboard  2=CreateMap  3-7=editor (no live target)
+            javafx.scene.Node newMapCard = cardsFlow.getChildren().isEmpty() ? null
+                : cardsFlow.getChildren().get(cardsFlow.getChildren().size() - 1);
+
+            TutorialManager.showIfNeeded(
+                (javafx.scene.layout.Pane) cardsFlow.getScene().getRoot(), u.getId(),
+                null,           // 0 Welcome
+                cardsFlow,      // 1 Dashboard
+                newMapCard,     // 2 Create Map  (the + card)
+                null,           // 3 Edit Nodes
+                null,           // 4 Styling
+                null,           // 5 AI
+                null,           // 6 Shortcuts
+                null            // 7 Ready
+            );
         });
 
         searchField.textProperty().addListener((obs, old, q) -> {
