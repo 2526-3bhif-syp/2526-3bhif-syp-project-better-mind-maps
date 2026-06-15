@@ -47,6 +47,30 @@ public class OverviewController {
             userLabel.setText(user.getUsername());
         }
         loadMaps();
+
+        // Show first-time tutorial after scene and layout are ready
+        Platform.runLater(() -> {
+            SessionManager.User u = SessionManager.getCurrentUser();
+            if (u == null || cardsFlow.getScene() == null) return;
+
+            // Target nodes: index matches STEPS[] in TutorialManager
+            // 0=Welcome  1=Dashboard  2=CreateMap  3-7=editor (no live target)
+            javafx.scene.Node newMapCard = cardsFlow.getChildren().isEmpty() ? null
+                : cardsFlow.getChildren().get(cardsFlow.getChildren().size() - 1);
+
+            TutorialManager.showIfNeeded(
+                (javafx.scene.layout.Pane) cardsFlow.getScene().getRoot(), u.getId(),
+                null,           // 0 Welcome
+                cardsFlow,      // 1 Dashboard
+                newMapCard,     // 2 Create Map  (the + card)
+                null,           // 3 Edit Nodes
+                null,           // 4 Styling
+                null,           // 5 AI
+                null,           // 6 Shortcuts
+                null            // 7 Ready
+            );
+        });
+
         searchField.textProperty().addListener((obs, old, q) -> {
             String query = q.trim().toLowerCase();
             if (query.isEmpty()) {
@@ -369,6 +393,7 @@ public class OverviewController {
         Optional<String> nameResult = nameDialog.showAndWait();
         if (nameResult.isEmpty() || nameResult.get().trim().isEmpty()) return;
         MindMap map = service.createMindMap(nameResult.get().trim());
+        TutorialManager.onAction(TutorialManager.TutorialAction.MAP_CREATED);
         openEditor(map);
     }
 
@@ -390,18 +415,18 @@ public class OverviewController {
     private void openEditor(MindMap map) {
         Stage stage = (Stage) cardsFlow.getScene().getWindow();
         if (mainController != null) {
-            stage.setScene(mainController.getRootScene());
-            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
+            stage.getScene().setRoot(mainController.getRootNode());
+            WindowsDarkMode.applyToAllWindows();
             mainController.openMapAsTab(map);
             return;
         }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("main-view.fxml"));
-            Scene scene = new Scene(loader.load(), 1280, 800);
+            javafx.scene.Parent mainRoot = loader.load();
             MainController controller = loader.getController();
             controller.loadMindMap(map);
-            stage.setScene(scene);
-            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
+            stage.getScene().setRoot(mainRoot);
+            WindowsDarkMode.applyToAllWindows();
         } catch (IOException e) {
             throw new RuntimeException("Failed to open editor", e);
         }
@@ -412,10 +437,9 @@ public class OverviewController {
         SessionManager.logout();
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("login-view.fxml"));
-            Scene scene = new Scene(loader.load(), 1024, 768);
             Stage stage = (Stage) cardsFlow.getScene().getWindow();
-            stage.setScene(scene);
-            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
+            stage.getScene().setRoot(loader.load());
+            WindowsDarkMode.applyToAllWindows();
         } catch (IOException e) {
             throw new RuntimeException("Failed to load login screen", e);
         }

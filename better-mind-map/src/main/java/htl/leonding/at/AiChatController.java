@@ -33,7 +33,7 @@ public class AiChatController {
     private final MindMapService service = new MindMapService(repository);
     private static String userApiKey = null;
 
-    private Scene returnScene = null;
+    private javafx.scene.Parent returnRoot = null;
     private Runnable returnCallback = null;
 
     private MindMap currentMap = null;
@@ -58,7 +58,7 @@ public class AiChatController {
     public void setApiKey(String key) { userApiKey = key; }
 
     public void setReturnScene(Scene scene, Runnable callback) {
-        this.returnScene = scene;
+        this.returnRoot = scene.getRoot(); // capture root before it gets swapped
         this.returnCallback = callback;
     }
 
@@ -100,18 +100,15 @@ public class AiChatController {
     @FXML
     private void onBack() {
         Stage stage = (Stage) chatContainer.getScene().getWindow();
-        if (returnScene != null) {
-            stage.setScene(returnScene);
-            Platform.runLater(() -> {
-                stage.setMaximized(true);
-                WindowsDarkMode.applyToAllWindows();
-                if (returnCallback != null) returnCallback.run();
-            });
+        if (returnRoot != null) {
+            stage.getScene().setRoot(returnRoot);
+            WindowsDarkMode.applyToAllWindows();
+            if (returnCallback != null) returnCallback.run();
         } else {
             try {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("overview-view.fxml"));
-                stage.setScene(new Scene(loader.load(), 1024, 768));
-                Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
+                stage.getScene().setRoot(loader.load());
+                WindowsDarkMode.applyToAllWindows();
             } catch (IOException e) {
                 e.printStackTrace();
             }

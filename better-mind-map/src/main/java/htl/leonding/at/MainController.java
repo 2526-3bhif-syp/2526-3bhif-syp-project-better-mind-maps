@@ -131,10 +131,25 @@ public class MainController {
         currentNode = getRoot(map);
         renderMindMap(map);
         updateSyncStatusLabel(map);
+
+        // Attach tutorial when navigated from overview (no pre-existing mainController)
+        if (TutorialManager.isActive()) {
+            Platform.runLater(() -> {
+                if (rootPane.getScene() != null)
+                    TutorialManager.attachToEditorScene(
+                        (javafx.scene.layout.Pane) rootPane.getScene().getRoot());
+            });
+        }
     }
 
     public Scene getRootScene() {
         return rootPane.getScene();
+    }
+
+    public javafx.scene.Parent getRootNode() {
+        // Remove from tutorial wrapper if still inside one
+        if (rootPane.getParent() instanceof Pane p) p.getChildren().remove(rootPane);
+        return rootPane;
     }
 
     public void openMapAsTab(MindMap map) {
@@ -146,18 +161,27 @@ public class MainController {
         }
         currentNode = getRoot(map);
         renderMindMap(map);
+
+        // Attach tutorial overlay to editor scene for interactive steps
+        if (TutorialManager.isActive()) {
+            Platform.runLater(() -> {
+                if (tabPane.getScene() != null)
+                    TutorialManager.attachToEditorScene(
+                        (javafx.scene.layout.Pane) tabPane.getScene().getRoot());
+            });
+        }
     }
 
     @FXML
     private void onBackToOverview() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("overview-view.fxml"));
-            Scene scene = new Scene(loader.load(), 1024, 768);
+            javafx.scene.Parent root = loader.load();
             OverviewController controller = loader.getController();
             controller.setMainController(this);
             Stage stage = (Stage) tabPane.getScene().getWindow();
-            stage.setScene(scene);
-            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
+            stage.getScene().setRoot(root);
+            WindowsDarkMode.applyToAllWindows();
         } catch (IOException e) {
             throw new RuntimeException("Failed to open overview", e);
         }
@@ -203,16 +227,15 @@ public class MainController {
 
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("ai-chat-view.fxml"));
-            Scene chatScene = new Scene(loader.load(), 1280, 800);
+            javafx.scene.Parent chatRoot = loader.load();
             AiChatController chatCtrl = loader.getController();
             chatCtrl.loadExistingMap(activeMap);
             if (userApiKey != null) chatCtrl.setApiKey(userApiKey);
 
-            Scene currentScene = rootPane.getScene();
             Stage stage = (Stage) rootPane.getScene().getWindow();
             final MindMap mapRef = activeMap;
 
-            chatCtrl.setReturnScene(currentScene, () -> Platform.runLater(() -> {
+            chatCtrl.setReturnScene(rootPane.getScene(), () -> Platform.runLater(() -> {
                 // Rebuild the tab so the updated map is re-rendered
                 tabPane.getTabs().removeIf(t ->
                     t.getUserData() instanceof MindMap &&
@@ -221,8 +244,8 @@ public class MainController {
                 renderMindMap(mapRef);
             }));
 
-            stage.setScene(chatScene);
-            Platform.runLater(() -> { stage.setMaximized(true); WindowsDarkMode.applyToAllWindows(); });
+            stage.getScene().setRoot(chatRoot);
+            WindowsDarkMode.applyToAllWindows();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -659,6 +682,7 @@ public class MainController {
             currentNode = newNode;
             refreshCanvas(canvas, map);
             canvas.requestFocus();
+            TutorialManager.onAction(TutorialManager.TutorialAction.NODE_ADDED);
         });
     }
 
@@ -1055,7 +1079,10 @@ public class MainController {
 
         MenuItem styleNode = new MenuItem("🎨  Stil bearbeiten");
         styleNode.setOnAction(e -> NodeStyleEditor.show(node, repository,
-                () -> refreshCanvas(canvas, map), canvas.getScene().getWindow()));
+                () -> {
+                    refreshCanvas(canvas, map);
+                    TutorialManager.onAction(TutorialManager.TutorialAction.NODE_STYLED);
+                }, canvas.getScene().getWindow()));
 
         MenuItem duplicate = new MenuItem("📋  Duplizieren");
         duplicate.setOnAction(e -> {
