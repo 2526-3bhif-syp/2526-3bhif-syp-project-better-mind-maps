@@ -164,8 +164,13 @@ public class TutorialManager {
         ovScene.setRoot(ovWrapper);
         ovWrapper.getChildren().add(ovOriginalRoot);
 
-        ovOverlay     = new Pane();
+        ovOverlay = new Pane();
+        // Allow clicks to reach the underlying UI (especially through the spotlight hole)
+        ovOverlay.setPickOnBounds(false);
+
         spotlightCanvas = new Canvas();
+        // Canvas must NOT block mouse events so the user can click the highlighted element
+        spotlightCanvas.setMouseTransparent(true);
         spotlightCanvas.widthProperty().bind(ovOverlay.widthProperty());
         spotlightCanvas.heightProperty().bind(ovOverlay.heightProperty());
         spotlightCanvas.widthProperty().addListener((o, a, b) ->
