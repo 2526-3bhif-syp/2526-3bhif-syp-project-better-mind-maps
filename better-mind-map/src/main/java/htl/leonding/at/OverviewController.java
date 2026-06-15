@@ -47,6 +47,16 @@ public class OverviewController {
             userLabel.setText(user.getUsername());
         }
         loadMaps();
+
+        // Show first-time tutorial after scene is ready
+        Platform.runLater(() -> {
+            SessionManager.User u = SessionManager.getCurrentUser();
+            if (u != null && cardsFlow.getScene() != null) {
+                TutorialManager.showIfNeeded(
+                    (javafx.scene.layout.Pane) cardsFlow.getScene().getRoot(), u.getId());
+            }
+        });
+
         searchField.textProperty().addListener((obs, old, q) -> {
             String query = q.trim().toLowerCase();
             if (query.isEmpty()) {

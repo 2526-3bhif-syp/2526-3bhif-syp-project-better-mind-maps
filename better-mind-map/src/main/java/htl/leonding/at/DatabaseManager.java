@@ -111,6 +111,17 @@ public class DatabaseManager {
             if (!hasIcon)  stmt.execute("ALTER TABLE nodes ADD COLUMN icon TEXT DEFAULT ''");
             if (!hasBadge) stmt.execute("ALTER TABLE nodes ADD COLUMN badge TEXT DEFAULT ''");
 
+            // tutorial_shown column in users table
+            boolean hasTutorialShown = false;
+            try (java.sql.ResultSet rs4 = stmt.executeQuery("PRAGMA table_info(users)")) {
+                while (rs4.next()) {
+                    if ("tutorial_shown".equals(rs4.getString("name"))) hasTutorialShown = true;
+                }
+            }
+            if (!hasTutorialShown) {
+                stmt.execute("ALTER TABLE users ADD COLUMN tutorial_shown INTEGER DEFAULT 0");
+            }
+
         } catch (SQLException e) {
             throw new RuntimeException("Failed to initialize database", e);
         }
