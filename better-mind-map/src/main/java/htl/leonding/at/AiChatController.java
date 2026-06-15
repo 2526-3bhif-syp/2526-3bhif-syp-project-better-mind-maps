@@ -245,31 +245,54 @@ public class AiChatController {
         }
     }
 
+    private static final String[] CLAUDE_MODELS = {
+        "claude-haiku-4-5-20251001",
+        "claude-3-5-haiku-20241022",
+        "claude-3-haiku-20240307"
+    };
+
     private void callClaudeApi(String prompt, String apiKey) {
         try {
             String escaped = buildAiPrompt(prompt)
                     .replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
-            String jsonBody = "{\"model\":\"claude-haiku-4-5-20251001\",\"max_tokens\":2048,"
-                    + "\"messages\":[{\"role\":\"user\",\"content\":\"" + escaped + "\"}]}";
 
             HttpClient client = HttpClient.newHttpClient();
-            HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.anthropic.com/v1/messages"))
-                    .header("Content-Type", "application/json")
-                    .header("x-api-key", apiKey)
-                    .header("anthropic-version", "2023-06-01")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                    .build();
-            HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() != 200) {
-                final String err = resp.body();
-                Platform.runLater(() -> addAiMessage("Claude Fehler: " + err));
+            String responseBody = "";
+            int statusCode = 500;
+
+            for (String model : CLAUDE_MODELS) {
+                String jsonBody = "{\"model\":\"" + model + "\",\"max_tokens\":2048,"
+                        + "\"messages\":[{\"role\":\"user\",\"content\":\"" + escaped + "\"}]}";
+                HttpRequest req = HttpRequest.newBuilder()
+                        .uri(URI.create("https://api.anthropic.com/v1/messages"))
+                        .header("Content-Type", "application/json")
+                        .header("x-api-key", apiKey)
+                        .header("anthropic-version", "2023-06-01")
+                        .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                        .build();
+                HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+                statusCode = resp.statusCode();
+                responseBody = resp.body();
+                System.out.println("Claude model " + model + " → " + statusCode);
+                if (statusCode == 200) break;
+            }
+
+            if (statusCode != 200) {
+                final String err = "Claude Fehler (" + statusCode + "): " + responseBody;
+                Platform.runLater(() -> addAiMessage(err));
                 generateMockAiMindMap(prompt);
                 return;
             }
-            String content = extractTextFromJson(resp.body());
-            if (content != null) applyAiContent(content);
-            else generateMockAiMindMap(prompt);
+
+            String content = extractTextFromJson(responseBody);
+            if (content != null) {
+                applyAiContent(content);
+            } else {
+                System.err.println("Claude: konnte Text nicht parsen. Response: "
+                        + responseBody.substring(0, Math.min(500, responseBody.length())));
+                Platform.runLater(() -> addAiMessage("Claude antwortete, aber der Text konnte nicht gelesen werden."));
+                generateMockAiMindMap(prompt);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             generateMockAiMindMap(prompt);

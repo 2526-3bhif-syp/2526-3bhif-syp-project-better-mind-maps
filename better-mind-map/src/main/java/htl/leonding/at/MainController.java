@@ -316,24 +316,50 @@ public class MainController {
         }
     }
 
+    private static final String[] CLAUDE_MODELS = {
+        "claude-haiku-4-5-20251001",
+        "claude-3-5-haiku-20241022",
+        "claude-3-haiku-20240307"
+    };
+
     private void callClaudeApi(MindMap map, Node root, String prompt, String apiKey) {
         try {
             String aiPrompt = buildAiPrompt(prompt);
-            String escapedPrompt = aiPrompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
-            String jsonBody = "{\"model\":\"claude-haiku-4-5-20251001\",\"max_tokens\":2048," +
-                              "\"messages\":[{\"role\":\"user\",\"content\":\"" + escapedPrompt + "\"}]}";
+            String escaped = aiPrompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
 
             HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.anthropic.com/v1/messages"))
-                    .header("Content-Type", "application/json")
-                    .header("x-api-key", apiKey)
-                    .header("anthropic-version", "2023-06-01")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                    .build();
+            String responseBody = "";
+            int statusCode = 500;
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            String responseBody = response.body();
+            for (String model : CLAUDE_MODELS) {
+                String jsonBody = "{\"model\":\"" + model + "\",\"max_tokens\":2048," +
+                                  "\"messages\":[{\"role\":\"user\",\"content\":\"" + escaped + "\"}]}";
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create("https://api.anthropic.com/v1/messages"))
+                        .header("Content-Type", "application/json")
+                        .header("x-api-key", apiKey)
+                        .header("anthropic-version", "2023-06-01")
+                        .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                        .build();
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                statusCode = response.statusCode();
+                responseBody = response.body();
+                System.out.println("Claude model " + model + " → " + statusCode);
+                if (statusCode == 200) break;
+            }
+
+            if (statusCode != 200) {
+                String finalErr = "Claude API Fehler (" + statusCode + "):\n" + responseBody;
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Claude API Fehler");
+                alert.setHeaderText("Anfrage fehlgeschlagen (HTTP " + statusCode + ")");
+                alert.setContentText(responseBody.length() > 400 ? responseBody.substring(0, 400) + "…" : responseBody);
+                applyTheme(alert);
+                alert.showAndWait();
+                System.err.println(finalErr);
+                generateSmarterMockAiMindMap(map, root, prompt);
+                return;
+            }
 
             service.updateNodeText(map, root, prompt.substring(0, Math.min(prompt.length(), 30)));
 
@@ -341,6 +367,7 @@ public class MainController {
             if (content != null) {
                 applyAiStyling(map, root, content);
             } else {
+                System.err.println("Claude: konnte Text nicht parsen. Response: " + responseBody.substring(0, Math.min(500, responseBody.length())));
                 generateSmarterMockAiMindMap(map, root, prompt);
             }
         } catch (Exception e) {
