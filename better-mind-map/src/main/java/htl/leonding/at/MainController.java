@@ -567,26 +567,55 @@ public class MainController {
         viewport.requestFocus();
     }
 
+    // Key: instead of canvas.setScaleX() — which scales around getBoundsInLocal().center (a dynamic
+    // value that shifts whenever a node is added/moved) — we add an explicit Scale transform with a
+    // fixed pivot at canvas-local (0,0).  The transform chain then gives exactly:
+    //   screenX = worldX * scale + translateX
+    // with no dynamic pivot correction needed anywhere.
+    private static javafx.scene.transform.Scale getOrAddScaleTransform(Pane canvas) {
+        for (javafx.scene.transform.Transform t : canvas.getTransforms()) {
+            if (t instanceof javafx.scene.transform.Scale s && s.getPivotX() == 0 && s.getPivotY() == 0)
+                return s;
+        }
+        javafx.scene.transform.Scale s = new javafx.scene.transform.Scale(1.0, 1.0, 0.0, 0.0);
+        canvas.getTransforms().add(0, s);
+        return s;
+    }
+
+    static double getCanvasScale(Pane canvas) {
+        for (javafx.scene.transform.Transform t : canvas.getTransforms()) {
+            if (t instanceof javafx.scene.transform.Scale s && s.getPivotX() == 0 && s.getPivotY() == 0)
+                return s.getX();
+        }
+        return 1.0;
+    }
+
     private void setupZoomAndPan(Pane viewport, Pane canvas, MindMap map) {
         final double SCALE_DELTA = 1.1;
+
+        // Install the fixed-pivot Scale transform (idempotent if called again).
+        javafx.scene.transform.Scale scaleXform = getOrAddScaleTransform(canvas);
 
         viewport.setOnScroll(event -> {
             event.consume();
             if (event.getDeltaY() == 0) return;
 
-            double scaleFactor = (event.getDeltaY() > 0) ? SCALE_DELTA : 1 / SCALE_DELTA;
-            double newScale = canvas.getScaleX() * scaleFactor;
-
+            double scaleFactor = event.getDeltaY() > 0 ? SCALE_DELTA : 1.0 / SCALE_DELTA;
+            double newScale = scaleXform.getX() * scaleFactor;
             if (newScale < 0.2 || newScale > 5.0) return;
 
-            double f = (scaleFactor - 1);
-            double dx = (event.getX() - (canvas.getBoundsInParent().getWidth() / 2 + canvas.getBoundsInParent().getMinX()));
-            double dy = (event.getY() - (canvas.getBoundsInParent().getHeight() / 2 + canvas.getBoundsInParent().getMinY()));
+            // screenX = worldX * scale + tx  (exact, pivot is fixed at 0,0).
+            // Keep the point under the cursor fixed: compute its world coords, then
+            // set tx so that same world point maps back to the same screen position.
+            double mx = event.getX();
+            double my = event.getY();
+            double worldMX = (mx - canvas.getTranslateX()) / scaleXform.getX();
+            double worldMY = (my - canvas.getTranslateY()) / scaleXform.getY();
 
-            canvas.setScaleX(newScale);
-            canvas.setScaleY(newScale);
-            canvas.setTranslateX(canvas.getTranslateX() - f * dx);
-            canvas.setTranslateY(canvas.getTranslateY() - f * dy);
+            scaleXform.setX(newScale);
+            scaleXform.setY(newScale);
+            canvas.setTranslateX(mx - worldMX * newScale);
+            canvas.setTranslateY(my - worldMY * newScale);
             refreshMinimapOnly(viewport, canvas, map);
         });
 
@@ -945,8 +974,10 @@ public class MainController {
 
     private void centerOnCurrentNode(Pane viewport, Pane canvas) {
         if (currentNode == null || viewport.getWidth() <= 0) return;
-        canvas.setTranslateX(viewport.getWidth()  / 2 - currentNode.getXCoordinate() * canvas.getScaleX());
-        canvas.setTranslateY(viewport.getHeight() / 2 - currentNode.getYCoordinate() * canvas.getScaleY());
+        double scale = getCanvasScale(canvas);
+        // Fixed-pivot Scale: screenX = worldX*scale + tx  →  tx = vpW/2 - worldX*scale
+        canvas.setTranslateX(viewport.getWidth()  / 2.0 - currentNode.getXCoordinate() * scale);
+        canvas.setTranslateY(viewport.getHeight() / 2.0 - currentNode.getYCoordinate() * scale);
     }
 
     private Node getRoot(MindMap map) {
@@ -1110,23 +1141,29 @@ public class MainController {
             }
         });
 
-        final double[] dragDelta = new double[2];
+        // Stores the scene position from the previous drag event so we can compute incremental deltas.
+        // Dividing the screen delta by scaleX converts it to world units at any zoom level.
+        // We avoid canvas.sceneToLocal() because moving a child changes the Pane's bounds, which
+        // shifts JavaFX's scale pivot and makes sceneToLocal() return wrong values mid-drag.
+        final double[] lastScene = new double[2];
 
         nodeView.setOnMousePressed(e -> {
             if (e.getButton() == MouseButton.PRIMARY) {
-                // Convert to canvas-local coords so drag speed is correct at any zoom level
-                javafx.geometry.Point2D local = canvas.sceneToLocal(e.getSceneX(), e.getSceneY());
-                dragDelta[0] = nodeView.getLayoutX() - local.getX();
-                dragDelta[1] = nodeView.getLayoutY() - local.getY();
+                lastScene[0] = e.getSceneX();
+                lastScene[1] = e.getSceneY();
                 e.consume();
             }
         });
 
         nodeView.setOnMouseDragged(e -> {
             if (e.getButton() == MouseButton.PRIMARY) {
-                javafx.geometry.Point2D local = canvas.sceneToLocal(e.getSceneX(), e.getSceneY());
-                double newX = local.getX() + dragDelta[0];
-                double newY = local.getY() + dragDelta[1];
+                double scale = getCanvasScale(canvas);
+                double dx = (e.getSceneX() - lastScene[0]) / scale;
+                double dy = (e.getSceneY() - lastScene[1]) / scale;
+                lastScene[0] = e.getSceneX();
+                lastScene[1] = e.getSceneY();
+                double newX = nodeView.getLayoutX() + dx;
+                double newY = nodeView.getLayoutY() + dy;
                 nodeView.setLayoutX(newX);
                 nodeView.setLayoutY(newY);
                 node.setXCoordinate(newX + nodeW / 2);
@@ -1332,8 +1369,9 @@ public class MainController {
         }
         double contentCenterX = (minX + maxX) / 2;
         double contentCenterY = (minY + maxY) / 2;
-        canvas.setTranslateX(viewport.getWidth()  / 2 - contentCenterX * canvas.getScaleX());
-        canvas.setTranslateY(viewport.getHeight() / 2 - contentCenterY * canvas.getScaleY());
+        double scale = getCanvasScale(canvas);
+        canvas.setTranslateX(viewport.getWidth()  / 2.0 - contentCenterX * scale);
+        canvas.setTranslateY(viewport.getHeight() / 2.0 - contentCenterY * scale);
     }
 
     private void exitPresentationMode(Stage stage) {
