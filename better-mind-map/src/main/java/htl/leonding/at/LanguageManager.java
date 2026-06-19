@@ -21,6 +21,7 @@ public class LanguageManager {
         p("btn.logout",          "Logout",                               "Abmelden");
         p("btn.language",        "🌐  Language",                         "🌐  Sprache");
         p("btn.sync",            "Sync",                                 "Sync");
+        p("btn.deletemap",       "🗑  Delete Map",                       "🗑  Map löschen");
         p("btn.exitpresentation","Exit Presentation",                    "Präsentation beenden");
 
         // ── Overview ─────────────────────────────────────────────────────────

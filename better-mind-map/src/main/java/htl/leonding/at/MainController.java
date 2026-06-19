@@ -47,6 +47,7 @@ public class MainController {
 
     @FXML private Button backBtn;
     @FXML private Button newMapBtn;
+    @FXML private Button deleteMapBtn;
     @FXML private Button aiBtn;
     @FXML private Button presentBtn;
     @FXML private Label structureLabel;
@@ -135,6 +136,7 @@ public class MainController {
     public void applyLanguage() {
         if (backBtn != null)       backBtn.setText(LanguageManager.get("btn.back"));
         if (newMapBtn != null)     newMapBtn.setText(LanguageManager.get("btn.newmap"));
+        if (deleteMapBtn != null)  deleteMapBtn.setText(LanguageManager.get("btn.deletemap"));
         if (aiBtn != null)         aiBtn.setText(LanguageManager.get("btn.aigenerate"));
         if (presentBtn != null)    presentBtn.setText(LanguageManager.get("btn.present"));
         if (structureLabel != null) structureLabel.setText(LanguageManager.get("sidebar.structure"));
@@ -236,6 +238,25 @@ public class MainController {
         MindMap map = service.createMindMap(nameResult.get().trim());
         currentNode = getRoot(map);
         renderMindMap(map);
+    }
+
+    @FXML
+    private void onDeleteCurrentMap() {
+        Tab selected = tabPane.getSelectionModel().getSelectedItem();
+        if (selected == null || !(selected.getUserData() instanceof MindMap)) return;
+        MindMap map = (MindMap) selected.getUserData();
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle(LanguageManager.get("dlg.delete.title"));
+        confirm.setHeaderText(LanguageManager.getf("dlg.delete.header", map.getName()));
+        confirm.setContentText(LanguageManager.get("dlg.delete.content"));
+        applyTheme(confirm);
+        confirm.showAndWait()
+            .filter(btn -> btn == ButtonType.OK)
+            .ifPresent(btn -> {
+                service.deleteMindMap(map.getId());
+                tabPane.getTabs().remove(selected);
+            });
     }
 
     private static final String[] AI_PALETTE = {
