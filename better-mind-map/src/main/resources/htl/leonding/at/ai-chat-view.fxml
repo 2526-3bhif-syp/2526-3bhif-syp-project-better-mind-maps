@@ -21,18 +21,18 @@
     <top>
         <HBox style="-fx-background-color: #111827; -fx-padding: 14 28; -fx-border-color: #1e293b; -fx-border-width: 0 0 1 0;"
               alignment="CENTER_LEFT" spacing="16">
-            <Button fx:id="backBtn" text="← Zurück" onAction="#onBack"
+            <Button fx:id="backBtn" text="← Back" onAction="#onBack"
                     style="-fx-background-color: #1e2433; -fx-text-fill: #8b94a8; -fx-font-size: 13px;
                            -fx-cursor: hand; -fx-padding: 7 14; -fx-background-radius: 8; -fx-border-width: 0;"/>
             <Label text="✨" style="-fx-font-size: 22px;"/>
             <VBox spacing="2">
-                <Label text="AI Mindmap Assistant"
+                <Label fx:id="aiTitleLabel" text="AI Mindmap Assistant"
                        style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #f1f5f9;"/>
-                <Label fx:id="mapContextLabel" text="Kein Mindmap geladen"
+                <Label fx:id="mapContextLabel" text="No mind map loaded"
                        style="-fx-font-size: 11px; -fx-text-fill: #475569;"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Label fx:id="statusLabel" text="● Bereit"
+            <Label fx:id="statusLabel" text="● Ready"
                    style="-fx-text-fill: #10b981; -fx-font-size: 12px;"/>
         </HBox>
     </top>
@@ -54,9 +54,9 @@
                   style="-fx-background-color: #0b0f1a; -fx-padding: 60;">
                 <Label text="✨" style="-fx-font-size: 56px;"/>
                 <VBox alignment="CENTER" spacing="10">
-                    <Label text="AI Mindmap Assistant"
+                    <Label fx:id="aiWelcomeTitleLabel" text="AI Mindmap Assistant"
                            style="-fx-font-size: 34px; -fx-font-weight: bold; -fx-text-fill: #f1f5f9;"/>
-                    <Label text="Stelle mir eine Frage oder wähle einen Vorschlag aus"
+                    <Label fx:id="aiSubtitleLabel" text="Ask me a question or choose a suggestion"
                            style="-fx-font-size: 14px; -fx-text-fill: #64748b;"/>
                 </VBox>
                 <FlowPane fx:id="suggestionChips" hgap="12" vgap="12" alignment="CENTER" prefWidth="720"/>
@@ -70,7 +70,7 @@
         <VBox style="-fx-background-color: #111827; -fx-border-color: #1e293b; -fx-border-width: 1 0 0 0; -fx-padding: 14 100;">
             <HBox fx:id="suggestionRow" spacing="8" style="-fx-padding: 0 0 10 0;"/>
             <HBox spacing="10" alignment="CENTER">
-                <TextField fx:id="promptField" promptText="Schreibe eine Nachricht..." HBox.hgrow="ALWAYS"
+                <TextField fx:id="promptField" promptText="Write a message..." HBox.hgrow="ALWAYS"
                            onAction="#onSend"
                            style="-fx-background-color: #1e2433; -fx-text-fill: #f1f5f9;
                                   -fx-prompt-text-fill: #475569; -fx-font-size: 14px;

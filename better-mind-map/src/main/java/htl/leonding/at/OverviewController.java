@@ -30,6 +30,8 @@ public class OverviewController {
     @FXML private Label heroStatsLabel;
     @FXML private Label sectionLabel;
     @FXML private TextField searchField;
+    @FXML private Button logoutBtn;
+    @FXML private Button languageBtn;
 
     private MainController mainController;
     private final MindMapRepository repository = new MindMapRepository();
@@ -42,6 +44,8 @@ public class OverviewController {
 
     @FXML
     public void initialize() {
+        applyLanguage();
+
         SessionManager.User user = SessionManager.getCurrentUser();
         if (user != null) {
             userLabel.setText(user.getUsername());
@@ -146,7 +150,7 @@ public class OverviewController {
         overlay.getStyleClass().add("card-thumb-overlay");
         overlay.setPrefSize(280, 152);
         overlay.setVisible(false);
-        Label openHint = new Label("Open  →");
+        Label openHint = new Label(LanguageManager.get("card.open"));
         openHint.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: white;");
         overlay.getChildren().add(openHint);
         thumbPane.getChildren().add(overlay);
@@ -183,7 +187,7 @@ public class OverviewController {
         nodeLabel.getStyleClass().add("card-meta");
 
         String sync = map.getSyncStatus() != null ? map.getSyncStatus() : "PENDING";
-        Label syncLabel = new Label("● " + sync);
+        Label syncLabel = new Label("● " + LanguageManager.get("sync.label." + sync));
         syncLabel.getStyleClass().add("card-meta");
         syncLabel.setStyle("-fx-text-fill: " + syncColor(sync) + ";");
 
@@ -231,10 +235,10 @@ public class OverviewController {
         Label icon = new Label("+");
         icon.setStyle("-fx-font-size: 38px; -fx-font-weight: bold; -fx-text-fill: #6366f1;");
 
-        Label label = new Label("New Mind Map");
+        Label label = new Label(LanguageManager.get("card.create.label"));
         label.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #8b94a8;");
 
-        Label sub = new Label("Click to create");
+        Label sub = new Label(LanguageManager.get("card.create.sub"));
         sub.setStyle("-fx-font-size: 11px; -fx-text-fill: #4a5568;");
 
         card.getChildren().addAll(icon, label, sub);
@@ -361,6 +365,13 @@ public class OverviewController {
         return s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase();
     }
 
+    private void applyLanguage() {
+        sectionLabel.setText(LanguageManager.get("section.label"));
+        searchField.setPromptText(LanguageManager.get("search.prompt"));
+        if (logoutBtn != null)   logoutBtn.setText(LanguageManager.get("btn.logout"));
+        if (languageBtn != null) languageBtn.setText(LanguageManager.get("btn.language"));
+    }
+
     private void applyTheme(Dialog<?> dialog) {
         dialog.getDialogPane().getStylesheets().add(
             getClass().getResource("styles.css").toExternalForm()
@@ -371,9 +382,9 @@ public class OverviewController {
 
     private void confirmDelete(MindMap map) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Mind Map löschen");
-        confirm.setHeaderText("\"" + map.getName() + "\" löschen?");
-        confirm.setContentText("Diese Aktion kann nicht rückgängig gemacht werden.");
+        confirm.setTitle(LanguageManager.get("dlg.delete.title"));
+        confirm.setHeaderText(LanguageManager.getf("dlg.delete.header", map.getName()));
+        confirm.setContentText(LanguageManager.get("dlg.delete.content"));
         applyTheme(confirm);
         confirm.showAndWait()
             .filter(btn -> btn == ButtonType.OK)
@@ -386,9 +397,9 @@ public class OverviewController {
     @FXML
     private void onNewMap() {
         TextInputDialog nameDialog = new TextInputDialog();
-        nameDialog.setTitle("New Mind Map");
-        nameDialog.setHeaderText("Neue Mind Map erstellen");
-        nameDialog.setContentText("Name der Mind Map:");
+        nameDialog.setTitle(LanguageManager.get("dlg.newmap.title"));
+        nameDialog.setHeaderText(LanguageManager.get("dlg.newmap.header"));
+        nameDialog.setContentText(LanguageManager.get("dlg.newmap.content"));
         applyTheme(nameDialog);
         Optional<String> nameResult = nameDialog.showAndWait();
         if (nameResult.isEmpty() || nameResult.get().trim().isEmpty()) return;
@@ -399,9 +410,9 @@ public class OverviewController {
 
     private void onRenameMap(MindMap map, Label nameLabel) {
         TextInputDialog dialog = new TextInputDialog(map.getName());
-        dialog.setTitle("Mind Map umbenennen");
-        dialog.setHeaderText("Neuer Name für \"" + map.getName() + "\"");
-        dialog.setContentText("Name:");
+        dialog.setTitle(LanguageManager.get("dlg.rename.title"));
+        dialog.setHeaderText(LanguageManager.getf("dlg.rename.header", map.getName()));
+        dialog.setContentText(LanguageManager.get("dlg.rename.content"));
         applyTheme(dialog);
         dialog.showAndWait()
             .map(String::trim).filter(s -> !s.isEmpty())
@@ -412,9 +423,36 @@ public class OverviewController {
             });
     }
 
+    @FXML
+    private void onLanguage() {
+        String current = LanguageManager.isEnglish() ? "English" : "Deutsch";
+        ChoiceDialog<String> dialog = new ChoiceDialog<>(current, "English", "Deutsch");
+        dialog.setTitle(LanguageManager.get("lang.title"));
+        dialog.setHeaderText(LanguageManager.get("lang.header"));
+        dialog.setContentText(LanguageManager.get("lang.content"));
+        applyTheme(dialog);
+        dialog.showAndWait().ifPresent(lang -> {
+            LanguageManager.setLanguage(
+                "English".equals(lang) ? LanguageManager.Language.ENGLISH
+                                       : LanguageManager.Language.DEUTSCH);
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("overview-view.fxml"));
+                Stage stage = (Stage) cardsFlow.getScene().getWindow();
+                javafx.scene.Parent root = loader.load();
+                OverviewController loaded = loader.getController();
+                loaded.setMainController(mainController);
+                stage.getScene().setRoot(root);
+                WindowsDarkMode.applyToAllWindows();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to reload overview", e);
+            }
+        });
+    }
+
     private void openEditor(MindMap map) {
         Stage stage = (Stage) cardsFlow.getScene().getWindow();
         if (mainController != null) {
+            mainController.applyLanguage();
             stage.getScene().setRoot(mainController.getRootNode());
             WindowsDarkMode.applyToAllWindows();
             mainController.openMapAsTab(map);

@@ -25,11 +25,12 @@
                 </VBox>
                 <Region HBox.hgrow="ALWAYS"/>
                 <VBox spacing="8" alignment="CENTER_RIGHT">
-                    <Label fx:id="userLabel" styleClass="hero-user"/>
+                    <Label fx:id="userLabel" styleClass="hero-user"
+                           style="-fx-font-size: 15px; -fx-padding: 6 16; -fx-font-weight: bold;"/>
                     <HBox spacing="8" alignment="CENTER_RIGHT">
-                        <Button text="Logout" onAction="#onLogout" styleClass="btn-ghost"
+                        <Button fx:id="logoutBtn" text="Logout" onAction="#onLogout" styleClass="btn-ghost"
                                 style="-fx-font-size: 11px; -fx-padding: 5 12;"/>
-                        <Button text="+ New Mind Map" onAction="#onNewMap" styleClass="btn-primary"/>
+                        <Button fx:id="languageBtn" text="🌐  Language" onAction="#onLanguage" styleClass="btn-ghost"/>
                     </HBox>
                 </VBox>
             </HBox>

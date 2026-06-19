@@ -17,12 +17,12 @@
             stylesheets="@styles.css">
     <top>
         <HBox fx:id="toolbar" styleClass="toolbar" alignment="CENTER_LEFT" spacing="8">
-            <Button text="← Overview" onAction="#onBackToOverview" styleClass="btn-ghost"/>
+            <Button fx:id="backBtn" text="← Overview" onAction="#onBackToOverview" styleClass="btn-ghost"/>
             <Separator orientation="VERTICAL" style="-fx-background-color: #1e2433; -fx-pref-width: 1; -fx-pref-height: 24;"/>
-            <Button text="+ New Map" onAction="#onCreateNewMap" styleClass="btn-primary"/>
-            <Button text="✨ AI Generate" onAction="#onOpenAiChat" styleClass="btn-secondary"/>
+            <Button fx:id="newMapBtn" text="+ New Map" onAction="#onCreateNewMap" styleClass="btn-primary"/>
+            <Button fx:id="aiBtn" text="✨ AI Generate" onAction="#onOpenAiChat" styleClass="btn-secondary"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="▶  Present" onAction="#onTogglePresentationMode" styleClass="btn-blue"/>
+            <Button fx:id="presentBtn" text="▶  Present" onAction="#onTogglePresentationMode" styleClass="btn-blue"/>
         </HBox>
     </top>
     <center>
@@ -31,7 +31,7 @@
             <VBox fx:id="sidebar" prefWidth="210" minWidth="210" maxWidth="210"
                   style="-fx-background-color: #0d1117; -fx-border-color: #1e2433; -fx-border-width: 0 1 0 0;">
                 <HBox fx:id="sidebarHeader" styleClass="sidebar-header" alignment="CENTER_LEFT">
-                    <Label text="STRUCTURE" styleClass="sidebar-label"/>
+                    <Label fx:id="structureLabel" text="STRUCTURE" styleClass="sidebar-label"/>
                 </HBox>
                 <TreeView fx:id="hierarchyTree" styleClass="tree-view" VBox.vgrow="ALWAYS"/>
             </VBox>
@@ -44,17 +44,17 @@
     <bottom>
         <HBox fx:id="statusbar" styleClass="statusbar" alignment="CENTER_LEFT">
             <Label text="Enter" styleClass="statusbar-key"/>
-            <Label text="Add child" styleClass="statusbar-desc"/>
+            <Label fx:id="sbAddChild" text="Add child" styleClass="statusbar-desc"/>
             <Label text="F2" styleClass="statusbar-key"/>
-            <Label text="Edit" styleClass="statusbar-desc"/>
+            <Label fx:id="sbEdit" text="Edit" styleClass="statusbar-desc"/>
             <Label text="Del" styleClass="statusbar-key"/>
-            <Label text="Delete" styleClass="statusbar-desc"/>
+            <Label fx:id="sbDelete" text="Delete" styleClass="statusbar-desc"/>
             <Label text="↑ ↓ ← →" styleClass="statusbar-key"/>
-            <Label text="Navigate" styleClass="statusbar-desc"/>
+            <Label fx:id="sbNavigate" text="Navigate" styleClass="statusbar-desc"/>
             <Label text="Tab" styleClass="statusbar-key"/>
-            <Label text="Cycle" styleClass="statusbar-desc"/>
+            <Label fx:id="sbCycle" text="Cycle" styleClass="statusbar-desc"/>
             <Label text="Scroll" styleClass="statusbar-key"/>
-            <Label text="Zoom" styleClass="statusbar-desc"/>
+            <Label fx:id="sbZoom" text="Zoom" styleClass="statusbar-desc"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Label fx:id="syncStatusLabel" text="● Pending sync"
                    style="-fx-font-size: 11px; -fx-text-fill: #f59e0b; -fx-font-weight: bold;"/>

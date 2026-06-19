@@ -28,6 +28,10 @@ public class AiChatController {
     @FXML private VBox welcomeOverlay;
     @FXML private FlowPane suggestionChips;
     @FXML private HBox suggestionRow;
+    @FXML private Button backBtn;
+    @FXML private Label aiTitleLabel;
+    @FXML private Label aiWelcomeTitleLabel;
+    @FXML private Label aiSubtitleLabel;
 
     private final MindMapRepository repository = new MindMapRepository();
     private final MindMapService service = new MindMapService(repository);
@@ -44,14 +48,8 @@ public class AiChatController {
         "#4f46e5", "#0891b2", "#059669", "#d97706", "#dc2626", "#7c3aed", "#db2777", "#0284c7"
     };
 
-    private static final String[][] WELCOME_SUGGESTIONS = {
-        {"💡", "Erkläre das aktuelle Thema genauer"},
-        {"✨", "Erweitere die Mindmap mit neuen Ideen"},
-        {"🔄", "Vereinfache die Struktur"},
-        {"📚", "Füge mehr Details hinzu"},
-        {"🎯", "Erstelle eine kurze Zusammenfassung"},
-        {"💬", "Was könnte ich noch ergänzen?"}
-    };
+    private static final String[] SUGGESTION_KEYS = {"ai.s1","ai.s2","ai.s3","ai.s4","ai.s5","ai.s6"};
+    private static final String[] REPLY_KEYS      = {"ai.r1","ai.r2","ai.r3","ai.r4"};
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -74,7 +72,7 @@ public class AiChatController {
         }
         Platform.runLater(() -> {
             if (mapContextLabel != null)
-                mapContextLabel.setText("Mindmap: " + map.getName());
+                mapContextLabel.setText("Mind map: " + map.getName());
         });
     }
 
@@ -83,14 +81,28 @@ public class AiChatController {
     @FXML
     public void initialize() {
         chatContainer.heightProperty().addListener((obs, o, n) -> chatScrollPane.setVvalue(1.0));
+        applyLanguage();
         setupWelcomeSuggestions();
+    }
+
+    private void applyLanguage() {
+        if (backBtn != null)           backBtn.setText(LanguageManager.get("ai.back"));
+        if (aiTitleLabel != null)      aiTitleLabel.setText(LanguageManager.get("ai.title"));
+        if (aiWelcomeTitleLabel != null) aiWelcomeTitleLabel.setText(LanguageManager.get("ai.title"));
+        if (aiSubtitleLabel != null)   aiSubtitleLabel.setText(LanguageManager.get("ai.subtitle"));
+        if (statusLabel != null)       statusLabel.setText(LanguageManager.get("ai.ready"));
+        if (mapContextLabel != null)   mapContextLabel.setText(LanguageManager.get("ai.nomapLoaded"));
+        if (promptField != null)       promptField.setPromptText(LanguageManager.get("ai.input.prompt"));
     }
 
     private void setupWelcomeSuggestions() {
         if (suggestionChips == null) return;
-        for (String[] s : WELCOME_SUGGESTIONS) {
-            Button chip = makeChip(s[0] + "  " + s[1], false);
-            chip.setOnAction(e -> { promptField.setText(s[1]); onSend(); });
+        for (String key : SUGGESTION_KEYS) {
+            String text = LanguageManager.get(key);
+            Button chip = makeChip(text, false);
+            // strip leading emoji for the prompt text (everything after first space)
+            String prompt = text.contains("  ") ? text.substring(text.indexOf("  ") + 2) : text;
+            chip.setOnAction(e -> { promptField.setText(prompt); onSend(); });
             suggestionChips.getChildren().add(chip);
         }
     }
@@ -128,7 +140,7 @@ public class AiChatController {
             String key = prompt.substring(8).trim();
             if (!key.isEmpty()) {
                 userApiKey = key;
-                addAiMessage("API Key gesetzt (" + (key.startsWith("sk-ant-") ? "Claude" : "Gemini") + "). Los geht's!");
+                addAiMessage(LanguageManager.getf("ai.keyset", key.startsWith("sk-ant-") ? "Claude" : "Gemini"));
             }
             return;
         }
@@ -137,16 +149,16 @@ public class AiChatController {
         addUserMessage(prompt);
         clearQuickReplies();
         promptField.setDisable(true);
-        setStatus("● Denkt nach...", "#f59e0b");
+        setStatus(LanguageManager.get("ai.thinking.status"), "#f59e0b");
 
         // Resolve API key on FX thread
         String apiKey = System.getenv("MINDMAP_AI_KEY");
         if (apiKey == null || apiKey.trim().isEmpty()) apiKey = userApiKey;
         if (apiKey == null || apiKey.trim().isEmpty()) {
             TextInputDialog keyDialog = new TextInputDialog();
-            keyDialog.setTitle("API Key benötigt");
-            keyDialog.setHeaderText("Gemini oder Claude API Key eingeben");
-            keyDialog.setContentText("API Key (Gemini oder sk-ant-... für Claude):");
+            keyDialog.setTitle(LanguageManager.get("ai.apikey.title"));
+            keyDialog.setHeaderText(LanguageManager.get("ai.apikey.header"));
+            keyDialog.setContentText(LanguageManager.get("ai.apikey.content"));
             keyDialog.getDialogPane().setPrefWidth(440);
             Optional<String> r = keyDialog.showAndWait();
             if (r.isPresent() && !r.get().trim().isEmpty()) {
@@ -168,8 +180,8 @@ public class AiChatController {
         if (finalKey == null || finalKey.trim().isEmpty()) {
             removeThinkingBubble();
             promptField.setDisable(false);
-            setStatus("● Bereit", "#10b981");
-            addAiMessage("Kein API Key vorhanden. Tippe !apikey:DEIN_KEY um einen zu setzen.");
+            setStatus(LanguageManager.get("ai.ready.status"), "#10b981");
+            addAiMessage(LanguageManager.get("ai.nokey"));
             return;
         }
 
@@ -181,7 +193,7 @@ public class AiChatController {
                 Platform.runLater(() -> {
                     removeThinkingBubble();
                     promptField.setDisable(false);
-                    setStatus("● Bereit", "#10b981");
+                    setStatus(LanguageManager.get("ai.ready.status"), "#10b981");
                     showQuickReplies();
                 });
             }
@@ -212,7 +224,7 @@ public class AiChatController {
         row.setId("thinking-bubble");
         Label avatar = new Label("✨");
         avatar.setStyle("-fx-font-size: 20px;");
-        Label bubble = new Label("Denkt nach...");
+        Label bubble = new Label(LanguageManager.get("ai.thinking.bubble"));
         bubble.setStyle("-fx-background-color: #1a2236; -fx-text-fill: #475569; -fx-padding: 12 18; "
                 + "-fx-background-radius: 18 18 18 4; -fx-font-size: 14px; -fx-font-style: italic;");
         bubble.setWrapText(true);
@@ -232,7 +244,8 @@ public class AiChatController {
     private void showQuickReplies() {
         if (suggestionRow == null) return;
         suggestionRow.getChildren().clear();
-        String[] replies = {"✨ Erweitern", "🔄 Neu strukturieren", "📊 Beispiele hinzufügen", "❓ Erklären"};
+        String[] replies = {LanguageManager.get("ai.r1"), LanguageManager.get("ai.r2"),
+                            LanguageManager.get("ai.r3"), LanguageManager.get("ai.r4")};
         for (String text : replies) {
             Button chip = makeChip(text, true);
             chip.setOnAction(e -> { promptField.setText(text.substring(text.indexOf(' ') + 1).trim()); onSend(); });
@@ -295,12 +308,12 @@ public class AiChatController {
 
     private String buildAiPrompt(String userRequest) {
         String context = currentMapText.isEmpty()
-                ? "Es existiert noch keine Mindmap. Erstelle eine neue."
-                : "Aktuelle Mindmap:\n" + currentMapText + "\n\nAktualisiere sie basierend auf dem Wunsch.";
-        return "Du bist ein Mindmap-Experte. " + context
-                + "\nNutzer: '" + userRequest + "'\n"
-                + "WICHTIG: Antworte AUSSCHLIESSLICH in diesem Format, ohne Markdown:\n"
-                + "Hauptthema\nKategorie 1\n- Unterkategorie 1.1\n- Unterkategorie 1.2\nKategorie 2\n- Unterkategorie 2.1";
+                ? "No mind map exists yet. Create a new one."
+                : "Current mind map:\n" + currentMapText + "\n\nUpdate it based on the request.";
+        return "You are a mind map expert. " + context
+                + "\nUser: '" + userRequest + "'\n"
+                + "IMPORTANT: Respond ONLY in this format, without Markdown:\n"
+                + "Main Topic\nCategory 1\n- Subcategory 1.1\n- Subcategory 1.2\nCategory 2\n- Subcategory 2.1";
     }
 
     private static String escapeJson(String s) {
@@ -414,20 +427,20 @@ public class AiChatController {
             }
 
             if (statusCode != 200) {
-                addAiMessage("Fehler (" + statusCode + "): " + responseBody);
+                addAiMessage(LanguageManager.getf("ai.claudeError", statusCode, responseBody));
                 return;
             }
             String content = extractTextFromJson(responseBody);
             if (content != null) {
                 applyAiContent(content);
-                addAiMessage("Mindmap aktualisiert! Ich habe " + countCategories(content)
-                        + " Kategorien zu \"" + prompt.substring(0, Math.min(prompt.length(), 30)) + "\" erstellt.");
+                addAiMessage(LanguageManager.getf("ai.updated",
+                        countCategories(content), prompt.substring(0, Math.min(prompt.length(), 30))));
             } else {
-                addAiMessage("Die Antwort konnte nicht verarbeitet werden. Bitte versuche es erneut.");
+                addAiMessage(LanguageManager.get("ai.error"));
             }
         } catch (Exception e) {
             e.printStackTrace();
-            addAiMessage("Verbindungsfehler: " + e.getMessage());
+            addAiMessage(LanguageManager.getf("ai.connectionError", e.getMessage()));
         }
     }
 
@@ -456,20 +469,20 @@ public class AiChatController {
             }
 
             if (statusCode != 200) {
-                addAiMessage("Gemini Fehler (" + statusCode + "): " + responseBody);
+                addAiMessage(LanguageManager.getf("ai.geminiError", statusCode, responseBody));
                 return;
             }
             String content = extractTextFromJson(responseBody);
             if (content != null) {
                 applyAiContent(content);
-                addAiMessage("Mindmap aktualisiert! Ich habe " + countCategories(content)
-                        + " Kategorien zu \"" + prompt.substring(0, Math.min(prompt.length(), 30)) + "\" erstellt.");
+                addAiMessage(LanguageManager.getf("ai.updated",
+                        countCategories(content), prompt.substring(0, Math.min(prompt.length(), 30))));
             } else {
-                addAiMessage("Die Antwort konnte nicht verarbeitet werden. Bitte versuche es erneut.");
+                addAiMessage(LanguageManager.get("ai.error"));
             }
         } catch (Exception e) {
             e.printStackTrace();
-            addAiMessage("Verbindungsfehler: " + e.getMessage());
+            addAiMessage(LanguageManager.getf("ai.connectionError", e.getMessage()));
         }
     }
 }

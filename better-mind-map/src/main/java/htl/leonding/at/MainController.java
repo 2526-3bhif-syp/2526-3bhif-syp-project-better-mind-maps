@@ -45,6 +45,18 @@ public class MainController {
     @FXML private VBox sidebar;
     @FXML private HBox statusbar;
 
+    @FXML private Button backBtn;
+    @FXML private Button newMapBtn;
+    @FXML private Button aiBtn;
+    @FXML private Button presentBtn;
+    @FXML private Label structureLabel;
+    @FXML private Label sbAddChild;
+    @FXML private Label sbEdit;
+    @FXML private Label sbDelete;
+    @FXML private Label sbNavigate;
+    @FXML private Label sbCycle;
+    @FXML private Label sbZoom;
+
     private boolean isPresentationModeActive = false;
     private VBox activeHud = null;
     private String currentPresentationTheme = "LIGHT"; // LIGHT, DARK, SEPIA, OCEAN
@@ -62,6 +74,7 @@ public class MainController {
     @FXML
     public void initialize() {
         tabPane.setTabDragPolicy(TabPane.TabDragPolicy.REORDER);
+        applyLanguage();
 
         tabPane.getTabs().addListener((javafx.collections.ListChangeListener<Tab>) change -> {
             if (tabPane.getTabs().isEmpty()) {
@@ -117,6 +130,22 @@ public class MainController {
                 }
             }
         });
+    }
+
+    public void applyLanguage() {
+        if (backBtn != null)       backBtn.setText(LanguageManager.get("btn.back"));
+        if (newMapBtn != null)     newMapBtn.setText(LanguageManager.get("btn.newmap"));
+        if (aiBtn != null)         aiBtn.setText(LanguageManager.get("btn.aigenerate"));
+        if (presentBtn != null)    presentBtn.setText(LanguageManager.get("btn.present"));
+        if (structureLabel != null) structureLabel.setText(LanguageManager.get("sidebar.structure"));
+        if (sbAddChild != null)    sbAddChild.setText(LanguageManager.get("sb.addchild"));
+        if (sbEdit != null)        sbEdit.setText(LanguageManager.get("sb.edit"));
+        if (sbDelete != null)      sbDelete.setText(LanguageManager.get("sb.delete"));
+        if (sbNavigate != null)    sbNavigate.setText(LanguageManager.get("sb.navigate"));
+        if (sbCycle != null)       sbCycle.setText(LanguageManager.get("sb.cycle"));
+        if (sbZoom != null)        sbZoom.setText(LanguageManager.get("sb.zoom"));
+        if (syncBtn != null)       syncBtn.setText(LanguageManager.get("btn.sync"));
+        if (syncStatusLabel != null) syncStatusLabel.setText(LanguageManager.get("status.pending"));
     }
 
     private void syncSidebarHeaderHeight() {
@@ -198,9 +227,9 @@ public class MainController {
     @FXML
     public void onCreateNewMap() {
         TextInputDialog nameDialog = new TextInputDialog();
-        nameDialog.setTitle("New Mind Map");
-        nameDialog.setHeaderText("Neue Mind Map");
-        nameDialog.setContentText("Name der Mind Map:");
+        nameDialog.setTitle(LanguageManager.get("dlg.newmap.title"));
+        nameDialog.setHeaderText(LanguageManager.get("dlg.newmap.header"));
+        nameDialog.setContentText(LanguageManager.get("dlg.newmap.content"));
         applyTheme(nameDialog);
         Optional<String> nameResult = nameDialog.showAndWait();
         if (nameResult.isEmpty() || nameResult.get().trim().isEmpty()) return;
@@ -222,9 +251,9 @@ public class MainController {
             activeMap = (MindMap) activeTab.getUserData();
         } else {
             TextInputDialog nameDialog = new TextInputDialog();
-            nameDialog.setTitle("New Mind Map");
-            nameDialog.setHeaderText("Zuerst eine Mind Map erstellen");
-            nameDialog.setContentText("Name der Mind Map:");
+            nameDialog.setTitle(LanguageManager.get("dlg.newmap.title"));
+            nameDialog.setHeaderText(LanguageManager.get("dlg.createfirst"));
+            nameDialog.setContentText(LanguageManager.get("dlg.newmap.content"));
             applyTheme(nameDialog);
             Optional<String> r = nameDialog.showAndWait();
             if (r.isEmpty() || r.get().trim().isEmpty()) return;
@@ -277,10 +306,10 @@ public class MainController {
     }
 
     private String buildAiPrompt(String topic) {
-        return "Du bist ein Mindmap-Experte. Erstelle zum Thema '" + topic + "' eine detaillierte Mindmap. " +
-               "WICHTIG: Antworte AUSSCHLIESSLICH im folgenden Format, OHNE Markdown, OHNE Text davor oder danach. " +
-               "Zeile 1 = Hauptthema. Dann Kategorien und Unterkategorien mit '- ' Prefix:\n" +
-               "Hauptthema\nKategorie 1\n- Unterkategorie 1.1\n- Unterkategorie 1.2\nKategorie 2\n- Unterkategorie 2.1";
+        return "You are a mind map expert. Create a detailed mind map about '" + topic + "'. " +
+               "IMPORTANT: Respond ONLY in the following format, NO markdown, NO text before or after. " +
+               "Line 1 = main topic. Then categories and subcategories with '- ' prefix:\n" +
+               "Main Topic\nCategory 1\n- Subcategory 1.1\n- Subcategory 1.2\nCategory 2\n- Subcategory 2.1";
     }
 
     private void applyAiStyling(MindMap map, Node root, String content) {
@@ -430,54 +459,53 @@ public class MainController {
     private void generateSmarterMockAiMindMap(MindMap map, Node root, String prompt) {
         String p = prompt.toLowerCase();
         
-        if (p.contains("aktien") || p.contains("börse") || p.contains("stock") || p.contains("investieren")) {
-            Node basics = service.addNode(map, root.getId(), "Grundlagen");
-            service.addNode(map, basics.getId(), "Börse & Handel");
+        if (p.contains("aktien") || p.contains("börse") || p.contains("stock") || p.contains("invest")) {
+            Node basics = service.addNode(map, root.getId(), "Basics");
+            service.addNode(map, basics.getId(), "Stock Exchange & Trading");
             service.addNode(map, basics.getId(), "Broker");
-            service.addNode(map, basics.getId(), "Dividende");
+            service.addNode(map, basics.getId(), "Dividends");
 
-            Node types = service.addNode(map, root.getId(), "Anlageklassen");
-            service.addNode(map, types.getId(), "Einzelaktien");
+            Node types = service.addNode(map, root.getId(), "Asset Classes");
+            service.addNode(map, types.getId(), "Individual Stocks");
             service.addNode(map, types.getId(), "ETFs");
-            service.addNode(map, types.getId(), "Aktienfonds");
+            service.addNode(map, types.getId(), "Mutual Funds");
 
-            Node strategy = service.addNode(map, root.getId(), "Strategie");
+            Node strategy = service.addNode(map, root.getId(), "Strategy");
             service.addNode(map, strategy.getId(), "Buy & Hold");
-            service.addNode(map, strategy.getId(), "Daytrading");
+            service.addNode(map, strategy.getId(), "Day Trading");
             service.addNode(map, strategy.getId(), "Value Investing");
-            
-            Node risks = service.addNode(map, root.getId(), "Risiken");
-            service.addNode(map, risks.getId(), "Kursschwankungen");
-            service.addNode(map, risks.getId(), "Inflation");
-            service.addNode(map, risks.getId(), "Totalverlust");
 
-        } else if (p.contains("java") || p.contains("programmieren") || p.contains("software")) {
-            Node concepts = service.addNode(map, root.getId(), "Konzepte");
-            service.addNode(map, concepts.getId(), "Objektorientierung");
-            service.addNode(map, concepts.getId(), "Datenstrukturen");
-            
+            Node risks = service.addNode(map, root.getId(), "Risks");
+            service.addNode(map, risks.getId(), "Price Volatility");
+            service.addNode(map, risks.getId(), "Inflation");
+            service.addNode(map, risks.getId(), "Total Loss");
+
+        } else if (p.contains("java") || p.contains("programming") || p.contains("software") || p.contains("programmieren")) {
+            Node concepts = service.addNode(map, root.getId(), "Concepts");
+            service.addNode(map, concepts.getId(), "Object-Oriented Programming");
+            service.addNode(map, concepts.getId(), "Data Structures");
+
             Node tools = service.addNode(map, root.getId(), "Tools");
             service.addNode(map, tools.getId(), "IDE (IntelliJ, Eclipse)");
             service.addNode(map, tools.getId(), "Git & GitHub");
-            
-            Node languages = service.addNode(map, root.getId(), "Sprachen");
+
+            Node languages = service.addNode(map, root.getId(), "Languages");
             service.addNode(map, languages.getId(), "Java");
             service.addNode(map, languages.getId(), "Python");
             service.addNode(map, languages.getId(), "JavaScript");
-            
+
         } else {
-            // Generisches Fallback für alle anderen Prompts
-            Node info = service.addNode(map, root.getId(), "Was ist das?");
+            Node info = service.addNode(map, root.getId(), "What is it?");
             service.addNode(map, info.getId(), "Definition");
-            service.addNode(map, info.getId(), "Ursprung");
-            
-            Node proCon = service.addNode(map, root.getId(), "Vor- & Nachteile");
-            service.addNode(map, proCon.getId(), "Vorteile");
-            service.addNode(map, proCon.getId(), "Nachteile");
-            
-            Node examples = service.addNode(map, root.getId(), "Beispiele & Nutzung");
-            service.addNode(map, examples.getId(), "Praxisbeispiele");
-            service.addNode(map, examples.getId(), "Anwendungsfälle");
+            service.addNode(map, info.getId(), "Origin");
+
+            Node proCon = service.addNode(map, root.getId(), "Pros & Cons");
+            service.addNode(map, proCon.getId(), "Advantages");
+            service.addNode(map, proCon.getId(), "Disadvantages");
+
+            Node examples = service.addNode(map, root.getId(), "Examples & Usage");
+            service.addNode(map, examples.getId(), "Real-world Examples");
+            service.addNode(map, examples.getId(), "Use Cases");
         }
     }
 
@@ -671,8 +699,8 @@ public class MainController {
 
     private void promptAddChild(MindMap map, Pane canvas, Node parent) {
         TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Add Node");
-        dialog.setHeaderText("Child von \"" + parent.getText() + "\"");
+        dialog.setTitle(LanguageManager.get("dlg.addchild.title"));
+        dialog.setHeaderText(LanguageManager.getf("dlg.addchild.header", parent.getText()));
         dialog.setContentText("Text:");
         applyTheme(dialog);
         dialog.showAndWait().ifPresent(text -> {
@@ -686,9 +714,9 @@ public class MainController {
 
     private void promptEditNode(MindMap map, Pane canvas, Node node) {
         TextInputDialog dialog = new TextInputDialog(node.getText());
-        dialog.setTitle("Node bearbeiten");
-        dialog.setHeaderText("Text ändern");
-        dialog.setContentText("Neuer Text:");
+        dialog.setTitle(LanguageManager.get("dlg.editnode.title"));
+        dialog.setHeaderText(LanguageManager.get("dlg.editnode.header"));
+        dialog.setContentText(LanguageManager.get("dlg.editnode.content"));
         applyTheme(dialog);
         dialog.showAndWait().ifPresent(text -> {
             service.updateNodeText(map, node, text);
@@ -1052,13 +1080,13 @@ public class MainController {
 
         ContextMenu contextMenu = new ContextMenu();
 
-        MenuItem addChild = new MenuItem("Add Child Node  [Enter]");
+        MenuItem addChild = new MenuItem(LanguageManager.get("menu.addchild"));
         addChild.setOnAction(e -> promptAddChild(map, canvas, node));
 
-        MenuItem editText = new MenuItem("Edit Text  [F2]");
+        MenuItem editText = new MenuItem(LanguageManager.get("menu.edittext"));
         editText.setOnAction(e -> promptEditNode(map, canvas, node));
 
-        MenuItem deleteNode = new MenuItem("Delete Node  [Del]");
+        MenuItem deleteNode = new MenuItem(LanguageManager.get("menu.deletenode"));
         deleteNode.setDisable(node.getParentId() == null);
         deleteNode.setOnAction(e -> {
             if (node.getParentId() != null) {
@@ -1072,17 +1100,17 @@ public class MainController {
             }
         });
 
-        MenuItem editDesc = new MenuItem("📝  Beschreibung bearbeiten");
+        MenuItem editDesc = new MenuItem(LanguageManager.get("menu.editdesc"));
         editDesc.setOnAction(e -> showEditDescriptionDialog(node, canvas, map));
 
-        MenuItem styleNode = new MenuItem("🎨  Stil bearbeiten");
+        MenuItem styleNode = new MenuItem(LanguageManager.get("menu.editstyle"));
         styleNode.setOnAction(e -> NodeStyleEditor.show(node, repository,
                 () -> {
                     refreshCanvas(canvas, map);
                     TutorialManager.onAction(TutorialManager.TutorialAction.NODE_STYLED);
                 }, canvas.getScene().getWindow()));
 
-        MenuItem duplicate = new MenuItem("📋  Duplizieren");
+        MenuItem duplicate = new MenuItem(LanguageManager.get("menu.duplicate"));
         duplicate.setOnAction(e -> {
             if (node.getParentId() != null) {
                 Node dup = service.addNode(map, node.getParentId(), node.getText());
@@ -1316,7 +1344,9 @@ public class MainController {
         hud.getStyleClass().add("presentation-hud");
 
         // Title
-        Label title = new Label(isPresentationModeActive ? "PRESENTATION CONTROLS" : "NODE STYLING");
+        Label title = new Label(isPresentationModeActive
+                ? LanguageManager.get("hud.presentationCtrl")
+                : LanguageManager.get("hud.nodeStyling"));
         title.getStyleClass().add("hud-title");
         hud.getChildren().add(title);
 
@@ -1348,7 +1378,7 @@ public class MainController {
                     colorStrip.getChildren().add(sw);
                 }
 
-                Button openEditor = new Button("🎨  Vollständig bearbeiten");
+                Button openEditor = new Button(LanguageManager.get("hud.fullEditor"));
                 openEditor.setStyle("-fx-background-color: #6366f1; -fx-text-fill: white; "
                         + "-fx-font-size: 12px; -fx-padding: 7 14; -fx-background-radius: 8; "
                         + "-fx-cursor: hand; -fx-border-width: 0;");
@@ -1361,7 +1391,7 @@ public class MainController {
                 nodeSection.getChildren().addAll(selectedLabel, colorStrip, openEditor);
                 hud.getChildren().add(nodeSection);
             } else {
-                Label noSelectLabel = new Label("Node auswählen um Stil zu bearbeiten");
+                Label noSelectLabel = new Label(LanguageManager.get("hud.noselection"));
                 noSelectLabel.getStyleClass().add("hud-label");
                 noSelectLabel.setStyle("-fx-font-style: italic; -fx-text-fill: #a5b1c2;");
                 hud.getChildren().add(noSelectLabel);
@@ -1377,14 +1407,14 @@ public class MainController {
         VBox themeSection = new VBox();
         themeSection.getStyleClass().add("hud-section");
         
-        Label themeLabel = new Label("Canvas Theme:");
+        Label themeLabel = new Label(LanguageManager.get("hud.canvastheme"));
         themeLabel.getStyleClass().add("hud-label");
         themeSection.getChildren().add(themeLabel);
 
         HBox themeBtnBox = new HBox();
         themeBtnBox.setSpacing(6);
         
-        Button btnLight = new Button("Light");
+        Button btnLight = new Button(LanguageManager.get("theme.light"));
         btnLight.getStyleClass().add("btn-hud");
         if (currentPresentationTheme.equals("LIGHT")) btnLight.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
         btnLight.setOnAction(e -> {
@@ -1393,7 +1423,7 @@ public class MainController {
             refreshCanvas(canvas, map);
         });
 
-        Button btnDark = new Button("Dark");
+        Button btnDark = new Button(LanguageManager.get("theme.dark"));
         btnDark.getStyleClass().add("btn-hud");
         if (currentPresentationTheme.equals("DARK")) btnDark.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
         btnDark.setOnAction(e -> {
@@ -1402,7 +1432,7 @@ public class MainController {
             refreshCanvas(canvas, map);
         });
 
-        Button btnSepia = new Button("Sepia");
+        Button btnSepia = new Button(LanguageManager.get("theme.sepia"));
         btnSepia.getStyleClass().add("btn-hud");
         if (currentPresentationTheme.equals("SEPIA")) btnSepia.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
         btnSepia.setOnAction(e -> {
@@ -1411,7 +1441,7 @@ public class MainController {
             refreshCanvas(canvas, map);
         });
 
-        Button btnOcean = new Button("Ocean");
+        Button btnOcean = new Button(LanguageManager.get("theme.ocean"));
         btnOcean.getStyleClass().add("btn-hud");
         if (currentPresentationTheme.equals("OCEAN")) btnOcean.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
         btnOcean.setOnAction(e -> {
@@ -1426,7 +1456,7 @@ public class MainController {
 
         // Exit Button (only in presentation mode)
         if (isPresentationModeActive) {
-            Button btnExit = new Button("Exit Presentation");
+            Button btnExit = new Button(LanguageManager.get("btn.exitpresentation"));
             btnExit.getStyleClass().add("btn-hud-danger");
             btnExit.setMaxWidth(Double.MAX_VALUE);
             btnExit.setOnAction(e -> {
@@ -1507,7 +1537,8 @@ public class MainController {
     private void updateSyncStatusLabel(MindMap map) {
         if (syncStatusLabel != null) {
             String status = map.getSyncStatus();
-            syncStatusLabel.setText("Cloud Sync: " + (status != null ? status : "PENDING"));
+            String key = "sync." + (status != null ? status.toLowerCase() : "pending");
+            syncStatusLabel.setText(LanguageManager.get(key));
         }
     }
 
@@ -1517,7 +1548,7 @@ public class MainController {
         if (selected == null || !(selected.getUserData() instanceof MindMap)) return;
         MindMap map = (MindMap) selected.getUserData();
 
-        syncStatusLabel.setText("Cloud Sync: SYNCING...");
+        syncStatusLabel.setText(LanguageManager.get("sync.syncing"));
         syncBtn.setDisable(true);
 
         javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {
@@ -1531,13 +1562,13 @@ public class MainController {
             @Override
             protected void succeeded() {
                 map.setSyncStatus("SYNCED");
-                syncStatusLabel.setText("Cloud Sync: SYNCED");
+                syncStatusLabel.setText(LanguageManager.get("sync.synced"));
                 syncBtn.setDisable(false);
             }
 
             @Override
             protected void failed() {
-                syncStatusLabel.setText("Cloud Sync: FAILED");
+                syncStatusLabel.setText(LanguageManager.get("sync.failed"));
                 syncBtn.setDisable(false);
             }
         };
@@ -1588,7 +1619,7 @@ public class MainController {
 
         String desc = node.getDescription();
         if (desc == null || desc.trim().isEmpty()) {
-            Label empty = new Label("Noch keine Beschreibung vorhanden.\n\nRechtsklick → \"Beschreibung bearbeiten\" um eine hinzuzufügen.");
+            Label empty = new Label(LanguageManager.get("desc.empty"));
             empty.getStyleClass().add("desc-empty-label");
             empty.setWrapText(true);
             empty.setPadding(new Insets(12, 14, 12, 14));
@@ -1606,7 +1637,7 @@ public class MainController {
         footer.getStyleClass().add("desc-popup-footer");
         footer.setAlignment(Pos.CENTER_RIGHT);
 
-        Button editBtn = new Button("✏  Bearbeiten");
+        Button editBtn = new Button(LanguageManager.get("desc.edit"));
         editBtn.getStyleClass().add("btn-primary");
         editBtn.setStyle("-fx-font-size: 12px; -fx-padding: 6 14;");
         editBtn.setOnAction(e -> {
@@ -1614,7 +1645,7 @@ public class MainController {
             showEditDescriptionDialog(node, canvas, map);
         });
 
-        Button closeFooterBtn = new Button("Schließen");
+        Button closeFooterBtn = new Button(LanguageManager.get("desc.close"));
         closeFooterBtn.getStyleClass().add("btn-ghost");
         closeFooterBtn.setStyle("-fx-font-size: 12px; -fx-padding: 6 14;");
         closeFooterBtn.setOnAction(e -> popup.close());
@@ -1652,13 +1683,13 @@ public class MainController {
 
     private void showEditDescriptionDialog(Node node, Pane canvas, MindMap map) {
         Dialog<String> dialog = new Dialog<>();
-        dialog.setTitle("Beschreibung");
-        dialog.setHeaderText("Beschreibung für: " + node.getText());
+        dialog.setTitle(LanguageManager.get("dlg.desc.title"));
+        dialog.setHeaderText(LanguageManager.getf("dlg.desc.header", node.getText()));
         applyTheme(dialog);
         dialog.getDialogPane().setPrefWidth(500);
 
         TextArea area = new TextArea(node.getDescription());
-        area.setPromptText("Notizen, Details oder eine Beschreibung für diesen Node...");
+        area.setPromptText(LanguageManager.get("dlg.desc.prompt"));
         area.setPrefRowCount(10);
         area.setWrapText(true);
         area.getStyleClass().add("desc-textarea");
@@ -1668,8 +1699,8 @@ public class MainController {
         content.setPadding(new Insets(4, 0, 0, 0));
         dialog.getDialogPane().setContent(content);
 
-        ButtonType saveType   = new ButtonType("Speichern", ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancelType = new ButtonType("Abbrechen", ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType saveType   = new ButtonType(LanguageManager.get("dlg.desc.save"), ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelType = new ButtonType(LanguageManager.get("dlg.desc.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
         dialog.getDialogPane().getButtonTypes().addAll(saveType, cancelType);
         dialog.setResultConverter(btn -> btn == saveType ? area.getText() : null);
 
