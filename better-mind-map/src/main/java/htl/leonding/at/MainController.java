@@ -1,9 +1,11 @@
 package htl.leonding.at;
 
+import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.util.Duration;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -62,6 +64,9 @@ public class MainController {
 
     private boolean isPresentationModeActive = false;
     private VBox activeHud = null;
+    private Button activeHudToggle = null;
+    private boolean hudExpanded = true;
+    private static final int HUD_TAB_W = 26;
     private String currentPresentationTheme = "LIGHT"; // LIGHT, DARK, SEPIA, OCEAN
 
     private boolean minimapExpanded = true;
@@ -565,6 +570,11 @@ public class MainController {
         tabPane.getSelectionModel().select(tab);
         refreshCanvas(canvas, map);
         viewport.requestFocus();
+
+        // Fit the entire map into view once the viewport has its actual size
+        Platform.runLater(() -> Platform.runLater(() ->
+            Platform.runLater(() -> fitMapToViewport(viewport, canvas, map))
+        ));
     }
 
     // Key: instead of canvas.setScaleX() — which scales around getBoundsInLocal().center (a dynamic
@@ -682,12 +692,10 @@ public class MainController {
             }
             currentNode = nodes.get(idx);
             refreshCanvas(canvas, map);
-            centerOnCurrentNode((Pane) canvas.getParent(), canvas);
             e.consume();
 
         } else if (code == KeyCode.RIGHT || code == KeyCode.LEFT || code == KeyCode.UP || code == KeyCode.DOWN) {
             navigateSpatial(map, canvas, code);
-            centerOnCurrentNode((Pane) canvas.getParent(), canvas);
             e.consume();
 
         } else if (code == KeyCode.F2) {
@@ -1374,6 +1382,41 @@ public class MainController {
         canvas.setTranslateY(viewport.getHeight() / 2.0 - contentCenterY * scale);
     }
 
+    private void fitMapToViewport(Pane viewport, Pane canvas, MindMap map) {
+        if (map.getNodes().isEmpty() || viewport.getWidth() <= 0 || viewport.getHeight() <= 0) return;
+
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+        for (Node n : map.getNodes()) {
+            double hw = getNodeWidth(n)  / 2.0;
+            double hh = getNodeHeight(n) / 2.0;
+            minX = Math.min(minX, n.getXCoordinate() - hw);
+            minY = Math.min(minY, n.getYCoordinate() - hh);
+            maxX = Math.max(maxX, n.getXCoordinate() + hw);
+            maxY = Math.max(maxY, n.getYCoordinate() + hh);
+        }
+
+        double contentW = maxX - minX;
+        double contentH = maxY - minY;
+        if (contentW <= 0 || contentH <= 0) return;
+
+        final double PADDING = 80;
+        double scaleX = (viewport.getWidth()  - PADDING * 2) / contentW;
+        double scaleY = (viewport.getHeight() - PADDING * 2) / contentH;
+        double scale  = Math.max(0.15, Math.min(1.5, Math.min(scaleX, scaleY)));
+
+        javafx.scene.transform.Scale scaleXform = getOrAddScaleTransform(canvas);
+        scaleXform.setX(scale);
+        scaleXform.setY(scale);
+
+        double cx = (minX + maxX) / 2.0;
+        double cy = (minY + maxY) / 2.0;
+        canvas.setTranslateX(viewport.getWidth()  / 2.0 - cx * scale);
+        canvas.setTranslateY(viewport.getHeight() / 2.0 - cy * scale);
+
+        refreshMinimapOnly(viewport, canvas, map);
+    }
+
     private void exitPresentationMode(Stage stage) {
         isPresentationModeActive = false;
         if (stage.isFullScreen()) {
@@ -1391,13 +1434,16 @@ public class MainController {
         // Remove CSS class from tabPane
         tabPane.getStyleClass().remove("presentation-mode");
 
-        // Remove active HUD
+        // Remove active HUD and its toggle
         if (activeHud != null) {
             Pane parent = (Pane) activeHud.getParent();
-            if (parent != null) {
-                parent.getChildren().remove(activeHud);
-            }
+            if (parent != null) parent.getChildren().remove(activeHud);
             activeHud = null;
+        }
+        if (activeHudToggle != null) {
+            Pane parent = (Pane) activeHudToggle.getParent();
+            if (parent != null) parent.getChildren().remove(activeHudToggle);
+            activeHudToggle = null;
         }
 
         // Re-render current tab's canvas, then re-center once the viewport has settled
@@ -1437,23 +1483,28 @@ public class MainController {
     }
 
     private void showPresentationHud(Pane viewport, Pane canvas, MindMap map) {
+        // Remove existing HUD and toggle
         if (activeHud != null) {
-            Pane parent = (Pane) activeHud.getParent();
-            if (parent != null) parent.getChildren().remove(activeHud);
+            Pane p = (Pane) activeHud.getParent();
+            if (p != null) p.getChildren().remove(activeHud);
             activeHud = null;
         }
+        if (activeHudToggle != null) {
+            Pane p = (Pane) activeHudToggle.getParent();
+            if (p != null) p.getChildren().remove(activeHudToggle);
+            activeHudToggle = null;
+        }
 
+        // ── Build HUD panel ───────────────────────────────────────────────────
         VBox hud = new VBox();
         hud.getStyleClass().add("presentation-hud");
 
-        // Title
         Label title = new Label(isPresentationModeActive
                 ? LanguageManager.get("hud.presentationCtrl")
                 : LanguageManager.get("hud.nodeStyling"));
         title.getStyleClass().add("hud-title");
         hud.getChildren().add(title);
 
-        // Selected Node Section — only visible outside presentation mode
         if (!isPresentationModeActive) {
             if (currentNode != null) {
                 VBox nodeSection = new VBox(10);
@@ -1465,7 +1516,6 @@ public class MainController {
                 selectedLabel.setMaxWidth(200);
                 selectedLabel.setWrapText(true);
 
-                // Color preview strip (read-only, opens full editor on click)
                 HBox colorStrip = new HBox(4);
                 colorStrip.setAlignment(Pos.CENTER_LEFT);
                 for (String hex : NodeStyleEditor.PRESETS) {
@@ -1501,80 +1551,105 @@ public class MainController {
             }
         }
 
-        // Separator
         Separator sep = new Separator();
         sep.setStyle("-fx-background-color: rgba(255,255,255,0.1);");
         hud.getChildren().add(sep);
 
-        // Global Canvas Theme Section
         VBox themeSection = new VBox();
         themeSection.getStyleClass().add("hud-section");
-        
         Label themeLabel = new Label(LanguageManager.get("hud.canvastheme"));
         themeLabel.getStyleClass().add("hud-label");
         themeSection.getChildren().add(themeLabel);
 
         HBox themeBtnBox = new HBox();
         themeBtnBox.setSpacing(6);
-        
         Button btnLight = new Button(LanguageManager.get("theme.light"));
         btnLight.getStyleClass().add("btn-hud");
         if (currentPresentationTheme.equals("LIGHT")) btnLight.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
-        btnLight.setOnAction(e -> {
-            map.setTheme("LIGHT");
-            repository.updateTheme(map.getId(), "LIGHT");
-            refreshCanvas(canvas, map);
-        });
+        btnLight.setOnAction(e -> { map.setTheme("LIGHT"); repository.updateTheme(map.getId(), "LIGHT"); refreshCanvas(canvas, map); });
 
         Button btnDark = new Button(LanguageManager.get("theme.dark"));
         btnDark.getStyleClass().add("btn-hud");
         if (currentPresentationTheme.equals("DARK")) btnDark.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
-        btnDark.setOnAction(e -> {
-            map.setTheme("DARK");
-            repository.updateTheme(map.getId(), "DARK");
-            refreshCanvas(canvas, map);
-        });
+        btnDark.setOnAction(e -> { map.setTheme("DARK"); repository.updateTheme(map.getId(), "DARK"); refreshCanvas(canvas, map); });
 
         Button btnSepia = new Button(LanguageManager.get("theme.sepia"));
         btnSepia.getStyleClass().add("btn-hud");
         if (currentPresentationTheme.equals("SEPIA")) btnSepia.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
-        btnSepia.setOnAction(e -> {
-            map.setTheme("SEPIA");
-            repository.updateTheme(map.getId(), "SEPIA");
-            refreshCanvas(canvas, map);
-        });
+        btnSepia.setOnAction(e -> { map.setTheme("SEPIA"); repository.updateTheme(map.getId(), "SEPIA"); refreshCanvas(canvas, map); });
 
         Button btnOcean = new Button(LanguageManager.get("theme.ocean"));
         btnOcean.getStyleClass().add("btn-hud");
         if (currentPresentationTheme.equals("OCEAN")) btnOcean.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
-        btnOcean.setOnAction(e -> {
-            map.setTheme("OCEAN");
-            repository.updateTheme(map.getId(), "OCEAN");
-            refreshCanvas(canvas, map);
-        });
+        btnOcean.setOnAction(e -> { map.setTheme("OCEAN"); repository.updateTheme(map.getId(), "OCEAN"); refreshCanvas(canvas, map); });
 
         themeBtnBox.getChildren().addAll(btnLight, btnDark, btnSepia, btnOcean);
         themeSection.getChildren().add(themeBtnBox);
         hud.getChildren().add(themeSection);
 
-        // Exit Button (only in presentation mode)
         if (isPresentationModeActive) {
             Button btnExit = new Button(LanguageManager.get("btn.exitpresentation"));
             btnExit.getStyleClass().add("btn-hud-danger");
             btnExit.setMaxWidth(Double.MAX_VALUE);
-            btnExit.setOnAction(e -> {
-                Stage stage = (Stage) viewport.getScene().getWindow();
-                exitPresentationMode(stage);
-            });
+            btnExit.setOnAction(e -> exitPresentationMode((Stage) viewport.getScene().getWindow()));
             hud.getChildren().add(btnExit);
         }
 
-        // Bind layout to keep HUD in top-right corner
-        hud.layoutXProperty().bind(viewport.widthProperty().subtract(hud.widthProperty()).subtract(20));
+        // ── Toggle tab button ─────────────────────────────────────────────────
+        // Stays fixed at the right viewport edge; HUD slides in/out beside it.
+        Button toggleTab = new Button(hudExpanded ? "›" : "‹");
+        String tabStyle = "-fx-background-color: rgba(14,20,35,0.92);"
+                + "-fx-text-fill: #94a3b8; -fx-font-size: 18px; -fx-font-weight: bold;"
+                + "-fx-min-width: " + HUD_TAB_W + "; -fx-pref-width: " + HUD_TAB_W + ";"
+                + "-fx-min-height: 56; -fx-pref-height: 56;"
+                + "-fx-background-radius: 10 0 0 10;"
+                + "-fx-border-color: rgba(255,255,255,0.09); -fx-border-radius: 10 0 0 10;"
+                + "-fx-border-width: 1 0 1 1; -fx-cursor: hand; -fx-padding: 0;";
+        toggleTab.setStyle(tabStyle);
+        toggleTab.setOnMouseEntered(e ->
+            toggleTab.setStyle(tabStyle.replace("rgba(14,20,35,0.92)", "rgba(30,36,51,0.98)")));
+        toggleTab.setOnMouseExited(e -> toggleTab.setStyle(tabStyle));
+
+        toggleTab.setOnAction(e -> {
+            if (hudExpanded) {
+                double slideAmt = hud.getWidth() + HUD_TAB_W + 16;
+                TranslateTransition tt = new TranslateTransition(Duration.millis(180), hud);
+                tt.setFromX(hud.getTranslateX());
+                tt.setToX(slideAmt);
+                tt.setInterpolator(Interpolator.EASE_OUT);
+                tt.play();
+                toggleTab.setText("‹");
+                hudExpanded = false;
+            } else {
+                TranslateTransition tt = new TranslateTransition(Duration.millis(180), hud);
+                tt.setFromX(hud.getTranslateX());
+                tt.setToX(0);
+                tt.setInterpolator(Interpolator.EASE_OUT);
+                tt.play();
+                toggleTab.setText("›");
+                hudExpanded = true;
+            }
+        });
+
+        // ── Layout: HUD to the left of the tab, both at top-right ────────────
+        hud.layoutXProperty().bind(
+            viewport.widthProperty().subtract(hud.widthProperty()).subtract(HUD_TAB_W + 8));
         hud.setLayoutY(20);
 
-        viewport.getChildren().add(hud);
+        toggleTab.layoutXProperty().bind(viewport.widthProperty().subtract(HUD_TAB_W + 4));
+        toggleTab.setLayoutY(28);
+
+        viewport.getChildren().addAll(hud, toggleTab);
         activeHud = hud;
+        activeHudToggle = toggleTab;
+
+        // If HUD was previously collapsed, restore it without animation
+        if (!hudExpanded) {
+            Platform.runLater(() -> {
+                if (activeHud != null)
+                    activeHud.setTranslateX(activeHud.getWidth() + HUD_TAB_W + 16);
+            });
+        }
     }
 
     // ── Hierarchy tree ───────────────────────────────────────────────────────

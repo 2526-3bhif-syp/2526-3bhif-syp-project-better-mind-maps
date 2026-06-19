@@ -15,7 +15,11 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.animation.*;
+import javafx.geometry.Insets;
+import javafx.stage.Popup;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,6 +41,7 @@ public class OverviewController {
     private final MindMapRepository repository = new MindMapRepository();
     private final MindMapService service = new MindMapService(repository);
     private List<MindMap> allMaps = new ArrayList<>();
+    private Popup langPopup = null;
 
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
@@ -44,6 +49,7 @@ public class OverviewController {
 
     @FXML
     public void initialize() {
+        loadLanguagePreference(); // restore per-user language before applying labels
         applyLanguage();
 
         SessionManager.User user = SessionManager.getCurrentUser();
@@ -368,8 +374,13 @@ public class OverviewController {
     private void applyLanguage() {
         sectionLabel.setText(LanguageManager.get("section.label"));
         searchField.setPromptText(LanguageManager.get("search.prompt"));
-        if (logoutBtn != null)   logoutBtn.setText(LanguageManager.get("btn.logout"));
-        if (languageBtn != null) languageBtn.setText(LanguageManager.get("btn.language"));
+        if (logoutBtn != null) logoutBtn.setText(LanguageManager.get("btn.logout"));
+        if (languageBtn != null) {
+            boolean eng = LanguageManager.isEnglish();
+            languageBtn.setGraphic(makeFlagCanvas(eng ? "en" : "de", 20, 13));
+            languageBtn.setText(eng ? "  English" : "  Deutsch");
+            languageBtn.setContentDisplay(ContentDisplay.LEFT);
+        }
     }
 
     private void applyTheme(Dialog<?> dialog) {
@@ -425,28 +436,164 @@ public class OverviewController {
 
     @FXML
     private void onLanguage() {
-        String current = LanguageManager.isEnglish() ? "English" : "Deutsch";
-        ChoiceDialog<String> dialog = new ChoiceDialog<>(current, "English", "Deutsch");
-        dialog.setTitle(LanguageManager.get("lang.title"));
-        dialog.setHeaderText(LanguageManager.get("lang.header"));
-        dialog.setContentText(LanguageManager.get("lang.content"));
-        applyTheme(dialog);
-        dialog.showAndWait().ifPresent(lang -> {
-            LanguageManager.setLanguage(
-                "English".equals(lang) ? LanguageManager.Language.ENGLISH
-                                       : LanguageManager.Language.DEUTSCH);
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("overview-view.fxml"));
-                Stage stage = (Stage) cardsFlow.getScene().getWindow();
-                javafx.scene.Parent root = loader.load();
-                OverviewController loaded = loader.getController();
-                loaded.setMainController(mainController);
-                stage.getScene().setRoot(root);
-                WindowsDarkMode.applyToAllWindows();
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to reload overview", e);
-            }
+        if (langPopup != null && langPopup.isShowing()) {
+            langPopup.hide();
+            return;
+        }
+
+        double rowH = Math.max(32, languageBtn.getHeight());
+        double rowW = Math.max(120, languageBtn.getWidth());
+
+        Popup popup = new Popup();
+        popup.setAutoHide(true);
+        popup.setOnHidden(e -> langPopup = null);
+        langPopup = popup;
+
+        VBox box = new VBox(0);
+        box.setStyle("-fx-background-color: #1e2433; -fx-border-color: #334155; -fx-border-width: 1;"
+                   + "-fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 4;");
+        box.setEffect(new javafx.scene.effect.DropShadow(16, 0, 6, javafx.scene.paint.Color.web("#00000066")));
+
+        // Only show languages that are not currently active
+        LanguageManager.Language cur = LanguageManager.getLanguage();
+        if (cur != LanguageManager.Language.ENGLISH)
+            addLangRow(box, popup, "English", LanguageManager.Language.ENGLISH, "en", rowH, rowW);
+        if (cur != LanguageManager.Language.DEUTSCH)
+            addLangRow(box, popup, "Deutsch", LanguageManager.Language.DEUTSCH,  "de", rowH, rowW);
+
+        Rectangle clip = new Rectangle(400, 0);
+        box.setClip(clip);
+
+        popup.getContent().add(box);
+        javafx.geometry.Bounds b = languageBtn.localToScreen(languageBtn.getBoundsInLocal());
+        popup.show(languageBtn.getScene().getWindow(), b.getMinX(), b.getMaxY() + 4);
+
+        Platform.runLater(() -> {
+            double fullH = box.getHeight() > 0 ? box.getHeight() : (2 * rowH + 10);
+            clip.setWidth(box.getWidth() > 0 ? box.getWidth() + 2 : 250);
+            Timeline tl = new Timeline(
+                new KeyFrame(Duration.ZERO,
+                    new KeyValue(clip.heightProperty(), 0, Interpolator.EASE_OUT)),
+                new KeyFrame(Duration.millis(220),
+                    new KeyValue(clip.heightProperty(), fullH, Interpolator.EASE_OUT))
+            );
+            tl.play();
         });
+    }
+
+    private void addLangRow(VBox box, Popup popup,
+                            String name, LanguageManager.Language lang,
+                            String flagCode, double rowH, double rowW) {
+        HBox row = new HBox(10);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setPrefHeight(rowH);
+        row.setMinHeight(rowH);
+        row.setMaxHeight(rowH);
+        row.setPrefWidth(rowW);
+        row.setMinWidth(rowW);
+        row.setMaxWidth(rowW);
+        row.setPadding(new Insets(0, 18, 0, 14));
+        row.setStyle("-fx-background-color: transparent; -fx-background-radius: 7; -fx-cursor: hand;");
+
+        Canvas flag = makeFlagCanvas(flagCode, 26, 17);
+        Rectangle flagClip = new Rectangle(26, 17);
+        flagClip.setArcWidth(3);
+        flagClip.setArcHeight(3);
+        flag.setClip(flagClip);
+
+        Label nameLbl = new Label(name);
+        nameLbl.setStyle("-fx-text-fill: #e2e8f0; -fx-font-size: 13px;");
+        row.getChildren().addAll(flag, nameLbl);
+
+        row.setOnMouseEntered(e -> row.setStyle(
+            "-fx-background-color: #2a3245; -fx-background-radius: 7; -fx-cursor: hand;"));
+        row.setOnMouseExited(e  -> row.setStyle(
+            "-fx-background-color: transparent; -fx-background-radius: 7; -fx-cursor: hand;"));
+        row.setOnMouseClicked(e -> { popup.hide(); applySelectedLanguage(lang); });
+        box.getChildren().add(row);
+    }
+
+    private static Canvas makeFlagCanvas(String code, double w, double h) {
+        Canvas c = new Canvas(w, h);
+        GraphicsContext gc = c.getGraphicsContext2D();
+        switch (code) {
+            case "en" -> {
+                gc.setFill(Color.web("#012169"));
+                gc.fillRect(0, 0, w, h);
+                // White diagonals
+                gc.setStroke(Color.WHITE);
+                gc.setLineWidth(h * 0.38);
+                gc.strokeLine(0, 0, w, h);
+                gc.strokeLine(w, 0, 0, h);
+                // Red diagonals (narrower, over white)
+                gc.setStroke(Color.web("#C8102E"));
+                gc.setLineWidth(h * 0.22);
+                gc.strokeLine(0, 0, w, h);
+                gc.strokeLine(w, 0, 0, h);
+                // White cross
+                gc.setFill(Color.WHITE);
+                gc.fillRect(w * 0.375, 0, w * 0.25, h);
+                gc.fillRect(0, h * 0.35, w, h * 0.30);
+                // Red cross
+                gc.setFill(Color.web("#C8102E"));
+                gc.fillRect(w * 0.42, 0, w * 0.16, h);
+                gc.fillRect(0, h * 0.40, w, h * 0.20);
+            }
+            case "de" -> {
+                double s = h / 3.0;
+                gc.setFill(Color.web("#000000")); gc.fillRect(0, 0,     w, s);
+                gc.setFill(Color.web("#DD0000")); gc.fillRect(0, s,     w, s);
+                gc.setFill(Color.web("#FFCE00")); gc.fillRect(0, s * 2, w, s);
+            }
+            default -> { gc.setFill(Color.GRAY); gc.fillRect(0, 0, w, h); }
+        }
+        return c;
+    }
+
+    private void applySelectedLanguage(LanguageManager.Language lang) {
+        LanguageManager.setLanguage(lang);
+        saveLanguagePreference();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("overview-view.fxml"));
+            Stage stage = (Stage) cardsFlow.getScene().getWindow();
+            javafx.scene.Parent root = loader.load();
+            OverviewController loaded = loader.getController();
+            loaded.setMainController(mainController);
+            stage.getScene().setRoot(root);
+            WindowsDarkMode.applyToAllWindows();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to reload overview", e);
+        }
+        if (mainController != null) mainController.applyLanguage();
+    }
+
+    // ── Per-user language preference ──────────────────────────────────────────
+
+    private static final String PREFS_NODE = "htl/leonding/at/better-mind-maps";
+    private static final String PREF_LANG  = "language";
+
+    private void loadLanguagePreference() {
+        SessionManager.User user = SessionManager.getCurrentUser();
+        if (user == null) return;
+        try {
+            java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userRoot()
+                    .node(PREFS_NODE + "/" + user.getId());
+            String saved = prefs.get(PREF_LANG, LanguageManager.Language.ENGLISH.name());
+            LanguageManager.setLanguage(LanguageManager.Language.valueOf(saved));
+        } catch (Exception ignored) {
+            LanguageManager.setLanguage(LanguageManager.Language.ENGLISH);
+        }
+    }
+
+    private void saveLanguagePreference() {
+        SessionManager.User user = SessionManager.getCurrentUser();
+        if (user == null) return;
+        try {
+            java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userRoot()
+                    .node(PREFS_NODE + "/" + user.getId());
+            prefs.put(PREF_LANG, LanguageManager.getLanguage().name());
+            prefs.flush();
+        } catch (Exception ignored) {}
     }
 
     private void openEditor(MindMap map) {
