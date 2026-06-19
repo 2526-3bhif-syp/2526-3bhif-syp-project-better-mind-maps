@@ -545,7 +545,7 @@ public class MainController {
         Pane canvas = new Pane();
         viewport.getChildren().add(canvas);
 
-        setupZoomAndPan(viewport, canvas);
+        setupZoomAndPan(viewport, canvas, map);
 
         // Re-layout when viewport gets its actual size on first display
         viewport.widthProperty().addListener((obs, oldW, newW) -> {
@@ -567,7 +567,7 @@ public class MainController {
         viewport.requestFocus();
     }
 
-    private void setupZoomAndPan(Pane viewport, Pane canvas) {
+    private void setupZoomAndPan(Pane viewport, Pane canvas, MindMap map) {
         final double SCALE_DELTA = 1.1;
 
         viewport.setOnScroll(event -> {
@@ -587,6 +587,7 @@ public class MainController {
             canvas.setScaleY(newScale);
             canvas.setTranslateX(canvas.getTranslateX() - f * dx);
             canvas.setTranslateY(canvas.getTranslateY() - f * dy);
+            refreshMinimapOnly(viewport, canvas, map);
         });
 
         final double[] dragContext = new double[2];
@@ -608,6 +609,7 @@ public class MainController {
             if (isDragging[0]) {
                 canvas.setTranslateX(event.getSceneX() - dragContext[0]);
                 canvas.setTranslateY(event.getSceneY() - dragContext[1]);
+                refreshMinimapOnly(viewport, canvas, map);
                 event.consume();
             }
         });
@@ -619,6 +621,17 @@ public class MainController {
                 event.consume();
             }
         });
+    }
+
+    private void refreshMinimapOnly(Pane viewport, Pane canvas, MindMap map) {
+        if (!minimapExpanded) return;
+        viewport.getChildren().stream()
+                .filter(n -> "minimap-box".equals(n.getId()) && n instanceof VBox)
+                .findFirst()
+                .ifPresent(n -> ((VBox) n).getChildren().stream()
+                        .filter(c -> c instanceof Canvas)
+                        .findFirst()
+                        .ifPresent(c -> drawMinimapContent((Canvas) c, viewport, canvas, map)));
     }
 
     private void handleKeyPress(KeyEvent e, MindMap map, Pane canvas) {
@@ -1101,21 +1114,23 @@ public class MainController {
 
         nodeView.setOnMousePressed(e -> {
             if (e.getButton() == MouseButton.PRIMARY) {
-                dragDelta[0] = nodeView.getLayoutX() - e.getSceneX();
-                dragDelta[1] = nodeView.getLayoutY() - e.getSceneY();
+                // Convert to canvas-local coords so drag speed is correct at any zoom level
+                javafx.geometry.Point2D local = canvas.sceneToLocal(e.getSceneX(), e.getSceneY());
+                dragDelta[0] = nodeView.getLayoutX() - local.getX();
+                dragDelta[1] = nodeView.getLayoutY() - local.getY();
                 e.consume();
             }
         });
 
         nodeView.setOnMouseDragged(e -> {
             if (e.getButton() == MouseButton.PRIMARY) {
-                double newX = e.getSceneX() + dragDelta[0];
-                double newY = e.getSceneY() + dragDelta[1];
+                javafx.geometry.Point2D local = canvas.sceneToLocal(e.getSceneX(), e.getSceneY());
+                double newX = local.getX() + dragDelta[0];
+                double newY = local.getY() + dragDelta[1];
                 nodeView.setLayoutX(newX);
                 nodeView.setLayoutY(newY);
                 node.setXCoordinate(newX + nodeW / 2);
                 node.setYCoordinate(newY + nodeH / 2);
-                
                 drawLines(canvas, map);
                 e.consume();
             }
@@ -1737,11 +1752,11 @@ public class MainController {
         viewport.getChildren().removeIf(n -> "minimap-box".equals(n.getId()));
 
         Label titleLbl = new Label("🗺  Minimap");
-        titleLbl.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 11px; -fx-font-weight: bold;");
+        titleLbl.setStyle("-fx-text-fill: #475569; -fx-font-size: 11px; -fx-font-weight: bold;");
         HBox.setHgrow(titleLbl, Priority.ALWAYS);
 
         Button toggleBtn = new Button(minimapExpanded ? "−" : "+");
-        toggleBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #64748b; "
+        toggleBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #94a3b8; "
                 + "-fx-font-size: 13px; -fx-cursor: hand; -fx-padding: 0 4; -fx-border-width: 0;");
         toggleBtn.setOnAction(e -> {
             minimapExpanded = !minimapExpanded;
@@ -1750,16 +1765,16 @@ public class MainController {
 
         HBox header = new HBox(4, titleLbl, toggleBtn);
         header.setAlignment(Pos.CENTER_LEFT);
-        header.setPadding(new Insets(6, 8, 6, 10));
-        header.setStyle("-fx-background-color: rgba(15,23,42,0.90); "
-                + "-fx-border-color: #1e293b; -fx-border-width: 0 0 1 0;");
+        header.setPadding(new Insets(5, 8, 5, 10));
+        header.setStyle("-fx-background-color: #e2e8f0; "
+                + "-fx-border-color: #cbd5e1; -fx-border-width: 0 0 1 0;");
 
         VBox box = new VBox(0, header);
         box.setId("minimap-box");
-        box.setStyle("-fx-background-color: rgba(11,15,26,0.88); "
-                + "-fx-border-color: #1e293b; -fx-border-width: 1; "
+        box.setStyle("-fx-background-color: #f8fafc; "
+                + "-fx-border-color: #cbd5e1; -fx-border-width: 1; "
                 + "-fx-background-radius: 8; -fx-border-radius: 8;");
-        box.setEffect(new javafx.scene.effect.DropShadow(12, 0, 3, Color.web("#00000077")));
+        box.setEffect(new javafx.scene.effect.DropShadow(10, 0, 3, Color.web("#00000033")));
 
         if (minimapExpanded) {
             Canvas mmCanvas = new Canvas(MM_W, MM_H);
@@ -1776,7 +1791,7 @@ public class MainController {
         viewport.getChildren().add(box);
     }
 
-    private double[] computeMiniTransform(MindMap map) {
+    private double[] computeMiniTransform(MindMap map, Pane viewport, Pane canvas) {
         List<Node> nodes = map.getNodes();
         if (nodes.isEmpty()) return null;
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
@@ -1787,13 +1802,21 @@ public class MainController {
             maxX = Math.max(maxX, n.getXCoordinate());
             maxY = Math.max(maxY, n.getYCoordinate());
         }
-        double pad = 14;
-        double scale = Math.min(
-                (MM_W - pad * 2) / Math.max(1, maxX - minX),
-                (MM_H - pad * 2) / Math.max(1, maxY - minY));
-        scale = Math.min(scale, 0.6);
-        double ox = (MM_W - (maxX - minX) * scale) / 2.0 - minX * scale;
-        double oy = (MM_H - (maxY - minY) * scale) / 2.0 - minY * scale;
+        // Expand bounding box to include current viewport so the red dot is always in frame
+        if (viewport != null && canvas != null && viewport.getWidth() > 0) {
+            try {
+                javafx.geometry.Point2D tl = canvas.parentToLocal(0, 0);
+                javafx.geometry.Point2D br = canvas.parentToLocal(viewport.getWidth(), viewport.getHeight());
+                minX = Math.min(minX, tl.getX()); minY = Math.min(minY, tl.getY());
+                maxX = Math.max(maxX, br.getX()); maxY = Math.max(maxY, br.getY());
+            } catch (Exception ignored) {}
+        }
+        double pad = 16;
+        double rangeX = Math.max(1, maxX - minX);
+        double rangeY = Math.max(1, maxY - minY);
+        double scale = Math.min((MM_W - pad * 2) / rangeX, (MM_H - pad * 2) / rangeY);
+        double ox = (MM_W - rangeX * scale) / 2.0 - minX * scale;
+        double oy = (MM_H - rangeY * scale) / 2.0 - minY * scale;
         return new double[]{scale, ox, oy};
     }
 
@@ -1801,15 +1824,16 @@ public class MainController {
         GraphicsContext gc = mmCanvas.getGraphicsContext2D();
         double mw = mmCanvas.getWidth(), mh = mmCanvas.getHeight();
 
-        gc.setFill(Color.web("#0b0f1a"));
+        // Light background
+        gc.setFill(Color.web("#f8fafc"));
         gc.fillRect(0, 0, mw, mh);
 
-        double[] t = computeMiniTransform(map);
+        double[] t = computeMiniTransform(map, viewport, canvas);
         if (t == null) return;
         double scale = t[0], ox = t[1], oy = t[2];
 
         // Connections
-        gc.setStroke(Color.web("#2a3245"));
+        gc.setStroke(Color.web("#cbd5e1"));
         gc.setLineWidth(1.0);
         for (Node n : map.getNodes()) {
             if (n.getParentId() == null) continue;
@@ -1822,49 +1846,72 @@ public class MainController {
             }
         }
 
-        // Nodes
+        // Nodes — same color logic as createNodeView, selected gets indigo border
+        boolean isDark = "DARK".equals(currentPresentationTheme);
         for (Node n : map.getNodes()) {
             boolean isRoot    = n.getParentId() == null;
             boolean isCurrent = n == currentNode;
             double nx = n.getXCoordinate() * scale + ox;
             double ny = n.getYCoordinate() * scale + oy;
-            double nw = isRoot ? 10 : 7, nh = isRoot ? 6 : 4;
+            double nw = isRoot ? 12 : 8, nh = isRoot ? 7 : 5;
 
-            if (isRoot)         gc.setFill(Color.web("#6366f1"));
-            else if (isCurrent) gc.setFill(Color.web("#a5b4fc"));
-            else {
+            Color fillColor, strokeColor;
+            double strokeW;
+            if (isRoot && (n.getColor() == null || n.getColor().equals("#ffffff"))) {
+                fillColor   = Color.web("#6366f1");
+                strokeColor = isCurrent ? Color.web("#a5b4fc") : Color.web("#4338ca");
+                strokeW     = isCurrent ? 2.0 : 1.0;
+            } else {
                 String col = n.getColor();
-                if (col == null || col.isEmpty() || "#ffffff".equalsIgnoreCase(col)) col = "#334155";
-                try { gc.setFill(Color.web(col)); } catch (Exception ex) { gc.setFill(Color.web("#334155")); }
+                if (col == null || col.isEmpty()) col = isDark ? "#1e2433" : "#ffffff";
+                if (isDark && (col.equals("#ffffff") || col.equals("#1e2433"))) col = "#1e2433";
+                // white is invisible on light minimap background — use a visible neutral
+                if ("#ffffff".equalsIgnoreCase(col)) col = "#e2e8f0";
+                try { fillColor = Color.web(col); } catch (Exception ex) { fillColor = Color.web("#e2e8f0"); }
+                strokeColor = isCurrent ? Color.web("#6366f1") : Color.web("#cbd5e1");
+                strokeW     = isCurrent ? 2.0 : 0.5;
             }
+            gc.setFill(fillColor);
             gc.fillRoundRect(nx - nw / 2.0, ny - nh / 2.0, nw, nh, 3, 3);
+            gc.setStroke(strokeColor);
+            gc.setLineWidth(strokeW);
+            gc.strokeRoundRect(nx - nw / 2.0, ny - nh / 2.0, nw, nh, 3, 3);
         }
 
-        // Viewport indicator
-        if (viewport.getWidth() > 0 && canvas.getScaleX() > 0) {
-            double sx = canvas.getScaleX(), sy = canvas.getScaleY();
-            double tx = canvas.getTranslateX(), ty = canvas.getTranslateY();
-            double rx = (-tx / sx) * scale + ox;
-            double ry = (-ty / sy) * scale + oy;
-            double rw = (viewport.getWidth()  / sx) * scale;
-            double rh = (viewport.getHeight() / sy) * scale;
-            gc.setFill(Color.web("#6366f11a"));
-            gc.fillRoundRect(rx, ry, rw, rh, 3, 3);
-            gc.setStroke(Color.web("#818cf8cc"));
-            gc.setLineWidth(1.5);
-            gc.strokeRoundRect(rx, ry, rw, rh, 3, 3);
+        // "You are here" red dot — viewport center mapped via parentToLocal (handles scale pivot correctly)
+        // The bounding box already includes the viewport, so the dot is always within minimap bounds.
+        if (viewport.getWidth() > 0) {
+            try {
+                javafx.geometry.Point2D worldCenter = canvas.parentToLocal(
+                        viewport.getWidth() / 2.0, viewport.getHeight() / 2.0);
+                double dotX = worldCenter.getX() * scale + ox;
+                double dotY = worldCenter.getY() * scale + oy;
+                gc.setFill(Color.web("#ef4444"));
+                gc.fillOval(dotX - 5, dotY - 5, 10, 10);
+                gc.setStroke(Color.WHITE);
+                gc.setLineWidth(1.5);
+                gc.strokeOval(dotX - 5, dotY - 5, 10, 10);
+            } catch (Exception ignored) {}
         }
     }
 
     private void navigateFromMinimap(double mmX, double mmY,
                                       Pane viewport, Pane canvas, MindMap map) {
-        double[] t = computeMiniTransform(map);
+        double[] t = computeMiniTransform(map, viewport, canvas);
         if (t == null) return;
+        // Convert minimap click → world coordinates
         double worldX = (mmX - t[1]) / t[0];
         double worldY = (mmY - t[2]) / t[0];
-        canvas.setTranslateX(viewport.getWidth()  / 2 - worldX * canvas.getScaleX());
-        canvas.setTranslateY(viewport.getHeight() / 2 - worldY * canvas.getScaleY());
-        refreshCanvas(canvas, map);
+        // Find where (worldX, worldY) currently appears on screen, then shift to viewport center.
+        // Using localToParent avoids the scale-pivot assumption that would make a formula wrong.
+        try {
+            javafx.geometry.Point2D screen = canvas.localToParent(worldX, worldY);
+            double dx = viewport.getWidth()  / 2.0 - screen.getX();
+            double dy = viewport.getHeight() / 2.0 - screen.getY();
+            canvas.setTranslateX(canvas.getTranslateX() + dx);
+            canvas.setTranslateY(canvas.getTranslateY() + dy);
+        } catch (Exception ignored) {}
+        refreshMinimapOnly(viewport, canvas, map);
     }
 
     private void showEditDescriptionDialog(Node node, Pane canvas, MindMap map) {
