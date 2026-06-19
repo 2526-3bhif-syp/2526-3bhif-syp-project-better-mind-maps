@@ -61,6 +61,14 @@ public class MainController {
 
     @FXML
     public void initialize() {
+        tabPane.setTabDragPolicy(TabPane.TabDragPolicy.REORDER);
+
+        tabPane.getTabs().addListener((javafx.collections.ListChangeListener<Tab>) change -> {
+            if (tabPane.getTabs().isEmpty()) {
+                onBackToOverview();
+            }
+        });
+
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab != null && newTab.getUserData() instanceof MindMap) {
                 MindMap map = (MindMap) newTab.getUserData();
@@ -496,17 +504,7 @@ public class MainController {
         tab.setUserData(map);
         tab.setClosable(true);
         tab.setOnCloseRequest(e -> {
-            e.consume();
-            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-            confirm.setTitle("Mind Map löschen");
-            confirm.setHeaderText("\"" + map.getName() + "\" löschen?");
-            confirm.setContentText("Die Mind Map wird dauerhaft gelöscht und kann nicht wiederhergestellt werden.");
-            confirm.showAndWait().ifPresent(btn -> {
-                if (btn == ButtonType.OK) {
-                    tabPane.getTabs().remove(tab);
-                    repository.deleteMindMap(map.getId());
-                }
-            });
+            // just close the tab, the mind map stays in the database
         });
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);

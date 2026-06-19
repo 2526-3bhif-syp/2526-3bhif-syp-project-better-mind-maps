@@ -36,7 +36,7 @@
                 <TreeView fx:id="hierarchyTree" styleClass="tree-view" VBox.vgrow="ALWAYS"/>
             </VBox>
             <!-- Editor: TabPane fills remaining space -->
-            <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE"
+            <TabPane fx:id="tabPane" tabClosingPolicy="ALL_TABS"
                      HBox.hgrow="ALWAYS"
                      style="-fx-background-color: #0d1117;"/>
         </HBox>

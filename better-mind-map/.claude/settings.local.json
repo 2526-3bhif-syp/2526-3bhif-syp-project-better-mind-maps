@@ -28,7 +28,9 @@
       "PowerShell($env:JAVA_HOME = \"C:\\\\Users\\\\DELL\\\\.jdks\\\\openjdk-26\"; & \"C:\\\\Program Files\\\\JetBrains\\\\IntelliJ IDEA 2026.1\\\\plugins\\\\maven\\\\lib\\\\maven3\\\\bin\\\\mvn.cmd\" -f \"C:\\\\HTL\\\\3BHIF\\\\syp\\\\better-mindmaps\\\\2526-3bhif-syp-project-better-mind-maps\\\\better-mind-map\\\\pom.xml\" compile -q 2>&1 | Where-Object { $_ -match \"ERROR|error:\" } | Select-Object -First 20)",
       "PowerShell($env:JAVA_HOME = \"C:\\\\Users\\\\DELL\\\\.jdks\\\\openjdk-26\"; & \"C:\\\\Program Files\\\\JetBrains\\\\IntelliJ IDEA 2026.1\\\\plugins\\\\maven\\\\lib\\\\maven3\\\\bin\\\\mvn.cmd\" -f \"C:\\\\HTL\\\\3BHIF\\\\syp\\\\better-mindmaps\\\\2526-3bhif-syp-project-better-mind-maps\\\\better-mind-map\\\\pom.xml\" compile -q 2>&1 | Where-Object { $_ -match \"ERROR|error:\" } | Select-Object -First 10)",
       "PowerShell($env:JAVA_HOME = \"C:\\\\Users\\\\DELL\\\\.jdks\\\\openjdk-26\"; & \"C:\\\\Program Files\\\\JetBrains\\\\IntelliJ IDEA 2026.1\\\\plugins\\\\maven\\\\lib\\\\maven3\\\\bin\\\\mvn.cmd\" -f \"C:\\\\HTL\\\\3BHIF\\\\syp\\\\better-mindmaps\\\\2526-3bhif-syp-project-better-mind-maps\\\\better-mind-map\\\\pom.xml\" compile 2>&1 | Where-Object { $_ -match \"ERROR|error:\" })",
-      "Bash(git merge feature/tutorial --no-ff -m ' *)"
+      "Bash(git merge feature/tutorial --no-ff -m ' *)",
+      "PowerShell(Get-ChildItem -Recurse -Path \"C:\\\\3. Klasse SYP\\\\better-mind-maps\\\\2526-3bhif-syp-project-better-mind-maps\\\\better-mind-map\\\\src\\\\main\\\\resources\" | Where-Object { $_.Extension -ne \"\" } | Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Recurse -Path \"C:\\\\3. Klasse SYP\\\\better-mind-maps\\\\2526-3bhif-syp-project-better-mind-maps\\\\better-mind-map\\\\src\\\\main\\\\java\" | Where-Object { $_.Extension -ne \"\" } | Select-Object FullName)"
     ]
   }
 }
