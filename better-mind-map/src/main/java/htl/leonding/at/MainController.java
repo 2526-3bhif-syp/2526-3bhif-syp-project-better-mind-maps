@@ -23,6 +23,8 @@ import javafx.geometry.Pos;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 
 import java.io.IOException;
 import java.net.URI;
@@ -61,6 +63,10 @@ public class MainController {
     private boolean isPresentationModeActive = false;
     private VBox activeHud = null;
     private String currentPresentationTheme = "LIGHT"; // LIGHT, DARK, SEPIA, OCEAN
+
+    private boolean minimapExpanded = true;
+    private static final int MM_W = 200;
+    private static final int MM_H = 130;
 
     private final MindMapRepository repository = new MindMapRepository();
     private final MindMapService service = new MindMapService(repository);
@@ -625,7 +631,7 @@ public class MainController {
             e.consume();
 
         } else if (code == KeyCode.TAB) {
-            List<Node> nodes = map.getNodes();
+            List<Node> nodes = getNodesInBfsOrder(map);
             int idx = nodes.indexOf(currentNode);
             if (e.isShiftDown()) {
                 idx = (idx - 1 + nodes.size()) % nodes.size();
@@ -634,10 +640,12 @@ public class MainController {
             }
             currentNode = nodes.get(idx);
             refreshCanvas(canvas, map);
+            centerOnCurrentNode((Pane) canvas.getParent(), canvas);
             e.consume();
 
         } else if (code == KeyCode.RIGHT || code == KeyCode.LEFT || code == KeyCode.UP || code == KeyCode.DOWN) {
             navigateSpatial(map, canvas, code);
+            centerOnCurrentNode((Pane) canvas.getParent(), canvas);
             e.consume();
 
         } else if (code == KeyCode.F2) {
@@ -800,6 +808,7 @@ public class MainController {
         // Always show the floating HUD overlay
         if (viewport != null) {
             showPresentationHud(viewport, canvas, map);
+            if (!isPresentationModeActive) showMinimap(viewport, canvas, map);
         }
 
         refreshTree(map);
@@ -905,6 +914,26 @@ public class MainController {
         return map.getNodes().stream()
                 .filter(n -> parent.getId().equals(n.getParentId()))
                 .collect(Collectors.toList());
+    }
+
+    private List<Node> getNodesInBfsOrder(MindMap map) {
+        List<Node> result = new ArrayList<>();
+        Deque<Node> queue = new ArrayDeque<>();
+        Node root = getRoot(map);
+        if (root == null) return new ArrayList<>(map.getNodes());
+        queue.add(root);
+        while (!queue.isEmpty()) {
+            Node n = queue.poll();
+            result.add(n);
+            getChildren(map, n).forEach(queue::add);
+        }
+        return result;
+    }
+
+    private void centerOnCurrentNode(Pane viewport, Pane canvas) {
+        if (currentNode == null || viewport.getWidth() <= 0) return;
+        canvas.setTranslateX(viewport.getWidth()  / 2 - currentNode.getXCoordinate() * canvas.getScaleX());
+        canvas.setTranslateY(viewport.getHeight() / 2 - currentNode.getYCoordinate() * canvas.getScaleY());
     }
 
     private Node getRoot(MindMap map) {
@@ -1700,6 +1729,142 @@ public class MainController {
             popup.setX(owner.getX() + (owner.getWidth()  - popup.getWidth())  / 2);
             popup.setY(owner.getY() + (owner.getHeight() - popup.getHeight()) / 2);
         });
+    }
+
+    // ── Minimap ──────────────────────────────────────────────────────────────
+
+    private void showMinimap(Pane viewport, Pane canvas, MindMap map) {
+        viewport.getChildren().removeIf(n -> "minimap-box".equals(n.getId()));
+
+        Label titleLbl = new Label("🗺  Minimap");
+        titleLbl.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 11px; -fx-font-weight: bold;");
+        HBox.setHgrow(titleLbl, Priority.ALWAYS);
+
+        Button toggleBtn = new Button(minimapExpanded ? "−" : "+");
+        toggleBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #64748b; "
+                + "-fx-font-size: 13px; -fx-cursor: hand; -fx-padding: 0 4; -fx-border-width: 0;");
+        toggleBtn.setOnAction(e -> {
+            minimapExpanded = !minimapExpanded;
+            showMinimap(viewport, canvas, map);
+        });
+
+        HBox header = new HBox(4, titleLbl, toggleBtn);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setPadding(new Insets(6, 8, 6, 10));
+        header.setStyle("-fx-background-color: rgba(15,23,42,0.90); "
+                + "-fx-border-color: #1e293b; -fx-border-width: 0 0 1 0;");
+
+        VBox box = new VBox(0, header);
+        box.setId("minimap-box");
+        box.setStyle("-fx-background-color: rgba(11,15,26,0.88); "
+                + "-fx-border-color: #1e293b; -fx-border-width: 1; "
+                + "-fx-background-radius: 8; -fx-border-radius: 8;");
+        box.setEffect(new javafx.scene.effect.DropShadow(12, 0, 3, Color.web("#00000077")));
+
+        if (minimapExpanded) {
+            Canvas mmCanvas = new Canvas(MM_W, MM_H);
+            drawMinimapContent(mmCanvas, viewport, canvas, map);
+            mmCanvas.setCursor(javafx.scene.Cursor.CROSSHAIR);
+            mmCanvas.setOnMouseClicked(e ->
+                    navigateFromMinimap(e.getX(), e.getY(), viewport, canvas, map));
+            box.getChildren().add(mmCanvas);
+        }
+
+        box.setLayoutX(20);
+        box.layoutYProperty().bind(
+                viewport.heightProperty().subtract(box.heightProperty()).subtract(20));
+        viewport.getChildren().add(box);
+    }
+
+    private double[] computeMiniTransform(MindMap map) {
+        List<Node> nodes = map.getNodes();
+        if (nodes.isEmpty()) return null;
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+        for (Node n : nodes) {
+            minX = Math.min(minX, n.getXCoordinate());
+            minY = Math.min(minY, n.getYCoordinate());
+            maxX = Math.max(maxX, n.getXCoordinate());
+            maxY = Math.max(maxY, n.getYCoordinate());
+        }
+        double pad = 14;
+        double scale = Math.min(
+                (MM_W - pad * 2) / Math.max(1, maxX - minX),
+                (MM_H - pad * 2) / Math.max(1, maxY - minY));
+        scale = Math.min(scale, 0.6);
+        double ox = (MM_W - (maxX - minX) * scale) / 2.0 - minX * scale;
+        double oy = (MM_H - (maxY - minY) * scale) / 2.0 - minY * scale;
+        return new double[]{scale, ox, oy};
+    }
+
+    private void drawMinimapContent(Canvas mmCanvas, Pane viewport, Pane canvas, MindMap map) {
+        GraphicsContext gc = mmCanvas.getGraphicsContext2D();
+        double mw = mmCanvas.getWidth(), mh = mmCanvas.getHeight();
+
+        gc.setFill(Color.web("#0b0f1a"));
+        gc.fillRect(0, 0, mw, mh);
+
+        double[] t = computeMiniTransform(map);
+        if (t == null) return;
+        double scale = t[0], ox = t[1], oy = t[2];
+
+        // Connections
+        gc.setStroke(Color.web("#2a3245"));
+        gc.setLineWidth(1.0);
+        for (Node n : map.getNodes()) {
+            if (n.getParentId() == null) continue;
+            Node parent = map.getNodes().stream()
+                    .filter(p -> p.getId().equals(n.getParentId())).findFirst().orElse(null);
+            if (parent != null) {
+                gc.strokeLine(
+                        parent.getXCoordinate() * scale + ox, parent.getYCoordinate() * scale + oy,
+                        n.getXCoordinate() * scale + ox,      n.getYCoordinate() * scale + oy);
+            }
+        }
+
+        // Nodes
+        for (Node n : map.getNodes()) {
+            boolean isRoot    = n.getParentId() == null;
+            boolean isCurrent = n == currentNode;
+            double nx = n.getXCoordinate() * scale + ox;
+            double ny = n.getYCoordinate() * scale + oy;
+            double nw = isRoot ? 10 : 7, nh = isRoot ? 6 : 4;
+
+            if (isRoot)         gc.setFill(Color.web("#6366f1"));
+            else if (isCurrent) gc.setFill(Color.web("#a5b4fc"));
+            else {
+                String col = n.getColor();
+                if (col == null || col.isEmpty() || "#ffffff".equalsIgnoreCase(col)) col = "#334155";
+                try { gc.setFill(Color.web(col)); } catch (Exception ex) { gc.setFill(Color.web("#334155")); }
+            }
+            gc.fillRoundRect(nx - nw / 2.0, ny - nh / 2.0, nw, nh, 3, 3);
+        }
+
+        // Viewport indicator
+        if (viewport.getWidth() > 0 && canvas.getScaleX() > 0) {
+            double sx = canvas.getScaleX(), sy = canvas.getScaleY();
+            double tx = canvas.getTranslateX(), ty = canvas.getTranslateY();
+            double rx = (-tx / sx) * scale + ox;
+            double ry = (-ty / sy) * scale + oy;
+            double rw = (viewport.getWidth()  / sx) * scale;
+            double rh = (viewport.getHeight() / sy) * scale;
+            gc.setFill(Color.web("#6366f11a"));
+            gc.fillRoundRect(rx, ry, rw, rh, 3, 3);
+            gc.setStroke(Color.web("#818cf8cc"));
+            gc.setLineWidth(1.5);
+            gc.strokeRoundRect(rx, ry, rw, rh, 3, 3);
+        }
+    }
+
+    private void navigateFromMinimap(double mmX, double mmY,
+                                      Pane viewport, Pane canvas, MindMap map) {
+        double[] t = computeMiniTransform(map);
+        if (t == null) return;
+        double worldX = (mmX - t[1]) / t[0];
+        double worldY = (mmY - t[2]) / t[0];
+        canvas.setTranslateX(viewport.getWidth()  / 2 - worldX * canvas.getScaleX());
+        canvas.setTranslateY(viewport.getHeight() / 2 - worldY * canvas.getScaleY());
+        refreshCanvas(canvas, map);
     }
 
     private void showEditDescriptionDialog(Node node, Pane canvas, MindMap map) {

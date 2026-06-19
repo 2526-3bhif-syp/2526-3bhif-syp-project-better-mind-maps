@@ -32,7 +32,8 @@ public class NodeStyleEditor {
         "#22c55e","#10b981","#14b8a6","#06b6d4",
         "#3b82f6","#0284c7","#1d4ed8","#4f46e5",
         "#0f172a","#1e293b","#334155","#475569",
-        "#ff6b6b","#ffd93d","#6bcb77","#4d96ff"
+        "#ff6b6b","#ffd93d","#6bcb77","#4d96ff",
+        "#ffffff"
     };
 
     static final String[][] BADGES = {
@@ -245,8 +246,12 @@ public class NodeStyleEditor {
             swatch.setMinSize(26, 26);
             swatch.setMaxSize(26, 26);
             boolean selected = hex.equalsIgnoreCase(currentHex());
-            swatch.setStyle("-fx-background-color: " + hex + "; -fx-background-radius: 6;"
-                    + (selected ? " -fx-border-color: white; -fx-border-width: 2; -fx-border-radius: 6;" : ""));
+            boolean isWhite = "#ffffff".equalsIgnoreCase(hex);
+            String borderStyle = selected
+                ? (isWhite ? " -fx-border-color: #64748b; -fx-border-width: 2; -fx-border-radius: 6;"
+                           : " -fx-border-color: white; -fx-border-width: 2; -fx-border-radius: 6;")
+                : (isWhite ? " -fx-border-color: #334155; -fx-border-width: 1; -fx-border-radius: 6;" : "");
+            swatch.setStyle("-fx-background-color: " + hex + "; -fx-background-radius: 6;" + borderStyle);
             swatch.setCursor(javafx.scene.Cursor.HAND);
             swatch.setOnMouseClicked(e -> {
                 parseColor(hex);
