@@ -61,6 +61,8 @@ public class MainController {
     @FXML private Label sbNavigate;
     @FXML private Label sbCycle;
     @FXML private Label sbZoom;
+    @FXML private Label sbUndo;
+    @FXML private Label sbRedo;
 
     private boolean isPresentationModeActive = false;
     private VBox activeHud = null;
@@ -71,6 +73,10 @@ public class MainController {
     private Label hudSelectedLabel;
     private Button hudBtnLight, hudBtnDark, hudBtnSepia, hudBtnOcean;
     private boolean hudPresentationMode = false;
+
+    private final java.util.Deque<List<Node>> undoStack = new java.util.ArrayDeque<>();
+    private final java.util.Deque<List<Node>> redoStack = new java.util.ArrayDeque<>();
+    private static final int MAX_UNDO_HISTORY = 50;
 
     private boolean minimapExpanded = true;
     private static final int MM_W = 200;
@@ -140,8 +146,22 @@ public class MainController {
             Object data = selected.getUserData();
             if (content instanceof Pane && data instanceof MindMap) {
                 Pane viewport = (Pane) content;
+                MindMap map = (MindMap) data;
                 if (!viewport.getChildren().isEmpty() && viewport.getChildren().get(0) instanceof Pane) {
-                    handleKeyPress(e, (MindMap) data, (Pane) viewport.getChildren().get(0));
+                    Pane canvas = (Pane) viewport.getChildren().get(0);
+                    if (e.isControlDown() && !e.isAltDown()) {
+                        if (e.getCode() == KeyCode.Z && !e.isShiftDown()) {
+                            performUndo(map, canvas);
+                            e.consume();
+                            return;
+                        } else if (e.getCode() == KeyCode.Y
+                                || (e.getCode() == KeyCode.Z && e.isShiftDown())) {
+                            performRedo(map, canvas);
+                            e.consume();
+                            return;
+                        }
+                    }
+                    handleKeyPress(e, map, canvas);
                 }
             }
         });
@@ -160,6 +180,8 @@ public class MainController {
         if (sbNavigate != null)    sbNavigate.setText(LanguageManager.get("sb.navigate"));
         if (sbCycle != null)       sbCycle.setText(LanguageManager.get("sb.cycle"));
         if (sbZoom != null)        sbZoom.setText(LanguageManager.get("sb.zoom"));
+        if (sbUndo != null)        sbUndo.setText(LanguageManager.get("sb.undo"));
+        if (sbRedo != null)        sbRedo.setText(LanguageManager.get("sb.redo"));
         if (syncBtn != null)       syncBtn.setText(LanguageManager.get("btn.sync"));
         if (syncStatusLabel != null) syncStatusLabel.setText(LanguageManager.get("status.pending"));
     }
@@ -724,6 +746,7 @@ public class MainController {
 
         } else if (code == KeyCode.DELETE) {
             if (currentNode.getParentId() != null) {
+                saveUndoSnapshot(map);
                 String parentId = currentNode.getParentId();
                 service.deleteNode(map, currentNode);
                 currentNode = map.getNodes().stream()
@@ -803,6 +826,7 @@ public class MainController {
         dialog.setContentText("Text:");
         applyTheme(dialog);
         dialog.showAndWait().ifPresent(text -> {
+            saveUndoSnapshot(map);
             Node newNode = service.addNode(map, parent.getId(), text);
             currentNode = newNode;
             refreshCanvas(canvas, map);
@@ -818,10 +842,66 @@ public class MainController {
         dialog.setContentText(LanguageManager.get("dlg.editnode.content"));
         applyTheme(dialog);
         dialog.showAndWait().ifPresent(text -> {
+            saveUndoSnapshot(map);
             service.updateNodeText(map, node, text);
             refreshCanvas(canvas, map);
             canvas.requestFocus();
         });
+    }
+
+    // ── Undo / Redo ─────────────────────────────────────────────────────────
+
+    private void saveUndoSnapshot(MindMap map) {
+        undoStack.push(deepCopyNodes(map.getNodes()));
+        if (undoStack.size() > MAX_UNDO_HISTORY) undoStack.pollLast();
+        redoStack.clear();
+    }
+
+    private List<Node> deepCopyNodes(List<Node> nodes) {
+        List<Node> copy = new ArrayList<>();
+        for (Node n : nodes) {
+            Node c = new Node(n.getId(), n.getText(), n.getParentId(),
+                              n.getXCoordinate(), n.getYCoordinate(),
+                              n.getTextSize(), n.getColor());
+            c.setShape(n.getShape());
+            c.setDescription(n.getDescription());
+            c.setIcon(n.getIcon());
+            c.setBadge(n.getBadge());
+            copy.add(c);
+        }
+        return copy;
+    }
+
+    private void performUndo(MindMap map, Pane canvas) {
+        if (undoStack.isEmpty()) return;
+        redoStack.push(deepCopyNodes(map.getNodes()));
+        applySnapshot(map, undoStack.pop());
+        refreshCanvas(canvas, map);
+    }
+
+    private void performRedo(MindMap map, Pane canvas) {
+        if (redoStack.isEmpty()) return;
+        undoStack.push(deepCopyNodes(map.getNodes()));
+        applySnapshot(map, redoStack.pop());
+        refreshCanvas(canvas, map);
+    }
+
+    private void applySnapshot(MindMap map, List<Node> snapshot) {
+        Set<String> snapshotIds = new HashSet<>();
+        for (Node n : snapshot) snapshotIds.add(n.getId());
+        for (Node n : map.getNodes()) {
+            if (!snapshotIds.contains(n.getId())) repository.deleteNode(n.getId());
+        }
+        for (Node n : snapshot) repository.saveNode(map.getId(), n);
+        map.getNodes().clear();
+        map.getNodes().addAll(snapshot);
+        if (currentNode != null) {
+            String id = currentNode.getId();
+            currentNode = map.getNodes().stream()
+                    .filter(n -> n.getId().equals(id))
+                    .findFirst()
+                    .orElse(map.getNodes().isEmpty() ? null : map.getNodes().get(0));
+        }
     }
 
     // ── Layout ──────────────────────────────────────────────────────────────
@@ -1188,9 +1268,11 @@ public class MainController {
         // We avoid canvas.sceneToLocal() because moving a child changes the Pane's bounds, which
         // shifts JavaFX's scale pivot and makes sceneToLocal() return wrong values mid-drag.
         final double[] lastScene = new double[2];
+        final boolean[] wasDragged = {false};
 
         nodeView.setOnMousePressed(e -> {
             if (e.getButton() == MouseButton.PRIMARY) {
+                wasDragged[0] = false;
                 lastScene[0] = e.getSceneX();
                 lastScene[1] = e.getSceneY();
                 e.consume();
@@ -1199,6 +1281,10 @@ public class MainController {
 
         nodeView.setOnMouseDragged(e -> {
             if (e.getButton() == MouseButton.PRIMARY) {
+                if (!wasDragged[0]) {
+                    wasDragged[0] = true;
+                    saveUndoSnapshot(map);
+                }
                 double scale = getCanvasScale(canvas);
                 double dx = (e.getSceneX() - lastScene[0]) / scale;
                 double dy = (e.getSceneY() - lastScene[1]) / scale;
@@ -1234,6 +1320,7 @@ public class MainController {
         deleteNode.setDisable(node.getParentId() == null);
         deleteNode.setOnAction(e -> {
             if (node.getParentId() != null) {
+                saveUndoSnapshot(map);
                 String parentId = node.getParentId();
                 service.deleteNode(map, node);
                 currentNode = map.getNodes().stream()
@@ -1257,6 +1344,7 @@ public class MainController {
         MenuItem duplicate = new MenuItem(LanguageManager.get("menu.duplicate"));
         duplicate.setOnAction(e -> {
             if (node.getParentId() != null) {
+                saveUndoSnapshot(map);
                 Node dup = service.addNode(map, node.getParentId(), node.getText());
                 dup.setShape(node.getShape());
                 dup.setColor(node.getColor());
@@ -1393,10 +1481,19 @@ public class MainController {
                 Pane viewport = (Pane) selected.getContent();
                 Pane canvas  = (Pane) viewport.getChildren().get(0);
                 refreshCanvas(canvas, map);
-                // Wait two pulses for fullscreen layout to settle, then animate center
+                // Wait two pulses for fullscreen layout to settle, then re-apply theme and animate
                 javafx.application.Platform.runLater(() ->
-                    javafx.application.Platform.runLater(() ->
-                        animateCenterCanvasInViewport(viewport, canvas, map, 420)));
+                    javafx.application.Platform.runLater(() -> {
+                        String themeColor;
+                        switch (map.getTheme()) {
+                            case "DARK":  themeColor = "#0d1117"; break;
+                            case "SEPIA": themeColor = "#f5f0e8"; break;
+                            case "OCEAN": themeColor = "#e0f7ff"; break;
+                            default:      themeColor = "#f1f5f9"; break;
+                        }
+                        viewport.setStyle("-fx-background-color: " + themeColor + ";");
+                        animateCenterCanvasInViewport(viewport, canvas, map, 420);
+                    }));
             }
         });
         fadeOut.play();
@@ -1585,6 +1682,7 @@ public class MainController {
                     sw.setCursor(javafx.scene.Cursor.HAND);
                     sw.setOnMouseClicked(e -> {
                         if (currentNode != null) {
+                            saveUndoSnapshot(map);
                             currentNode.setColor(hex);
                             repository.updateNode(currentNode);
                             refreshCanvas(canvas, map);

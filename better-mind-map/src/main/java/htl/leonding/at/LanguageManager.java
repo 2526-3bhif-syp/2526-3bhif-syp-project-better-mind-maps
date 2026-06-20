@@ -41,6 +41,8 @@ public class LanguageManager {
         p("sb.navigate",         "Navigate",                            "Navigieren");
         p("sb.cycle",            "Cycle",                               "Wechseln");
         p("sb.zoom",             "Zoom",                                "Zoom");
+        p("sb.undo",             "Undo",                               "Rückgängig");
+        p("sb.redo",             "Redo",                               "Wiederholen");
         p("status.pending",      "● Pending sync",                      "● Sync ausstehend");
 
         // ── Context menu ──────────────────────────────────────────────────────

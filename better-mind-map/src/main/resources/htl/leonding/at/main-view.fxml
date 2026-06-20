@@ -56,6 +56,10 @@
             <Label fx:id="sbCycle" text="Cycle" styleClass="statusbar-desc"/>
             <Label text="Scroll" styleClass="statusbar-key"/>
             <Label fx:id="sbZoom" text="Zoom" styleClass="statusbar-desc"/>
+            <Label text="Ctrl+Z" styleClass="statusbar-key"/>
+            <Label fx:id="sbUndo" text="Undo" styleClass="statusbar-desc"/>
+            <Label text="Ctrl+Y" styleClass="statusbar-key"/>
+            <Label fx:id="sbRedo" text="Redo" styleClass="statusbar-desc"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Label fx:id="syncStatusLabel" text="● Pending sync"
                    style="-fx-font-size: 11px; -fx-text-fill: #f59e0b; -fx-font-weight: bold;"/>
