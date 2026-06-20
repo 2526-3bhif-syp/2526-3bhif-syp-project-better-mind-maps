@@ -1359,20 +1359,10 @@ public class MainController {
 
     private void enterPresentationMode(Stage stage) {
         isPresentationModeActive = true;
-        stage.setFullScreen(true);
-
-        // Hide toolbar, sidebar, statusbar
-        toolbar.setVisible(false);
-        toolbar.setManaged(false);
-        sidebar.setVisible(false);
-        sidebar.setManaged(false);
-        statusbar.setVisible(false);
-        statusbar.setManaged(false);
-
-        // Add CSS class to tabPane
+        hudExpanded = false;
         tabPane.getStyleClass().add("presentation-mode");
 
-        // Listen for ESC key or window loss of focus/fullscreen change
+        // Attach ESC/fullscreen-exit listener before going fullscreen
         stage.fullScreenProperty().addListener(new javafx.beans.value.ChangeListener<Boolean>() {
             @Override
             public void changed(javafx.beans.value.ObservableValue<? extends Boolean> obs, Boolean wasFS, Boolean isFS) {
@@ -1383,38 +1373,35 @@ public class MainController {
             }
         });
 
-        // Re-render current tab's canvas to draw HUD, then center the diagram
-        Tab selected = tabPane.getSelectionModel().getSelectedItem();
-        if (selected != null && selected.getUserData() instanceof MindMap) {
-            MindMap map = (MindMap) selected.getUserData();
-            Pane viewport = (Pane) selected.getContent();
-            Pane canvas = (Pane) viewport.getChildren().get(0);
-            refreshCanvas(canvas, map);
-            // Double runLater to wait for fullscreen layout to settle
-            javafx.application.Platform.runLater(() ->
+        // Fade out toolbar / sidebar / statusbar, then go fullscreen once invisible
+        FadeTransition ft1 = new FadeTransition(Duration.millis(180), toolbar);
+        ft1.setToValue(0);
+        FadeTransition ft2 = new FadeTransition(Duration.millis(180), sidebar);
+        ft2.setToValue(0);
+        FadeTransition ft3 = new FadeTransition(Duration.millis(180), statusbar);
+        ft3.setToValue(0);
+        ParallelTransition fadeOut = new ParallelTransition(ft1, ft2, ft3);
+        fadeOut.setOnFinished(ev -> {
+            toolbar.setVisible(false);   toolbar.setManaged(false);   toolbar.setOpacity(1);
+            sidebar.setVisible(false);   sidebar.setManaged(false);   sidebar.setOpacity(1);
+            statusbar.setVisible(false); statusbar.setManaged(false); statusbar.setOpacity(1);
+            stage.setFullScreen(true);
+
+            Tab selected = tabPane.getSelectionModel().getSelectedItem();
+            if (selected != null && selected.getUserData() instanceof MindMap) {
+                MindMap map = (MindMap) selected.getUserData();
+                Pane viewport = (Pane) selected.getContent();
+                Pane canvas  = (Pane) viewport.getChildren().get(0);
+                refreshCanvas(canvas, map);
+                // Wait two pulses for fullscreen layout to settle, then animate center
                 javafx.application.Platform.runLater(() ->
-                    centerCanvasInViewport(viewport, canvas, map)
-                )
-            );
-        }
+                    javafx.application.Platform.runLater(() ->
+                        animateCenterCanvasInViewport(viewport, canvas, map, 420)));
+            }
+        });
+        fadeOut.play();
     }
 
-    private void centerCanvasInViewport(Pane viewport, Pane canvas, MindMap map) {
-        if (map.getNodes().isEmpty() || viewport.getWidth() <= 0 || viewport.getHeight() <= 0) return;
-        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
-        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
-        for (Node n : map.getNodes()) {
-            minX = Math.min(minX, n.getXCoordinate());
-            minY = Math.min(minY, n.getYCoordinate());
-            maxX = Math.max(maxX, n.getXCoordinate());
-            maxY = Math.max(maxY, n.getYCoordinate());
-        }
-        double contentCenterX = (minX + maxX) / 2;
-        double contentCenterY = (minY + maxY) / 2;
-        double scale = getCanvasScale(canvas);
-        canvas.setTranslateX(viewport.getWidth()  / 2.0 - contentCenterX * scale);
-        canvas.setTranslateY(viewport.getHeight() / 2.0 - contentCenterY * scale);
-    }
 
     private void fitMapToViewport(Pane viewport, Pane canvas, MindMap map) {
         if (map.getNodes().isEmpty() || viewport.getWidth() <= 0 || viewport.getHeight() <= 0) return;
@@ -1453,22 +1440,9 @@ public class MainController {
 
     private void exitPresentationMode(Stage stage) {
         isPresentationModeActive = false;
-        if (stage.isFullScreen()) {
-            stage.setFullScreen(false);
-        }
+        hudExpanded = false;
 
-        // Show toolbar, sidebar, statusbar
-        toolbar.setVisible(true);
-        toolbar.setManaged(true);
-        sidebar.setVisible(true);
-        sidebar.setManaged(true);
-        statusbar.setVisible(true);
-        statusbar.setManaged(true);
-
-        // Remove CSS class from tabPane
-        tabPane.getStyleClass().remove("presentation-mode");
-
-        // Remove active HUD and its toggle
+        // Remove HUD immediately (before layout changes)
         if (activeHud != null) {
             Pane parent = (Pane) activeHud.getParent();
             if (parent != null) parent.getChildren().remove(activeHud);
@@ -1482,47 +1456,81 @@ public class MainController {
             activeHudToggle = null;
         }
 
-        // Re-render current tab's canvas, then re-center once the viewport has settled
-        Tab selected = tabPane.getSelectionModel().getSelectedItem();
-        if (selected != null && selected.getUserData() instanceof MindMap) {
-            MindMap map = (MindMap) selected.getUserData();
-            Pane viewport = (Pane) selected.getContent();
-            Pane canvas = (Pane) viewport.getChildren().get(0);
-            refreshCanvas(canvas, map);
+        tabPane.getStyleClass().remove("presentation-mode");
 
-            // stage.setFullScreen(false) is async — wait for the viewport to actually resize
-            final boolean[] centered = {false};
-            final java.util.concurrent.atomic.AtomicReference<javafx.beans.value.ChangeListener<Number>> ref =
-                    new java.util.concurrent.atomic.AtomicReference<>();
-            javafx.beans.value.ChangeListener<Number> listener = (obs, oldW, newW) -> {
-                if (!centered[0]) {
-                    centered[0] = true;
-                    viewport.widthProperty().removeListener(ref.get());
-                    javafx.application.Platform.runLater(() -> centerCanvasInViewport(viewport, canvas, map));
-                }
-            };
-            ref.set(listener);
-            viewport.widthProperty().addListener(listener);
-            // Fallback: center after layout passes if viewport width never changed
+        // Restore toolbar/sidebar/statusbar invisibly so layout can already compute correct sizes
+        toolbar.setOpacity(0);   toolbar.setVisible(true);   toolbar.setManaged(true);
+        sidebar.setOpacity(0);   sidebar.setVisible(true);   sidebar.setManaged(true);
+        statusbar.setOpacity(0); statusbar.setVisible(true); statusbar.setManaged(true);
+
+        if (stage.isFullScreen()) stage.setFullScreen(false);
+
+        Tab selected = tabPane.getSelectionModel().getSelectedItem();
+        if (selected == null || !(selected.getUserData() instanceof MindMap)) return;
+        MindMap map = (MindMap) selected.getUserData();
+        Pane viewport = (Pane) selected.getContent();
+        Pane canvas   = (Pane) viewport.getChildren().get(0);
+        refreshCanvas(canvas, map);
+
+        // Once the viewport resizes (fullscreen exit is async), fade UI in and animate canvas
+        Runnable finish = () -> {
+            FadeTransition ft1 = new FadeTransition(Duration.millis(220), toolbar);   ft1.setToValue(1);
+            FadeTransition ft2 = new FadeTransition(Duration.millis(220), sidebar);   ft2.setToValue(1);
+            FadeTransition ft3 = new FadeTransition(Duration.millis(220), statusbar); ft3.setToValue(1);
+            new ParallelTransition(ft1, ft2, ft3).play();
+            animateCenterCanvasInViewport(viewport, canvas, map, 380);
+        };
+
+        final boolean[] done = {false};
+        final java.util.concurrent.atomic.AtomicReference<javafx.beans.value.ChangeListener<Number>> ref =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        javafx.beans.value.ChangeListener<Number> listener = (obs, oldW, newW) -> {
+            if (!done[0]) {
+                done[0] = true;
+                viewport.widthProperty().removeListener(ref.get());
+                javafx.application.Platform.runLater(finish);
+            }
+        };
+        ref.set(listener);
+        viewport.widthProperty().addListener(listener);
+
+        // Fallback: if viewport width never fires (already correct size), run after layout passes
+        javafx.application.Platform.runLater(() ->
             javafx.application.Platform.runLater(() ->
-                javafx.application.Platform.runLater(() ->
-                    javafx.application.Platform.runLater(() -> {
-                        viewport.widthProperty().removeListener(ref.get());
-                        if (!centered[0]) {
-                            centered[0] = true;
-                            centerCanvasInViewport(viewport, canvas, map);
-                        }
-                    })
-                )
-            );
+                javafx.application.Platform.runLater(() -> {
+                    viewport.widthProperty().removeListener(ref.get());
+                    if (!done[0]) { done[0] = true; finish.run(); }
+                })
+            )
+        );
+    }
+
+    private void animateCenterCanvasInViewport(Pane viewport, Pane canvas, MindMap map, int ms) {
+        if (map.getNodes().isEmpty() || viewport.getWidth() <= 0 || viewport.getHeight() <= 0) return;
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+        for (Node n : map.getNodes()) {
+            minX = Math.min(minX, n.getXCoordinate());
+            minY = Math.min(minY, n.getYCoordinate());
+            maxX = Math.max(maxX, n.getXCoordinate());
+            maxY = Math.max(maxY, n.getYCoordinate());
         }
+        double scale = getCanvasScale(canvas);
+        double targetX = viewport.getWidth()  / 2.0 - (minX + maxX) / 2.0 * scale;
+        double targetY = viewport.getHeight() / 2.0 - (minY + maxY) / 2.0 * scale;
+        TranslateTransition tt = new TranslateTransition(Duration.millis(ms), canvas);
+        tt.setToX(targetX);
+        tt.setToY(targetY);
+        tt.setInterpolator(Interpolator.EASE_BOTH);
+        tt.play();
     }
 
     private void showPresentationHud(Pane viewport, Pane canvas, MindMap map) {
-        // Fast-path: if HUD already lives in this viewport and mode/node-presence
-        // haven't changed, just update the mutable parts in-place (no remove/re-add = no flash).
-        boolean hasNode = currentNode != null;
-        boolean hadNode = hudSelectedLabel != null;
+        // Fast-path: if HUD already lives in this viewport and mode hasn't changed,
+        // just update the mutable parts in-place (no remove/re-add = no flash).
+        // In presentation mode there is no node section, so ignore node-presence changes.
+        boolean hasNode = !isPresentationModeActive && (currentNode != null);
+        boolean hadNode = !hudPresentationMode  && (hudSelectedLabel != null);
         if (activeHud != null && activeHud.getParent() == viewport
                 && hudPresentationMode == isPresentationModeActive
                 && hasNode == hadNode) {
@@ -1660,15 +1668,20 @@ public class MainController {
 
         toggleTab.setOnAction(e -> {
             if (hudExpanded) {
-                double slideAmt = hud.getWidth() + HUD_TAB_W + 16;
+                // Collapse: animate off-screen, then bind so it tracks any width changes.
+                hud.translateXProperty().unbind();
                 TranslateTransition tt = new TranslateTransition(Duration.millis(180), hud);
                 tt.setFromX(hud.getTranslateX());
-                tt.setToX(slideAmt);
+                tt.setToX(hud.getWidth() + HUD_TAB_W + 16);
                 tt.setInterpolator(Interpolator.EASE_OUT);
+                tt.setOnFinished(ev ->
+                    hud.translateXProperty().bind(hud.widthProperty().add(HUD_TAB_W + 16)));
                 tt.play();
                 toggleTab.setText("‹");
                 hudExpanded = false;
             } else {
+                // Expand: unbind the off-screen binding before animating to 0.
+                hud.translateXProperty().unbind();
                 TranslateTransition tt = new TranslateTransition(Duration.millis(180), hud);
                 tt.setFromX(hud.getTranslateX());
                 tt.setToX(0);
@@ -1686,20 +1699,10 @@ public class MainController {
         toggleTab.layoutXProperty().bind(viewport.widthProperty().subtract(HUD_TAB_W + 4));
         toggleTab.setLayoutY(28);
 
-        // If collapsed, start far off-screen and snap to correct position once width is known.
-        // Using a widthProperty listener avoids Platform.runLater timing issues.
+        // Collapsed state: bind translateX = hudWidth + HUD_TAB_W + 16 so it stays
+        // exactly off-screen even when the viewport or HUD width changes (fullscreen etc.).
         if (!hudExpanded) {
-            hud.setTranslateX(10000);
-            hud.widthProperty().addListener(new javafx.beans.value.ChangeListener<Number>() {
-                @Override
-                public void changed(javafx.beans.value.ObservableValue<? extends Number> obs,
-                                    Number oldW, Number newW) {
-                    if (newW.doubleValue() > 0 && hud == activeHud) {
-                        hud.setTranslateX(newW.doubleValue() + HUD_TAB_W + 16);
-                        hud.widthProperty().removeListener(this);
-                    }
-                }
-            });
+            hud.translateXProperty().bind(hud.widthProperty().add(HUD_TAB_W + 16));
         }
 
         viewport.getChildren().addAll(hud, toggleTab);
