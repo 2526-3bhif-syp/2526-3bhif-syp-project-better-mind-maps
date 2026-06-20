@@ -98,6 +98,7 @@ public class LanguageManager {
         p("hud.canvastheme",     "Canvas Theme:",                       "Canvas-Design:");
         p("hud.nodeStyling",     "NODE STYLING",                        "KNOTEN-STIL");
         p("hud.presentationCtrl","PRESENTATION CONTROLS",               "PRÄSENTATIONSSTEUERUNG");
+        p("hud.exitHint",        "Press ESC to exit full screen",       "ESC drücken um Vollbild zu beenden");
 
         // ── Description popup ─────────────────────────────────────────────────
         p("desc.empty",

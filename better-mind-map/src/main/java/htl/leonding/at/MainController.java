@@ -169,24 +169,54 @@ public class MainController {
     }
 
     public void applyLanguage() {
-        if (backBtn != null)       backBtn.setText(LanguageManager.get("btn.back"));
-        if (newMapBtn != null)     newMapBtn.setText(LanguageManager.get("btn.newmap"));
-        if (deleteMapBtn != null)  deleteMapBtn.setText(LanguageManager.get("btn.deletemap"));
-        if (aiBtn != null)         aiBtn.setText(LanguageManager.get("btn.aigenerate"));
-        if (exportBtn != null)     exportBtn.setText(LanguageManager.get("btn.export"));
-        if (presentBtn != null)    presentBtn.setText(LanguageManager.get("btn.present"));
+        if (backBtn != null)        backBtn.setText(LanguageManager.get("btn.back"));
+        if (newMapBtn != null)      newMapBtn.setText(LanguageManager.get("btn.newmap"));
+        if (deleteMapBtn != null)   deleteMapBtn.setText(LanguageManager.get("btn.deletemap"));
+        if (aiBtn != null)          aiBtn.setText(LanguageManager.get("btn.aigenerate"));
+        if (exportBtn != null)      exportBtn.setText(LanguageManager.get("btn.export"));
+        if (presentBtn != null)     presentBtn.setText(LanguageManager.get("btn.present"));
         if (structureLabel != null) structureLabel.setText(LanguageManager.get("sidebar.structure"));
-        if (sbAddChild != null)    sbAddChild.setText(LanguageManager.get("sb.addchild"));
-        if (sbEdit != null)        sbEdit.setText(LanguageManager.get("sb.edit"));
-        if (sbDelete != null)      sbDelete.setText(LanguageManager.get("sb.delete"));
-        if (sbNavigate != null)    sbNavigate.setText(LanguageManager.get("sb.navigate"));
-        if (sbCycle != null)       sbCycle.setText(LanguageManager.get("sb.cycle"));
-        if (sbZoom != null)        sbZoom.setText(LanguageManager.get("sb.zoom"));
-        if (sbUndo != null)        sbUndo.setText(LanguageManager.get("sb.undo"));
-        if (sbRedo != null)        sbRedo.setText(LanguageManager.get("sb.redo"));
-        if (syncBtn != null)       syncBtn.setText(LanguageManager.get("btn.sync"));
+        if (sbAddChild != null)     sbAddChild.setText(LanguageManager.get("sb.addchild"));
+        if (sbEdit != null)         sbEdit.setText(LanguageManager.get("sb.edit"));
+        if (sbDelete != null)       sbDelete.setText(LanguageManager.get("sb.delete"));
+        if (sbNavigate != null)     sbNavigate.setText(LanguageManager.get("sb.navigate"));
+        if (sbCycle != null)        sbCycle.setText(LanguageManager.get("sb.cycle"));
+        if (sbZoom != null)         sbZoom.setText(LanguageManager.get("sb.zoom"));
+        if (sbUndo != null)         sbUndo.setText(LanguageManager.get("sb.undo"));
+        if (sbRedo != null)         sbRedo.setText(LanguageManager.get("sb.redo"));
+        if (syncBtn != null)        syncBtn.setText(LanguageManager.get("btn.sync"));
         if (syncStatusLabel != null) syncStatusLabel.setText(LanguageManager.get("status.pending"));
+
+        // Remove the HUD from its parent before clearing the reference —
+        // without this the old HUD stays as a ghost child in the viewport
+        if (activeHud != null) {
+            Pane hudParent = (Pane) activeHud.getParent();
+            if (hudParent != null) hudParent.getChildren().remove(activeHud);
+            activeHud = null;
+        }
+        if (activeHudToggle != null) {
+            Pane hudParent = (Pane) activeHudToggle.getParent();
+            if (hudParent != null) hudParent.getChildren().remove(activeHudToggle);
+            activeHudToggle = null;
+        }
+        hudSelectedLabel = null;
+        hudBtnLight = hudBtnDark = hudBtnSepia = hudBtnOcean = null;
+
+        // Refresh current tab canvas to rebuild context menus and HUD
+        if (tabPane != null) {
+            Tab selected = tabPane.getSelectionModel().getSelectedItem();
+            if (selected != null && selected.getUserData() instanceof MindMap
+                    && selected.getContent() instanceof Pane) {
+                Pane viewport = (Pane) selected.getContent();
+                if (!viewport.getChildren().isEmpty()
+                        && viewport.getChildren().get(0) instanceof Pane) {
+                    refreshCanvas((Pane) viewport.getChildren().get(0),
+                            (MindMap) selected.getUserData());
+                }
+            }
+        }
     }
+
 
     private void syncSidebarHeaderHeight() {
         javafx.scene.Node tabHeader = tabPane.lookup(".tab-header-area");
@@ -1637,6 +1667,7 @@ public class MainController {
             toolbar.setVisible(false);   toolbar.setManaged(false);   toolbar.setOpacity(1);
             sidebar.setVisible(false);   sidebar.setManaged(false);   sidebar.setOpacity(1);
             statusbar.setVisible(false); statusbar.setManaged(false); statusbar.setOpacity(1);
+            stage.setFullScreenExitHint(LanguageManager.get("hud.exitHint"));
             stage.setFullScreen(true);
 
             Tab selected = tabPane.getSelectionModel().getSelectedItem();
