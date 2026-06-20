@@ -1509,6 +1509,8 @@ public class MainController {
     }
 
     private javafx.scene.image.WritableImage snapshotFullMap(MindMap map, Pane canvas) {
+        if (map.getNodes().isEmpty()) return null;
+
         final double PADDING = 60;
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
         double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
@@ -1520,8 +1522,30 @@ public class MainController {
             maxX = Math.max(maxX, n.getXCoordinate() + hw);
             maxY = Math.max(maxY, n.getYCoordinate() + hh);
         }
-        double w = maxX - minX + 2 * PADDING;
-        double h = maxY - minY + 2 * PADDING;
+        double imgW = maxX - minX + 2 * PADDING;
+        double imgH = maxY - minY + 2 * PADDING;
+
+        Pane viewport = (Pane) canvas.getParent();
+
+        // Save canvas transform
+        javafx.scene.transform.Scale st = getOrAddScaleTransform(canvas);
+        double savedSX = st.getX(), savedSY = st.getY();
+        double savedTX = canvas.getTranslateX(), savedTY = canvas.getTranslateY();
+
+        // Scale=1 + translate so content's top-left lands at (PADDING, PADDING) in viewport coords.
+        // viewport_coord = local_coord * scale + translateX  →  minX * 1 + tx = PADDING → tx = -minX + PADDING
+        st.setX(1.0); st.setY(1.0);
+        canvas.setTranslateX(-minX + PADDING);
+        canvas.setTranslateY(-minY + PADDING);
+
+        // Temporarily hide HUD / minimap overlay children
+        List<javafx.scene.Node> hidden = new ArrayList<>();
+        for (javafx.scene.Node child : new ArrayList<>(viewport.getChildren())) {
+            if (child != canvas && child.isVisible()) {
+                child.setVisible(false);
+                hidden.add(child);
+            }
+        }
 
         String bg;
         switch (currentPresentationTheme) {
@@ -1532,8 +1556,17 @@ public class MainController {
         }
         javafx.scene.SnapshotParameters params = new javafx.scene.SnapshotParameters();
         params.setFill(Color.web(bg));
-        params.setViewport(new javafx.geometry.Rectangle2D(minX - PADDING, minY - PADDING, w, h));
-        return canvas.snapshot(params, null);
+        // Snapshot the viewport from (0,0): canvas is repositioned so content fills this area
+        params.setViewport(new javafx.geometry.Rectangle2D(0, 0, imgW, imgH));
+        javafx.scene.image.WritableImage image = viewport.snapshot(params, null);
+
+        // Restore overlays
+        for (javafx.scene.Node child : hidden) child.setVisible(true);
+        // Restore canvas transform
+        st.setX(savedSX); st.setY(savedSY);
+        canvas.setTranslateX(savedTX); canvas.setTranslateY(savedTY);
+
+        return image;
     }
 
     private java.awt.image.BufferedImage toBufferedImage(javafx.scene.image.WritableImage fxImg) {
