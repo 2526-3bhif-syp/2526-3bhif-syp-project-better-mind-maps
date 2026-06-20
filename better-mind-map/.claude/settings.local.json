@@ -34,7 +34,12 @@
       "Bash(xargs ls -la)",
       "Bash(xargs grep -l \"21\\\\|export\\\\|story\")",
       "Bash(xargs grep -l \"export\\\\|json\\\\|serialize\")",
-      "Bash(gh issue *)"
+      "Bash(gh issue *)",
+      "PowerShell(Get-ChildItem -Recurse \"C:\\\\3. Klasse SYP\\\\better-mind-maps\\\\2526-3bhif-syp-project-better-mind-maps\" | Where-Object { $_.FullName -notmatch \"node_modules|target\" -and \\($_.Name -match \"\\\\.vue$|\\\\.ts$|\\\\.js$\"\\) } | Select-Object -First 60 | ForEach-Object { $_.FullName })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\3. Klasse SYP\\\\better-mind-maps\\\\2526-3bhif-syp-project-better-mind-maps\" -Recurse | Select-Object -First 5 | ForEach-Object { $_.FullName })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\3. Klasse SYP\\\\better-mind-maps\\\\2526-3bhif-syp-project-better-mind-maps\" | ForEach-Object { $_.FullName })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\3. Klasse SYP\\\\better-mind-maps\\\\2526-3bhif-syp-project-better-mind-maps\\\\src\" -Recurse -File | Select-Object -First 60 | ForEach-Object { $_.FullName })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\3. Klasse SYP\\\\better-mind-maps\\\\2526-3bhif-syp-project-better-mind-maps\\\\better-mind-map\\\\src\\\\main\" -Recurse | Select-Object -First 80 | ForEach-Object { $_.FullName })"
     ]
   }
 }

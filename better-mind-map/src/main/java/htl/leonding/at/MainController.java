@@ -737,7 +737,6 @@ public class MainController {
     }
 
     private void refreshMinimapOnly(Pane viewport, Pane canvas, MindMap map) {
-        if (!minimapExpanded) return;
         viewport.getChildren().stream()
                 .filter(n -> "minimap-box".equals(n.getId()) && n instanceof VBox)
                 .findFirst()
@@ -2227,12 +2226,10 @@ public class MainController {
                 .filter(n -> "minimap-box".equals(n.getId()) && n instanceof VBox)
                 .findFirst().orElse(null);
         if (existing != null) {
-            if (minimapExpanded) {
-                existing.getChildren().stream()
-                        .filter(c -> c instanceof Canvas)
-                        .findFirst()
-                        .ifPresent(c -> drawMinimapContent((Canvas) c, viewport, canvas, map));
-            }
+            existing.getChildren().stream()
+                    .filter(c -> c instanceof Canvas)
+                    .findFirst()
+                    .ifPresent(c -> drawMinimapContent((Canvas) c, viewport, canvas, map));
             return;
         }
 
@@ -2272,7 +2269,7 @@ public class MainController {
 
         // ── Toggle: fold / unfold with clip animation ─────────────────────
         toggleBtn.setOnAction(e -> {
-            if (minimapExpanded) {
+            if (box.getChildren().contains(mmCanvas)) {
                 // Collapse
                 minimapExpanded = false;
                 toggleBtn.setText("+");
