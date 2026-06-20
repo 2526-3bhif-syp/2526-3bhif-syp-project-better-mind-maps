@@ -53,6 +53,7 @@ public class MainController {
     @FXML private Button newMapBtn;
     @FXML private Button deleteMapBtn;
     @FXML private Button aiBtn;
+    @FXML private Button exportBtn;
     @FXML private Button presentBtn;
     @FXML private Label structureLabel;
     @FXML private Label sbAddChild;
@@ -172,6 +173,7 @@ public class MainController {
         if (newMapBtn != null)     newMapBtn.setText(LanguageManager.get("btn.newmap"));
         if (deleteMapBtn != null)  deleteMapBtn.setText(LanguageManager.get("btn.deletemap"));
         if (aiBtn != null)         aiBtn.setText(LanguageManager.get("btn.aigenerate"));
+        if (exportBtn != null)     exportBtn.setText(LanguageManager.get("btn.export"));
         if (presentBtn != null)    presentBtn.setText(LanguageManager.get("btn.present"));
         if (structureLabel != null) structureLabel.setText(LanguageManager.get("sidebar.structure"));
         if (sbAddChild != null)    sbAddChild.setText(LanguageManager.get("sb.addchild"));
@@ -1432,6 +1434,135 @@ public class MainController {
             return brightness < 0.5 ? Color.WHITE : Color.web("#2c3e50");
         } catch (Exception e) {
             return Color.web("#2c3e50");
+        }
+    }
+
+    // ── Export ──────────────────────────────────────────────────────────────
+
+    @FXML
+    public void onExportMindMap() {
+        Tab selected = tabPane.getSelectionModel().getSelectedItem();
+        if (selected == null || !(selected.getUserData() instanceof MindMap)) {
+            Alert a = new Alert(Alert.AlertType.WARNING);
+            a.setTitle(LanguageManager.get("dlg.export.title"));
+            a.setHeaderText(null);
+            a.setContentText(LanguageManager.get("dlg.export.nomap"));
+            applyTheme(a);
+            a.showAndWait();
+            return;
+        }
+        MindMap map = (MindMap) selected.getUserData();
+        Pane viewport = (Pane) selected.getContent();
+        Pane canvas   = (Pane) viewport.getChildren().get(0);
+
+        // Format choice
+        Alert fmt = new Alert(Alert.AlertType.CONFIRMATION);
+        fmt.setTitle(LanguageManager.get("dlg.export.title"));
+        fmt.setHeaderText(LanguageManager.get("dlg.export.header"));
+        ButtonType btnPng    = new ButtonType("PNG");
+        ButtonType btnPdf    = new ButtonType("PDF");
+        ButtonType btnCancel = new ButtonType("Cancel", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+        fmt.getButtonTypes().setAll(btnPng, btnPdf, btnCancel);
+        applyTheme(fmt);
+        Optional<ButtonType> fmtResult = fmt.showAndWait();
+        if (fmtResult.isEmpty() || fmtResult.get() == btnCancel) return;
+        boolean isPng = fmtResult.get() == btnPng;
+
+        // File chooser
+        javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
+        fc.setTitle(LanguageManager.get("dlg.export.saveas"));
+        String safeName = map.getName().replaceAll("[^a-zA-Z0-9_\\-]", "_");
+        fc.setInitialFileName(safeName);
+        if (isPng) {
+            fc.getExtensionFilters().add(
+                new javafx.stage.FileChooser.ExtensionFilter("PNG Image (*.png)", "*.png"));
+        } else {
+            fc.getExtensionFilters().add(
+                new javafx.stage.FileChooser.ExtensionFilter("PDF Document (*.pdf)", "*.pdf"));
+        }
+        java.io.File file = fc.showSaveDialog(rootPane.getScene().getWindow());
+        if (file == null) return;
+
+        try {
+            javafx.scene.image.WritableImage fxImg = snapshotFullMap(map, canvas);
+            java.awt.image.BufferedImage bImg = toBufferedImage(fxImg);
+            if (isPng) {
+                javax.imageio.ImageIO.write(bImg, "PNG", file);
+            } else {
+                saveAsPdf(bImg, file);
+            }
+            Alert ok = new Alert(Alert.AlertType.INFORMATION);
+            ok.setTitle(LanguageManager.get("dlg.export.success.title"));
+            ok.setHeaderText(null);
+            ok.setContentText(LanguageManager.getf("dlg.export.success.msg", file.getName()));
+            applyTheme(ok);
+            ok.showAndWait();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Alert err = new Alert(Alert.AlertType.ERROR);
+            err.setTitle(LanguageManager.get("dlg.export.error.title"));
+            err.setHeaderText(null);
+            err.setContentText(ex.getMessage());
+            applyTheme(err);
+            err.showAndWait();
+        }
+    }
+
+    private javafx.scene.image.WritableImage snapshotFullMap(MindMap map, Pane canvas) {
+        final double PADDING = 60;
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+        for (Node n : map.getNodes()) {
+            double hw = getNodeWidth(n)  / 2.0;
+            double hh = getNodeHeight(n) / 2.0;
+            minX = Math.min(minX, n.getXCoordinate() - hw);
+            minY = Math.min(minY, n.getYCoordinate() - hh);
+            maxX = Math.max(maxX, n.getXCoordinate() + hw);
+            maxY = Math.max(maxY, n.getYCoordinate() + hh);
+        }
+        double w = maxX - minX + 2 * PADDING;
+        double h = maxY - minY + 2 * PADDING;
+
+        String bg;
+        switch (currentPresentationTheme) {
+            case "DARK":  bg = "#0d1117"; break;
+            case "SEPIA": bg = "#f5f0e8"; break;
+            case "OCEAN": bg = "#e0f7ff"; break;
+            default:      bg = "#f1f5f9"; break;
+        }
+        javafx.scene.SnapshotParameters params = new javafx.scene.SnapshotParameters();
+        params.setFill(Color.web(bg));
+        params.setViewport(new javafx.geometry.Rectangle2D(minX - PADDING, minY - PADDING, w, h));
+        return canvas.snapshot(params, null);
+    }
+
+    private java.awt.image.BufferedImage toBufferedImage(javafx.scene.image.WritableImage fxImg) {
+        int w = (int) fxImg.getWidth();
+        int h = (int) fxImg.getHeight();
+        int[] pixels = new int[w * h];
+        fxImg.getPixelReader().getPixels(
+            0, 0, w, h,
+            javafx.scene.image.PixelFormat.getIntArgbInstance(),
+            pixels, 0, w);
+        java.awt.image.BufferedImage img =
+            new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        img.setRGB(0, 0, w, h, pixels, 0, w);
+        return img;
+    }
+
+    private void saveAsPdf(java.awt.image.BufferedImage bImg, java.io.File file) throws Exception {
+        try (org.apache.pdfbox.pdmodel.PDDocument doc = new org.apache.pdfbox.pdmodel.PDDocument()) {
+            org.apache.pdfbox.pdmodel.common.PDRectangle rect =
+                new org.apache.pdfbox.pdmodel.common.PDRectangle(bImg.getWidth(), bImg.getHeight());
+            org.apache.pdfbox.pdmodel.PDPage page = new org.apache.pdfbox.pdmodel.PDPage(rect);
+            doc.addPage(page);
+            org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject pdImg =
+                org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory.createFromImage(doc, bImg);
+            try (org.apache.pdfbox.pdmodel.PDPageContentStream cs =
+                    new org.apache.pdfbox.pdmodel.PDPageContentStream(doc, page)) {
+                cs.drawImage(pdImg, 0, 0, bImg.getWidth(), bImg.getHeight());
+            }
+            doc.save(file);
         }
     }
 

@@ -23,6 +23,7 @@
             <Button fx:id="deleteMapBtn" text="🗑  Delete Map" onAction="#onDeleteCurrentMap" styleClass="btn-danger"/>
             <Button fx:id="aiBtn" text="✨ AI Generate" onAction="#onOpenAiChat" styleClass="btn-secondary"/>
             <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="exportBtn" text="⬇  Export" onAction="#onExportMindMap" styleClass="btn-secondary"/>
             <Button fx:id="presentBtn" text="▶  Present" onAction="#onTogglePresentationMode" styleClass="btn-blue"/>
         </HBox>
     </top>

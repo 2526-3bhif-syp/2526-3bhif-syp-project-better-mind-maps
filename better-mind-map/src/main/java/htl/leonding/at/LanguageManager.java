@@ -23,6 +23,7 @@ public class LanguageManager {
         p("btn.sync",            "Sync",                                 "Sync");
         p("btn.deletemap",       "🗑  Delete Map",                       "🗑  Map löschen");
         p("btn.exitpresentation","Exit Presentation",                    "Präsentation beenden");
+        p("btn.export",          "⬇  Export",                           "⬇  Exportieren");
 
         // ── Overview ─────────────────────────────────────────────────────────
         p("section.label",       "MY MIND MAPS",                        "MEINE MIND MAPS");
@@ -43,6 +44,15 @@ public class LanguageManager {
         p("sb.zoom",             "Zoom",                                "Zoom");
         p("sb.undo",             "Undo",                               "Rückgängig");
         p("sb.redo",             "Redo",                               "Wiederholen");
+
+        // ── Export ────────────────────────────────────────────────────────────
+        p("dlg.export.title",        "Export Mind Map",                "Mind Map exportieren");
+        p("dlg.export.header",       "Choose export format",           "Exportformat wählen");
+        p("dlg.export.saveas",       "Save As",                        "Speichern unter");
+        p("dlg.export.success.title","Export Successful",              "Export erfolgreich");
+        p("dlg.export.success.msg",  "Saved as: %s",                  "Gespeichert als: %s");
+        p("dlg.export.error.title",  "Export Failed",                  "Export fehlgeschlagen");
+        p("dlg.export.nomap",        "Please open a mind map first.",  "Bitte zuerst eine Mind Map öffnen.");
         p("status.pending",      "● Pending sync",                      "● Sync ausstehend");
 
         // ── Context menu ──────────────────────────────────────────────────────
