@@ -1064,7 +1064,7 @@ public class MainController {
         boolean isDarkCanvas = "DARK".equals(currentPresentationTheme);
         Color textColor;
 
-        if (isRoot && (node.getColor() == null || node.getColor().equals("#ffffff"))) {
+        if (isRoot && (node.getColor() == null || node.getColor().isEmpty())) {
             // Root node: vivid indigo gradient
             rect.setFill(new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
                     new Stop(0, Color.web("#6366f1")),
@@ -1119,7 +1119,7 @@ public class MainController {
         label.setTextFill(textColor);
         label.setStyle(
             "-fx-font-size: " + node.getTextSize() + "px; -fx-text-alignment: center; -fx-alignment: center;" +
-            (isRoot && (node.getColor() == null || node.getColor().equals("#ffffff")) ? " -fx-font-weight: bold;" : "")
+            (isRoot && (node.getColor() == null || node.getColor().isEmpty()) ? " -fx-font-weight: bold;" : "")
         );
 
         nodeView.getChildren().addAll(rect, label);

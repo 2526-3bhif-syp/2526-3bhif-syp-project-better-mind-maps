@@ -39,16 +39,22 @@ public class MindMapService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Parent node not found"));
 
+        Node root = map.getNodes().stream()
+                .filter(n -> n.getParentId() == null)
+                .findFirst().orElse(null);
+        double startAngle = (root != null && parent != root && parent.getXCoordinate() < root.getXCoordinate())
+                ? Math.PI : 0;
+
         double candidateX = 0;
         double candidateY = 0;
-        
+
         int i = 0;
         double angleStep = Math.PI / 4; // 45 Grad Schritte (8 Positionen pro Kreis)
         double currentRadius = 150;
 
         while (true) {
-            candidateX = parent.getXCoordinate() + currentRadius * Math.cos(i * angleStep);
-            candidateY = parent.getYCoordinate() + currentRadius * Math.sin(i * angleStep);
+            candidateX = parent.getXCoordinate() + currentRadius * Math.cos(startAngle + i * angleStep);
+            candidateY = parent.getYCoordinate() + currentRadius * Math.sin(startAngle + i * angleStep);
             
             boolean collision = false;
             for (Node n : map.getNodes()) {
