@@ -370,11 +370,11 @@ public class NodeStyleEditor {
             btn.setOnMouseExited(e -> btn.setStyle(baseStyle));
             btn.setOnAction(e -> {
                 node.setShape(key);
+                Window owner = popup.getOwner();
                 saveAndRefresh();
                 popup.close();
-                // Reopen to refresh active state
-                NodeStyleEditor.show(node, repository, onChanged,
-                        popup.getOwner() != null ? popup.getOwner() : popup);
+                javafx.application.Platform.runLater(() ->
+                        NodeStyleEditor.show(node, repository, onChanged, owner));
             });
             grid.getChildren().add(btn);
         }
@@ -428,10 +428,11 @@ public class NodeStyleEditor {
                     + "-fx-padding: 6 10; -fx-background-radius: 8; -fx-cursor: hand; -fx-border-width: 0;");
             btn.setOnAction(e -> {
                 node.setIcon(clear ? "" : ico);
+                Window owner = popup.getOwner();
                 saveAndRefresh();
                 popup.close();
-                NodeStyleEditor.show(node, repository, onChanged,
-                        popup.getOwner() != null ? popup.getOwner() : popup);
+                javafx.application.Platform.runLater(() ->
+                        NodeStyleEditor.show(node, repository, onChanged, owner));
             });
             grid.getChildren().add(btn);
         }
@@ -454,10 +455,11 @@ public class NodeStyleEditor {
                     + "-fx-padding: 6 12; -fx-background-radius: 20; -fx-cursor: hand; -fx-border-width: 0;");
             btn.setOnAction(e -> {
                 node.setBadge(key);
+                Window owner = popup.getOwner();
                 saveAndRefresh();
                 popup.close();
-                NodeStyleEditor.show(node, repository, onChanged,
-                        popup.getOwner() != null ? popup.getOwner() : popup);
+                javafx.application.Platform.runLater(() ->
+                        NodeStyleEditor.show(node, repository, onChanged, owner));
             });
             grid.getChildren().add(btn);
         }

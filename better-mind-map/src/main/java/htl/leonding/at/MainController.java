@@ -68,6 +68,9 @@ public class MainController {
     private boolean hudExpanded = true;
     private static final int HUD_TAB_W = 26;
     private String currentPresentationTheme = "LIGHT"; // LIGHT, DARK, SEPIA, OCEAN
+    private Label hudSelectedLabel;
+    private Button hudBtnLight, hudBtnDark, hudBtnSepia, hudBtnOcean;
+    private boolean hudPresentationMode = false;
 
     private boolean minimapExpanded = true;
     private static final int MM_W = 200;
@@ -993,9 +996,22 @@ public class MainController {
 
     private void dfsCollect(MindMap map, Node node, List<Node> result) {
         result.add(node);
-        for (Node child : getChildren(map, node)) {
+        List<Node> children = new ArrayList<>(getChildren(map, node));
+        children.sort((a, b) -> {
+            double angleA = clockwiseAngle(node, a);
+            double angleB = clockwiseAngle(node, b);
+            return Double.compare(angleA, angleB);
+        });
+        for (Node child : children) {
             dfsCollect(map, child, result);
         }
+    }
+
+    private double clockwiseAngle(Node from, Node to) {
+        double dx = to.getXCoordinate() - from.getXCoordinate();
+        double dy = to.getYCoordinate() - from.getYCoordinate();
+        // atan2(dx, -dy): 0 = top, π/2 = right, π = bottom, normalised to [0, 2π)
+        return (Math.atan2(dx, -dy) + 2 * Math.PI) % (2 * Math.PI);
     }
 
     private void centerOnCurrentNode(Pane viewport, Pane canvas) {
@@ -1457,6 +1473,8 @@ public class MainController {
             Pane parent = (Pane) activeHud.getParent();
             if (parent != null) parent.getChildren().remove(activeHud);
             activeHud = null;
+            hudSelectedLabel = null;
+            hudBtnLight = hudBtnDark = hudBtnSepia = hudBtnOcean = null;
         }
         if (activeHudToggle != null) {
             Pane parent = (Pane) activeHudToggle.getParent();
@@ -1501,7 +1519,20 @@ public class MainController {
     }
 
     private void showPresentationHud(Pane viewport, Pane canvas, MindMap map) {
-        // Remove existing HUD and toggle
+        // Fast-path: if HUD already lives in this viewport and mode/node-presence
+        // haven't changed, just update the mutable parts in-place (no remove/re-add = no flash).
+        boolean hasNode = currentNode != null;
+        boolean hadNode = hudSelectedLabel != null;
+        if (activeHud != null && activeHud.getParent() == viewport
+                && hudPresentationMode == isPresentationModeActive
+                && hasNode == hadNode) {
+            if (hudSelectedLabel != null && currentNode != null)
+                hudSelectedLabel.setText(currentNode.getText());
+            updateHudThemeButtons();
+            return;
+        }
+
+        // ── Full rebuild ──────────────────────────────────────────────────────
         if (activeHud != null) {
             Pane p = (Pane) activeHud.getParent();
             if (p != null) p.getChildren().remove(activeHud);
@@ -1512,8 +1543,10 @@ public class MainController {
             if (p != null) p.getChildren().remove(activeHudToggle);
             activeHudToggle = null;
         }
+        hudSelectedLabel = null;
+        hudBtnLight = hudBtnDark = hudBtnSepia = hudBtnOcean = null;
+        hudPresentationMode = isPresentationModeActive;
 
-        // ── Build HUD panel ───────────────────────────────────────────────────
         VBox hud = new VBox();
         hud.getStyleClass().add("presentation-hud");
 
@@ -1533,6 +1566,7 @@ public class MainController {
                 selectedLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #f1f5f9; -fx-font-size: 13px;");
                 selectedLabel.setMaxWidth(200);
                 selectedLabel.setWrapText(true);
+                hudSelectedLabel = selectedLabel;
 
                 HBox colorStrip = new HBox(4);
                 colorStrip.setAlignment(Pos.CENTER_LEFT);
@@ -1542,9 +1576,11 @@ public class MainController {
                     sw.setFill(javafx.scene.paint.Color.web(hex));
                     sw.setCursor(javafx.scene.Cursor.HAND);
                     sw.setOnMouseClicked(e -> {
-                        currentNode.setColor(hex);
-                        repository.updateNode(currentNode);
-                        refreshCanvas(canvas, map);
+                        if (currentNode != null) {
+                            currentNode.setColor(hex);
+                            repository.updateNode(currentNode);
+                            refreshCanvas(canvas, map);
+                        }
                     });
                     colorStrip.getChildren().add(sw);
                 }
@@ -1553,11 +1589,12 @@ public class MainController {
                 openEditor.setStyle("-fx-background-color: #6366f1; -fx-text-fill: white; "
                         + "-fx-font-size: 12px; -fx-padding: 7 14; -fx-background-radius: 8; "
                         + "-fx-cursor: hand; -fx-border-width: 0;");
-                final Node capturedNode = currentNode;
-                openEditor.setOnAction(e -> NodeStyleEditor.show(
-                        capturedNode, repository,
-                        () -> refreshCanvas(canvas, map),
-                        canvas.getScene().getWindow()));
+                openEditor.setOnAction(e -> {
+                    if (currentNode != null)
+                        NodeStyleEditor.show(currentNode, repository,
+                                () -> refreshCanvas(canvas, map),
+                                canvas.getScene().getWindow());
+                });
 
                 nodeSection.getChildren().addAll(selectedLabel, colorStrip, openEditor);
                 hud.getChildren().add(nodeSection);
@@ -1581,27 +1618,21 @@ public class MainController {
 
         HBox themeBtnBox = new HBox();
         themeBtnBox.setSpacing(6);
-        Button btnLight = new Button(LanguageManager.get("theme.light"));
-        btnLight.getStyleClass().add("btn-hud");
-        if (currentPresentationTheme.equals("LIGHT")) btnLight.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
-        btnLight.setOnAction(e -> { map.setTheme("LIGHT"); repository.updateTheme(map.getId(), "LIGHT"); refreshCanvas(canvas, map); });
+        hudBtnLight = new Button(LanguageManager.get("theme.light"));
+        hudBtnLight.getStyleClass().add("btn-hud");
+        hudBtnLight.setOnAction(e -> { map.setTheme("LIGHT"); repository.updateTheme(map.getId(), "LIGHT"); refreshCanvas(canvas, map); });
+        hudBtnDark = new Button(LanguageManager.get("theme.dark"));
+        hudBtnDark.getStyleClass().add("btn-hud");
+        hudBtnDark.setOnAction(e -> { map.setTheme("DARK"); repository.updateTheme(map.getId(), "DARK"); refreshCanvas(canvas, map); });
+        hudBtnSepia = new Button(LanguageManager.get("theme.sepia"));
+        hudBtnSepia.getStyleClass().add("btn-hud");
+        hudBtnSepia.setOnAction(e -> { map.setTheme("SEPIA"); repository.updateTheme(map.getId(), "SEPIA"); refreshCanvas(canvas, map); });
+        hudBtnOcean = new Button(LanguageManager.get("theme.ocean"));
+        hudBtnOcean.getStyleClass().add("btn-hud");
+        hudBtnOcean.setOnAction(e -> { map.setTheme("OCEAN"); repository.updateTheme(map.getId(), "OCEAN"); refreshCanvas(canvas, map); });
+        updateHudThemeButtons();
 
-        Button btnDark = new Button(LanguageManager.get("theme.dark"));
-        btnDark.getStyleClass().add("btn-hud");
-        if (currentPresentationTheme.equals("DARK")) btnDark.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
-        btnDark.setOnAction(e -> { map.setTheme("DARK"); repository.updateTheme(map.getId(), "DARK"); refreshCanvas(canvas, map); });
-
-        Button btnSepia = new Button(LanguageManager.get("theme.sepia"));
-        btnSepia.getStyleClass().add("btn-hud");
-        if (currentPresentationTheme.equals("SEPIA")) btnSepia.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
-        btnSepia.setOnAction(e -> { map.setTheme("SEPIA"); repository.updateTheme(map.getId(), "SEPIA"); refreshCanvas(canvas, map); });
-
-        Button btnOcean = new Button(LanguageManager.get("theme.ocean"));
-        btnOcean.getStyleClass().add("btn-hud");
-        if (currentPresentationTheme.equals("OCEAN")) btnOcean.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
-        btnOcean.setOnAction(e -> { map.setTheme("OCEAN"); repository.updateTheme(map.getId(), "OCEAN"); refreshCanvas(canvas, map); });
-
-        themeBtnBox.getChildren().addAll(btnLight, btnDark, btnSepia, btnOcean);
+        themeBtnBox.getChildren().addAll(hudBtnLight, hudBtnDark, hudBtnSepia, hudBtnOcean);
         themeSection.getChildren().add(themeBtnBox);
         hud.getChildren().add(themeSection);
 
@@ -1613,8 +1644,7 @@ public class MainController {
             hud.getChildren().add(btnExit);
         }
 
-        // ── Toggle tab button ─────────────────────────────────────────────────
-        // Stays fixed at the right viewport edge; HUD slides in/out beside it.
+        // ── Toggle tab ────────────────────────────────────────────────────────
         Button toggleTab = new Button(hudExpanded ? "›" : "‹");
         String tabStyle = "-fx-background-color: rgba(14,20,35,0.92);"
                 + "-fx-text-fill: #94a3b8; -fx-font-size: 18px; -fx-font-weight: bold;"
@@ -1649,25 +1679,41 @@ public class MainController {
             }
         });
 
-        // ── Layout: HUD to the left of the tab, both at top-right ────────────
+        // ── Layout ────────────────────────────────────────────────────────────
         hud.layoutXProperty().bind(
             viewport.widthProperty().subtract(hud.widthProperty()).subtract(HUD_TAB_W + 8));
         hud.setLayoutY(20);
-
         toggleTab.layoutXProperty().bind(viewport.widthProperty().subtract(HUD_TAB_W + 4));
         toggleTab.setLayoutY(28);
+
+        // If collapsed, start far off-screen and snap to correct position once width is known.
+        // Using a widthProperty listener avoids Platform.runLater timing issues.
+        if (!hudExpanded) {
+            hud.setTranslateX(10000);
+            hud.widthProperty().addListener(new javafx.beans.value.ChangeListener<Number>() {
+                @Override
+                public void changed(javafx.beans.value.ObservableValue<? extends Number> obs,
+                                    Number oldW, Number newW) {
+                    if (newW.doubleValue() > 0 && hud == activeHud) {
+                        hud.setTranslateX(newW.doubleValue() + HUD_TAB_W + 16);
+                        hud.widthProperty().removeListener(this);
+                    }
+                }
+            });
+        }
 
         viewport.getChildren().addAll(hud, toggleTab);
         activeHud = hud;
         activeHudToggle = toggleTab;
+    }
 
-        // If HUD was previously collapsed, restore it without animation
-        if (!hudExpanded) {
-            Platform.runLater(() -> {
-                if (activeHud != null)
-                    activeHud.setTranslateX(activeHud.getWidth() + HUD_TAB_W + 16);
-            });
-        }
+    private void updateHudThemeButtons() {
+        if (hudBtnLight == null) return;
+        String active = "-fx-background-color: rgba(255,255,255,0.35);";
+        hudBtnLight.setStyle(currentPresentationTheme.equals("LIGHT")  ? active : "");
+        hudBtnDark.setStyle(currentPresentationTheme.equals("DARK")   ? active : "");
+        hudBtnSepia.setStyle(currentPresentationTheme.equals("SEPIA") ? active : "");
+        hudBtnOcean.setStyle(currentPresentationTheme.equals("OCEAN") ? active : "");
     }
 
     // ── Hierarchy tree ───────────────────────────────────────────────────────
@@ -1715,7 +1761,7 @@ public class MainController {
             if (currentItem != null) {
                 hierarchyTree.getSelectionModel().select(currentItem);
             }
-            javafx.application.Platform.runLater(() -> suppressTreeSelection = false);
+            suppressTreeSelection = false;
         }
     }
 
@@ -1880,25 +1926,34 @@ public class MainController {
     // ── Minimap ──────────────────────────────────────────────────────────────
 
     private void showMinimap(Pane viewport, Pane canvas, MindMap map) {
-        viewport.getChildren().removeIf(n -> "minimap-box".equals(n.getId()));
+        // If box already exists just refresh canvas content — no rebuild, no re-animation
+        VBox existing = (VBox) viewport.getChildren().stream()
+                .filter(n -> "minimap-box".equals(n.getId()) && n instanceof VBox)
+                .findFirst().orElse(null);
+        if (existing != null) {
+            if (minimapExpanded) {
+                existing.getChildren().stream()
+                        .filter(c -> c instanceof Canvas)
+                        .findFirst()
+                        .ifPresent(c -> drawMinimapContent((Canvas) c, viewport, canvas, map));
+            }
+            return;
+        }
 
+        // ── Build box ────────────────────────────────────────────────────────
         Label titleLbl = new Label("🗺  Minimap");
         titleLbl.setStyle("-fx-text-fill: #475569; -fx-font-size: 11px; -fx-font-weight: bold;");
         HBox.setHgrow(titleLbl, Priority.ALWAYS);
 
-        Button toggleBtn = new Button(minimapExpanded ? "−" : "+");
-        toggleBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #94a3b8; "
-                + "-fx-font-size: 13px; -fx-cursor: hand; -fx-padding: 0 4; -fx-border-width: 0;");
-        toggleBtn.setOnAction(e -> {
-            minimapExpanded = !minimapExpanded;
-            showMinimap(viewport, canvas, map);
-        });
+        Button toggleBtn = new Button("−");
+        toggleBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #1e293b; "
+                + "-fx-font-size: 14px; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 0 4; -fx-border-width: 0;");
 
         HBox header = new HBox(4, titleLbl, toggleBtn);
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(5, 8, 5, 10));
         header.setStyle("-fx-background-color: #e2e8f0; "
-                + "-fx-border-color: #cbd5e1; -fx-border-width: 0 0 1 0;");
+                + "-fx-border-color: #cbd5e1; -fx-border-width: 0 0 1 0; -fx-cursor: hand;");
 
         VBox box = new VBox(0, header);
         box.setId("minimap-box");
@@ -1907,19 +1962,69 @@ public class MainController {
                 + "-fx-background-radius: 8; -fx-border-radius: 8;");
         box.setEffect(new javafx.scene.effect.DropShadow(10, 0, 3, Color.web("#00000033")));
 
-        if (minimapExpanded) {
-            Canvas mmCanvas = new Canvas(MM_W, MM_H);
-            drawMinimapContent(mmCanvas, viewport, canvas, map);
-            mmCanvas.setCursor(javafx.scene.Cursor.CROSSHAIR);
-            mmCanvas.setOnMouseClicked(e ->
-                    navigateFromMinimap(e.getX(), e.getY(), viewport, canvas, map));
-            box.getChildren().add(mmCanvas);
-        }
+        // ── Canvas ───────────────────────────────────────────────────────────
+        Canvas mmCanvas = new Canvas(MM_W, MM_H);
+        drawMinimapContent(mmCanvas, viewport, canvas, map);
+        mmCanvas.setCursor(javafx.scene.Cursor.CROSSHAIR);
+        mmCanvas.setOnMouseClicked(e ->
+                navigateFromMinimap(e.getX(), e.getY(), viewport, canvas, map));
 
+        // Clip used for fold animation
+        Rectangle mmClip = new Rectangle(MM_W, MM_H);
+        mmCanvas.setClip(mmClip);
+        box.getChildren().add(mmCanvas);
+
+        // ── Toggle: fold / unfold with clip animation ─────────────────────
+        toggleBtn.setOnAction(e -> {
+            if (minimapExpanded) {
+                // Collapse
+                minimapExpanded = false;
+                toggleBtn.setText("+");
+                Timeline collapse = new Timeline(
+                    new KeyFrame(Duration.ZERO,        new KeyValue(mmClip.heightProperty(), MM_H)),
+                    new KeyFrame(Duration.millis(200), new KeyValue(mmClip.heightProperty(), 0, Interpolator.EASE_OUT))
+                );
+                collapse.setOnFinished(ev -> box.getChildren().remove(mmCanvas));
+                collapse.play();
+            } else {
+                // Expand
+                minimapExpanded = true;
+                toggleBtn.setText("−");
+                drawMinimapContent(mmCanvas, viewport, canvas, map);
+                mmClip.setHeight(0);
+                box.getChildren().add(mmCanvas);
+                Timeline expand = new Timeline(
+                    new KeyFrame(Duration.ZERO,        new KeyValue(mmClip.heightProperty(), 0)),
+                    new KeyFrame(Duration.millis(220), new KeyValue(mmClip.heightProperty(), MM_H, Interpolator.EASE_OUT))
+                );
+                expand.play();
+            }
+        });
+
+        // Clicking anywhere on header opens the minimap when collapsed
+        header.setOnMouseClicked(e -> {
+            if (!minimapExpanded) toggleBtn.fire();
+        });
+
+        // ── Position ─────────────────────────────────────────────────────────
         box.setLayoutX(20);
         box.layoutYProperty().bind(
                 viewport.heightProperty().subtract(box.heightProperty()).subtract(20));
+
+        // ── Slide-in from bottom on first appearance ─────────────────────────
+        box.setTranslateY(MM_H + 40);
+        box.setOpacity(0);
         viewport.getChildren().add(box);
+
+        Timeline slideIn = new Timeline(
+            new KeyFrame(Duration.ZERO,
+                new KeyValue(box.translateYProperty(), MM_H + 40),
+                new KeyValue(box.opacityProperty(), 0)),
+            new KeyFrame(Duration.millis(300),
+                new KeyValue(box.translateYProperty(), 0, Interpolator.EASE_OUT),
+                new KeyValue(box.opacityProperty(), 1, Interpolator.EASE_OUT))
+        );
+        slideIn.play();
     }
 
     private double[] computeMiniTransform(MindMap map, Pane viewport, Pane canvas) {
