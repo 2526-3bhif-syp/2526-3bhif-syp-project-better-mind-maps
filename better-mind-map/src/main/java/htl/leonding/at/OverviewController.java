@@ -120,12 +120,41 @@ public class OverviewController {
             return;
         }
 
-        for (MindMap map : maps) {
-            cardsFlow.getChildren().add(createCard(map));
+        List<MindMap> pinned   = maps.stream().filter(MindMap::isPinned).collect(Collectors.toList());
+        List<MindMap> unpinned = maps.stream().filter(m -> !m.isPinned()).collect(Collectors.toList());
+
+        if (!pinned.isEmpty()) {
+            cardsFlow.getChildren().add(sectionHeader("⭐  " + LanguageManager.get("section.pinned")));
+            for (MindMap map : pinned) cardsFlow.getChildren().add(createCard(map));
+        }
+
+        if (!unpinned.isEmpty()) {
+            if (!pinned.isEmpty()) {
+                cardsFlow.getChildren().add(sectionHeader(LanguageManager.get("section.all")));
+            }
+            for (MindMap map : unpinned) cardsFlow.getChildren().add(createCard(map));
         }
 
         if (searchField.getText().trim().isEmpty()) {
             cardsFlow.getChildren().add(createNewCard());
+        }
+    }
+
+    private Label sectionHeader(String text) {
+        Label lbl = new Label(text);
+        lbl.setStyle("-fx-text-fill: #64748b; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 8 4 4 4;");
+        lbl.setPrefWidth(10000);
+        return lbl;
+    }
+
+    private void rebuildCurrentView() {
+        String query = searchField.getText().trim().toLowerCase();
+        if (query.isEmpty()) {
+            buildCards(allMaps);
+        } else {
+            buildCards(allMaps.stream()
+                .filter(m -> m.getName().toLowerCase().contains(query))
+                .collect(Collectors.toList()));
         }
     }
 
@@ -137,6 +166,9 @@ public class OverviewController {
         card.setPrefWidth(280);
         card.setMaxWidth(280);
         card.setCursor(Cursor.HAND);
+        if (map.isPinned()) {
+            card.setStyle("-fx-border-color: #f59e0b; -fx-border-width: 2; -fx-border-radius: 12;");
+        }
 
         // ── Thumbnail ──
         ImageView thumb = renderThumbnail(map);
@@ -180,10 +212,23 @@ public class OverviewController {
         renameBtn.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_CLICKED,
             javafx.event.Event::consume);
 
+        Button pinBtn = new Button(map.isPinned() ? "⭐" : "☆");
+        pinBtn.getStyleClass().add("card-delete-btn");
+        String pinColor = map.isPinned() ? "#f59e0b" : "#64748b";
+        pinBtn.setStyle("-fx-text-fill: " + pinColor + "; -fx-font-size: 13px;");
+        pinBtn.setOnAction(e -> {
+            map.setPinned(!map.isPinned());
+            repository.updatePinned(map.getId(), map.isPinned());
+            rebuildCurrentView();
+            e.consume();
+        });
+        pinBtn.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_CLICKED,
+            javafx.event.Event::consume);
+
         String theme = map.getTheme() == null ? "LIGHT" : map.getTheme();
         Label themeBadge = new Label(themeIcon(theme) + " " + capitalize(theme));
         themeBadge.getStyleClass().add("card-badge");
-        titleRow.getChildren().addAll(nameLabel, renameBtn, themeBadge);
+        titleRow.getChildren().addAll(nameLabel, pinBtn, renameBtn, themeBadge);
 
         // Meta row
         HBox metaRow = new HBox(10);

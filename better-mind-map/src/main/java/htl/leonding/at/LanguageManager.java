@@ -26,6 +26,8 @@ public class LanguageManager {
 
         // ── Overview ─────────────────────────────────────────────────────────
         p("section.label",       "MY MIND MAPS",                        "MEINE MIND MAPS");
+        p("section.pinned",      "PINNED",                               "ANGEHEFTET");
+        p("section.all",         "ALL MAPS",                             "ALLE MAPS");
         p("search.prompt",       "Search mind maps...",                  "Mind Maps suchen...");
         p("card.open",           "Open  →",                             "Öffnen  →");
         p("card.create.label",   "New Mind Map",                        "Neue Mind Map");

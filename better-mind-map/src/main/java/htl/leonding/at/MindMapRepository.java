@@ -7,7 +7,7 @@ import java.util.List;
 public class MindMapRepository {
 
     public void save(MindMap map) {
-        String sql = "INSERT OR REPLACE INTO mind_maps (id, name, user_id, sync_status, theme) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT OR REPLACE INTO mind_maps (id, name, user_id, sync_status, theme, pinned) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, map.getId());
@@ -15,6 +15,7 @@ public class MindMapRepository {
             stmt.setString(3, map.getUserId());
             stmt.setString(4, map.getSyncStatus());
             stmt.setString(5, map.getTheme());
+            stmt.setInt(6, map.isPinned() ? 1 : 0);
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save mind map", e);
@@ -92,6 +93,18 @@ public class MindMapRepository {
         }
     }
 
+    public void updatePinned(String mapId, boolean pinned) {
+        String sql = "UPDATE mind_maps SET pinned = ? WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, pinned ? 1 : 0);
+            stmt.setString(2, mapId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update pinned status", e);
+        }
+    }
+
     public void updateTheme(String mapId, String theme) {
         String sql = "UPDATE mind_maps SET theme = ? WHERE id = ?";
         try (Connection conn = DatabaseManager.getConnection();
@@ -121,7 +134,7 @@ public class MindMapRepository {
 
     public List<MindMap> loadAll(String userId) {
         List<MindMap> maps = new ArrayList<>();
-        String mapSql = "SELECT id, name, user_id, sync_status, theme FROM mind_maps WHERE user_id = ?";
+        String mapSql = "SELECT id, name, user_id, sync_status, theme, pinned FROM mind_maps WHERE user_id = ?";
         String nodeSql = "SELECT id, text, parent_id, x_coordinate, y_coordinate, text_size, color, shape, description, icon, badge " +
                          "FROM nodes WHERE mind_map_id = ?";
 
@@ -134,6 +147,7 @@ public class MindMapRepository {
                     map.setUserId(rs.getString("user_id"));
                     map.setSyncStatus(rs.getString("sync_status"));
                     map.setTheme(rs.getString("theme"));
+                    map.setPinned(rs.getInt("pinned") == 1);
 
                     try (PreparedStatement nodeStmt = conn.prepareStatement(nodeSql)) {
                         nodeStmt.setString(1, map.getId());

@@ -11,6 +11,7 @@ public class MindMap {
     private String userId;
     private String syncStatus;
     private String theme = "LIGHT";
+    private boolean pinned = false;
 
     public MindMap(String id, String name) {
         this._id = id;
@@ -53,6 +54,14 @@ public class MindMap {
 
     public void setTheme(String theme) {
         this.theme = theme;
+    }
+
+    public boolean isPinned() {
+        return pinned;
+    }
+
+    public void setPinned(boolean pinned) {
+        this.pinned = pinned;
     }
 
     public void addNode(Node node) {

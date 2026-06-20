@@ -47,12 +47,14 @@ public class DatabaseManager {
             boolean hasUserId = false;
             boolean hasSyncStatus = false;
             boolean hasTheme = false;
+            boolean hasPinned = false;
             try (java.sql.ResultSet rs = stmt.executeQuery("PRAGMA table_info(mind_maps)")) {
                 while (rs.next()) {
                     String columnName = rs.getString("name");
-                    if ("user_id".equals(columnName)) hasUserId = true;
+                    if ("user_id".equals(columnName))    hasUserId = true;
                     if ("sync_status".equals(columnName)) hasSyncStatus = true;
-                    if ("theme".equals(columnName)) hasTheme = true;
+                    if ("theme".equals(columnName))      hasTheme = true;
+                    if ("pinned".equals(columnName))     hasPinned = true;
                 }
             }
 
@@ -64,6 +66,9 @@ public class DatabaseManager {
             }
             if (!hasTheme) {
                 stmt.execute("ALTER TABLE mind_maps ADD COLUMN theme TEXT DEFAULT 'LIGHT'");
+            }
+            if (!hasPinned) {
+                stmt.execute("ALTER TABLE mind_maps ADD COLUMN pinned INTEGER DEFAULT 0");
             }
 
             // Check which columns exist in nodes
