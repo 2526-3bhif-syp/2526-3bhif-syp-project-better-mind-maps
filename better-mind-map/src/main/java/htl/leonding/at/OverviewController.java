@@ -212,10 +212,10 @@ public class OverviewController {
         renameBtn.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_CLICKED,
             javafx.event.Event::consume);
 
-        Button pinBtn = new Button(map.isPinned() ? "⭐" : "☆");
+        Button pinBtn = new Button(map.isPinned() ? "★" : "☆");
         pinBtn.getStyleClass().add("card-delete-btn");
         String pinColor = map.isPinned() ? "#f59e0b" : "#64748b";
-        pinBtn.setStyle("-fx-text-fill: " + pinColor + "; -fx-font-size: 13px;");
+        pinBtn.setStyle("-fx-text-fill: " + pinColor + "; -fx-font-size: 14px;");
         pinBtn.setOnAction(e -> {
             map.setPinned(!map.isPinned());
             repository.updatePinned(map.getId(), map.isPinned());

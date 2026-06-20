@@ -205,6 +205,8 @@ public class MainController {
     public void openMapAsTab(MindMap map) {
         for (Tab tab : tabPane.getTabs()) {
             if (tab.getUserData() instanceof MindMap && ((MindMap) tab.getUserData()).getId().equals(map.getId())) {
+                tab.setUserData(map);
+                applyTabHeader(tab, map);
                 tabPane.getSelectionModel().select(tab);
                 return;
             }
@@ -559,13 +561,14 @@ public class MainController {
             }
         });
 
-        Tab tab = new Tab(map.getName());
+        Tab tab = new Tab();
         tab.setContent(viewport);
         tab.setUserData(map);
         tab.setClosable(true);
         tab.setOnCloseRequest(e -> {
             // just close the tab, the mind map stays in the database
         });
+        applyTabHeader(tab, map);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
         refreshCanvas(canvas, map);
@@ -575,6 +578,20 @@ public class MainController {
         Platform.runLater(() -> Platform.runLater(() ->
             Platform.runLater(() -> fitMapToViewport(viewport, canvas, map))
         ));
+    }
+
+    private void applyTabHeader(Tab tab, MindMap map) {
+        javafx.scene.control.Label starLbl = new javafx.scene.control.Label(map.isPinned() ? "★" : "☆");
+        starLbl.setStyle((map.isPinned() ? "-fx-text-fill: #f59e0b;" : "-fx-text-fill: #64748b;")
+                + " -fx-font-size: 14px; -fx-cursor: hand; -fx-padding: 0 4 0 0;");
+        starLbl.setOnMouseClicked(e -> {
+            map.setPinned(!map.isPinned());
+            repository.updatePinned(map.getId(), map.isPinned());
+            applyTabHeader(tab, map);
+            e.consume();
+        });
+        tab.setText(map.getName());
+        tab.setGraphic(starLbl);
     }
 
     // Key: instead of canvas.setScaleX() — which scales around getBoundsInLocal().center (a dynamic
@@ -683,7 +700,7 @@ public class MainController {
             e.consume();
 
         } else if (code == KeyCode.TAB) {
-            List<Node> nodes = getNodesInBfsOrder(map);
+            List<Node> nodes = getNodesInDfsOrder(map);
             int idx = nodes.indexOf(currentNode);
             if (e.isShiftDown()) {
                 idx = (idx - 1 + nodes.size()) % nodes.size();
@@ -966,18 +983,19 @@ public class MainController {
                 .collect(Collectors.toList());
     }
 
-    private List<Node> getNodesInBfsOrder(MindMap map) {
+    private List<Node> getNodesInDfsOrder(MindMap map) {
         List<Node> result = new ArrayList<>();
-        Deque<Node> queue = new ArrayDeque<>();
         Node root = getRoot(map);
         if (root == null) return new ArrayList<>(map.getNodes());
-        queue.add(root);
-        while (!queue.isEmpty()) {
-            Node n = queue.poll();
-            result.add(n);
-            getChildren(map, n).forEach(queue::add);
-        }
+        dfsCollect(map, root, result);
         return result;
+    }
+
+    private void dfsCollect(MindMap map, Node node, List<Node> result) {
+        result.add(node);
+        for (Node child : getChildren(map, node)) {
+            dfsCollect(map, child, result);
+        }
     }
 
     private void centerOnCurrentNode(Pane viewport, Pane canvas) {
