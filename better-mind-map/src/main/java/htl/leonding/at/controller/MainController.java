@@ -17,6 +17,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.ZoomEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.LinearGradient;
@@ -698,6 +699,24 @@ public class MainController {
             // screenX = worldX * scale + tx  (exact, pivot is fixed at 0,0).
             // Keep the point under the cursor fixed: compute its world coords, then
             // set tx so that same world point maps back to the same screen position.
+            double mx = event.getX();
+            double my = event.getY();
+            double worldMX = (mx - canvas.getTranslateX()) / scaleXform.getX();
+            double worldMY = (my - canvas.getTranslateY()) / scaleXform.getY();
+
+            scaleXform.setX(newScale);
+            scaleXform.setY(newScale);
+            canvas.setTranslateX(mx - worldMX * newScale);
+            canvas.setTranslateY(my - worldMY * newScale);
+            refreshMinimapOnly(viewport, canvas, map);
+        });
+
+        viewport.setOnZoom(event -> {
+            event.consume();
+            double zoomFactor = event.getZoomFactor();
+            double newScale = scaleXform.getX() * zoomFactor;
+            if (newScale < 0.2 || newScale > 5.0) return;
+
             double mx = event.getX();
             double my = event.getY();
             double worldMX = (mx - canvas.getTranslateX()) / scaleXform.getX();

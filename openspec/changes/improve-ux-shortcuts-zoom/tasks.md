@@ -4,5 +4,5 @@
 
 ## 2. Pinch-to-Zoom Support
 
-- [ ] 2.1 Register `setOnZoom` event handler on the viewport pane in `MainController.java#setupZoomAndPan`.
-- [ ] 2.2 Calculate scale transform updates and viewport translation based on gesture coordinates in the zoom handler.
+- [x] 2.1 Register `setOnZoom` event handler on the viewport pane in `MainController.java#setupZoomAndPan`.
+- [x] 2.2 Calculate scale transform updates and viewport translation based on gesture coordinates in the zoom handler.
