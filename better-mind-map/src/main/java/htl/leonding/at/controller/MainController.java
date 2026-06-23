@@ -65,10 +65,11 @@ public class MainController {
     @FXML private Button presentBtn;
     @FXML private Label structureLabel;
     @FXML private Label sbAddChild;
+    @FXML private Label sbAddSibling;
     @FXML private Label sbEdit;
+    @FXML private Label sbEditDesc;
     @FXML private Label sbDelete;
     @FXML private Label sbNavigate;
-    @FXML private Label sbCycle;
     @FXML private Label sbZoom;
     @FXML private Label sbUndo;
     @FXML private Label sbRedo;
@@ -185,10 +186,11 @@ public class MainController {
         if (presentBtn != null)     presentBtn.setText(LanguageManager.get("btn.present"));
         if (structureLabel != null) structureLabel.setText(LanguageManager.get("sidebar.structure"));
         if (sbAddChild != null)     sbAddChild.setText(LanguageManager.get("sb.addchild"));
+        if (sbAddSibling != null)   sbAddSibling.setText(LanguageManager.get("sb.addsibling"));
         if (sbEdit != null)         sbEdit.setText(LanguageManager.get("sb.edit"));
+        if (sbEditDesc != null)     sbEditDesc.setText(LanguageManager.get("sb.editdesc"));
         if (sbDelete != null)       sbDelete.setText(LanguageManager.get("sb.delete"));
         if (sbNavigate != null)     sbNavigate.setText(LanguageManager.get("sb.navigate"));
-        if (sbCycle != null)        sbCycle.setText(LanguageManager.get("sb.cycle"));
         if (sbZoom != null)         sbZoom.setText(LanguageManager.get("sb.zoom"));
         if (sbUndo != null)         sbUndo.setText(LanguageManager.get("sb.undo"));
         if (sbRedo != null)         sbRedo.setText(LanguageManager.get("sb.redo"));
@@ -1920,8 +1922,8 @@ public class MainController {
                 selectedLabel.setWrapText(true);
                 hudSelectedLabel = selectedLabel;
 
-                HBox colorStrip = new HBox(4);
-                colorStrip.setAlignment(Pos.CENTER_LEFT);
+                FlowPane colorStrip = new FlowPane(4, 4);
+                colorStrip.setPrefWrapLength(200);
                 for (String hex : NodeStyleEditor.PRESETS) {
                     javafx.scene.shape.Rectangle sw = new javafx.scene.shape.Rectangle(14, 14);
                     sw.setArcWidth(4); sw.setArcHeight(4);
@@ -1938,10 +1940,36 @@ public class MainController {
                     colorStrip.getChildren().add(sw);
                 }
 
+                Label shapeLabel = new Label(LanguageManager.get("hud.shape"));
+                shapeLabel.getStyleClass().add("hud-label");
+                shapeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #94a3b8; -fx-padding: 8 0 4 0;");
+
+                FlowPane shapeGrid = new FlowPane(4, 4);
+                shapeGrid.setPrefWrapLength(200);
+                for (String[] s : NodeStyleEditor.SHAPES) {
+                    String key = s[0], symbol = s[1], tip = s[2];
+                    boolean active = key.equals(currentNode.getShape());
+                    Button btn = new Button(symbol);
+                    btn.setTooltip(new Tooltip(tip));
+                    btn.setStyle("-fx-background-color: " + (active ? "#6366f1" : "rgba(255,255,255,0.05)")
+                            + "; -fx-text-fill: " + (active ? "white" : "#a5b1c2")
+                            + "; -fx-padding: 4 8; -fx-background-radius: 4; -fx-cursor: hand; -fx-border-width: 0;");
+                    btn.setOnAction(e -> {
+                        if (currentNode != null) {
+                            saveUndoSnapshot(map);
+                            currentNode.setShape(key);
+                            repository.updateNode(currentNode);
+                            refreshCanvas(canvas, map);
+                        }
+                    });
+                    shapeGrid.getChildren().add(btn);
+                }
+
                 Button openEditor = new Button(LanguageManager.get("hud.fullEditor"));
                 openEditor.setStyle("-fx-background-color: #6366f1; -fx-text-fill: white; "
                         + "-fx-font-size: 12px; -fx-padding: 7 14; -fx-background-radius: 8; "
                         + "-fx-cursor: hand; -fx-border-width: 0;");
+                VBox.setMargin(openEditor, new Insets(8, 0, 0, 0));
                 openEditor.setOnAction(e -> {
                     if (currentNode != null)
                         NodeStyleEditor.show(currentNode, repository,
@@ -1949,7 +1977,7 @@ public class MainController {
                                 canvas.getScene().getWindow());
                 });
 
-                nodeSection.getChildren().addAll(selectedLabel, colorStrip, openEditor);
+                nodeSection.getChildren().addAll(selectedLabel, colorStrip, shapeLabel, shapeGrid, openEditor);
                 hud.getChildren().add(nodeSection);
             } else {
                 Label noSelectLabel = new Label(LanguageManager.get("hud.noselection"));
@@ -2008,7 +2036,10 @@ public class MainController {
                 + "-fx-border-width: 1 0 1 1; -fx-cursor: hand; -fx-padding: 0;";
         toggleTab.setStyle(tabStyle);
         toggleTab.setOnMouseEntered(e ->
-            toggleTab.setStyle(tabStyle.replace("rgba(14,20,35,0.92)", "rgba(30,36,51,0.98)")));
+            toggleTab.setStyle(tabStyle
+                .replace("rgba(14,20,35,0.92)", "rgba(30,36,51,0.98)")
+                .replace("#94a3b8", "#ffffff")
+                .replace("rgba(255,255,255,0.09)", "rgba(255,255,255,0.15)")));
         toggleTab.setOnMouseExited(e -> toggleTab.setStyle(tabStyle));
 
         toggleTab.setOnAction(e -> {

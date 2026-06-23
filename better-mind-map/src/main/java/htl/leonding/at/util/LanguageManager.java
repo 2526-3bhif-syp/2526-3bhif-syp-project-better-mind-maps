@@ -44,10 +44,11 @@ public class LanguageManager {
         // ── Sidebar / Statusbar ───────────────────────────────────────────────
         p("sidebar.structure",   "STRUCTURE",                           "STRUKTUR");
         p("sb.addchild",         "Add child",                           "Kind hinzufügen");
+        p("sb.addsibling",       "Add sibling",                         "Geschwister hinzufügen");
         p("sb.edit",             "Edit",                                "Bearbeiten");
+        p("sb.editdesc",         "Description",                         "Beschreibung");
         p("sb.delete",           "Delete",                              "Löschen");
         p("sb.navigate",         "Navigate",                            "Navigieren");
-        p("sb.cycle",            "Cycle",                               "Wechseln");
         p("sb.zoom",             "Zoom",                                "Zoom");
         p("sb.undo",             "Undo",                               "Rückgängig");
         p("sb.redo",             "Redo",                               "Wiederholen");
@@ -65,7 +66,7 @@ public class LanguageManager {
         // ── Context menu ──────────────────────────────────────────────────────
         p("menu.addchild",       "Add Child Node  [Tab]",               "Kind-Knoten hinzufügen  [Tab]");
         p("menu.addsibling",      "Add Sibling Node  [Enter]",           "Geschwister-Knoten hinzufügen  [Enter]");
-        p("menu.edittext",        "Edit Text  [F2 / Dbl-Click]",         "Text bearbeiten  [F2 / Doppelklick]");
+        p("menu.edittext",        "Edit Text  [F2 / Double-Click]",         "Text bearbeiten  [F2 / Doppelklick]");
         p("menu.deletenode",      "Delete Node  [Del / Backspace]",      "Knoten löschen  [Del / Rücktaste]");
         p("menu.editdesc",        "📝  Edit Description  [Space]",       "📝  Beschreibung bearbeiten  [Leertaste]");
         p("menu.editstyle",       "🎨  Edit Style",                      "🎨  Stil bearbeiten");
@@ -105,6 +106,7 @@ public class LanguageManager {
         p("hud.fullEditor",      "🎨  Full Editor",                     "🎨  Vollständig bearbeiten");
         p("hud.canvastheme",     "Canvas Theme:",                       "Canvas-Design:");
         p("hud.nodeStyling",     "NODE STYLING",                        "KNOTEN-STIL");
+        p("hud.shape",           "Shape:",                              "Form:");
         p("hud.presentationCtrl","PRESENTATION CONTROLS",               "PRÄSENTATIONSSTEUERUNG");
         p("hud.exitHint",        "Press ESC to exit full screen",       "ESC drücken um Vollbild zu beenden");
 
@@ -159,7 +161,7 @@ public class LanguageManager {
         p("sync.synced",   "Cloud Sync: SYNCED",        "Cloud Sync: Synchronisiert");
         p("sync.failed",   "Cloud Sync: FAILED",        "Cloud Sync: Fehlgeschlagen");
 
-        p("sync.label.PENDING", "PENDING",   "Ausstehend");
+        p("sync.label.PENDING", "Sync Pending",   "Sync ausstehend");
         p("sync.label.SYNCED",  "SYNCED",    "Synchronisiert");
         p("sync.label.FAILED",  "FAILED",    "Fehlgeschlagen");
 

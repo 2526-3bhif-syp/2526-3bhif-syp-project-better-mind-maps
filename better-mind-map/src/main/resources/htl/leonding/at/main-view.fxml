@@ -45,16 +45,18 @@
     </center>
     <bottom>
         <HBox fx:id="statusbar" styleClass="statusbar" alignment="CENTER_LEFT">
-            <Label text="Enter" styleClass="statusbar-key"/>
+            <Label text="Tab" styleClass="statusbar-key"/>
             <Label fx:id="sbAddChild" text="Add child" styleClass="statusbar-desc"/>
-            <Label text="F2" styleClass="statusbar-key"/>
+            <Label text="Enter" styleClass="statusbar-key"/>
+            <Label fx:id="sbAddSibling" text="Add sibling" styleClass="statusbar-desc"/>
+            <Label text="Space" styleClass="statusbar-key"/>
+            <Label fx:id="sbEditDesc" text="Description" styleClass="statusbar-desc"/>
+            <Label text="F2 / Double-Click" styleClass="statusbar-key"/>
             <Label fx:id="sbEdit" text="Edit" styleClass="statusbar-desc"/>
             <Label text="Del" styleClass="statusbar-key"/>
             <Label fx:id="sbDelete" text="Delete" styleClass="statusbar-desc"/>
             <Label text="↑ ↓ ← →" styleClass="statusbar-key"/>
             <Label fx:id="sbNavigate" text="Navigate" styleClass="statusbar-desc"/>
-            <Label text="Tab" styleClass="statusbar-key"/>
-            <Label fx:id="sbCycle" text="Cycle" styleClass="statusbar-desc"/>
             <Label text="Scroll" styleClass="statusbar-key"/>
             <Label fx:id="sbZoom" text="Zoom" styleClass="statusbar-desc"/>
             <Label text="Ctrl+Z" styleClass="statusbar-key"/>
@@ -62,7 +64,7 @@
             <Label text="Ctrl+Y" styleClass="statusbar-key"/>
             <Label fx:id="sbRedo" text="Redo" styleClass="statusbar-desc"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Label fx:id="syncStatusLabel" text="● Pending sync"
+            <Label fx:id="syncStatusLabel" text="● Sync Pending"
                    style="-fx-font-size: 11px; -fx-text-fill: #f59e0b; -fx-font-weight: bold;"/>
             <Button fx:id="syncBtn" text="Sync" onAction="#onSync" styleClass="btn-ghost"
                     style="-fx-font-size: 10px; -fx-padding: 4 10;"/>
