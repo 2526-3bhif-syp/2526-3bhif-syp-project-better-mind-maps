@@ -63,12 +63,13 @@ public class LanguageManager {
         p("status.pending",      "● Pending sync",                      "● Sync ausstehend");
 
         // ── Context menu ──────────────────────────────────────────────────────
-        p("menu.addchild",       "Add Child Node  [Enter]",             "Kind-Knoten hinzufügen  [Enter]");
-        p("menu.edittext",       "Edit Text  [F2]",                     "Text bearbeiten  [F2]");
-        p("menu.deletenode",     "Delete Node  [Del]",                  "Knoten löschen  [Del]");
-        p("menu.editdesc",       "📝  Edit Description",                "📝  Beschreibung bearbeiten");
-        p("menu.editstyle",      "🎨  Edit Style",                      "🎨  Stil bearbeiten");
-        p("menu.duplicate",      "📋  Duplicate",                       "📋  Duplizieren");
+        p("menu.addchild",       "Add Child Node  [Tab]",               "Kind-Knoten hinzufügen  [Tab]");
+        p("menu.addsibling",      "Add Sibling Node  [Enter]",           "Geschwister-Knoten hinzufügen  [Enter]");
+        p("menu.edittext",        "Edit Text  [F2 / Dbl-Click]",         "Text bearbeiten  [F2 / Doppelklick]");
+        p("menu.deletenode",      "Delete Node  [Del / Backspace]",      "Knoten löschen  [Del / Rücktaste]");
+        p("menu.editdesc",        "📝  Edit Description  [Space]",       "📝  Beschreibung bearbeiten  [Leertaste]");
+        p("menu.editstyle",       "🎨  Edit Style",                      "🎨  Stil bearbeiten");
+        p("menu.duplicate",       "📋  Duplicate",                       "📋  Duplizieren");
 
         // ── Dialogs ───────────────────────────────────────────────────────────
         p("dlg.newmap.title",    "New Mind Map",                        "Neue Mind Map");

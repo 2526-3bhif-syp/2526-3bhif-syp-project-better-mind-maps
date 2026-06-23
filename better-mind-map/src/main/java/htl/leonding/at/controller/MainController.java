@@ -777,20 +777,16 @@ public class MainController {
 
         KeyCode code = e.getCode();
 
-        if (code == KeyCode.ENTER || code == KeyCode.INSERT) {
+        if (code == KeyCode.TAB) {
             promptAddChild(map, canvas, currentNode);
             e.consume();
 
-        } else if (code == KeyCode.TAB) {
-            List<Node> nodes = getNodesInDfsOrder(map);
-            int idx = nodes.indexOf(currentNode);
-            if (e.isShiftDown()) {
-                idx = (idx - 1 + nodes.size()) % nodes.size();
-            } else {
-                idx = (idx + 1) % nodes.size();
-            }
-            currentNode = nodes.get(idx);
-            refreshCanvas(canvas, map);
+        } else if (code == KeyCode.ENTER || code == KeyCode.INSERT) {
+            promptAddSibling(map, canvas, currentNode);
+            e.consume();
+
+        } else if (code == KeyCode.SPACE) {
+            showEditDescriptionDialog(currentNode, canvas, map);
             e.consume();
 
         } else if (code == KeyCode.RIGHT || code == KeyCode.LEFT || code == KeyCode.UP || code == KeyCode.DOWN) {
@@ -801,18 +797,8 @@ public class MainController {
             promptEditNode(map, canvas, currentNode);
             e.consume();
 
-        } else if (code == KeyCode.DELETE) {
-            if (currentNode.getParentId() != null) {
-                saveUndoSnapshot(map);
-                String parentId = currentNode.getParentId();
-                service.deleteNode(map, currentNode);
-                currentNode = map.getNodes().stream()
-                        .filter(n -> n.getId().equals(parentId))
-                        .findFirst()
-                        .orElse(map.getNodes().isEmpty() ? null : map.getNodes().get(0));
-                refreshCanvas(canvas, map);
-                canvas.requestFocus();
-            }
+        } else if (code == KeyCode.DELETE || code == KeyCode.BACK_SPACE) {
+            confirmAndDeleteNode(map, canvas, currentNode);
             e.consume();
         }
     }
@@ -890,6 +876,54 @@ public class MainController {
             canvas.requestFocus();
             TutorialManager.onAction(TutorialManager.TutorialAction.NODE_ADDED);
         });
+    }
+
+    private void promptAddSibling(MindMap map, Pane canvas, Node node) {
+        if (node.getParentId() == null) {
+            // Root node has no parent — cannot add a sibling
+            return;
+        }
+        Node parent = map.getNodes().stream()
+                .filter(n -> n.getId().equals(node.getParentId()))
+                .findFirst().orElse(null);
+        if (parent == null) return;
+
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle(LanguageManager.get("dlg.addchild.title"));
+        dialog.setHeaderText(LanguageManager.getf("dlg.addchild.header", parent.getText()));
+        dialog.setContentText("Text:");
+        applyTheme(dialog);
+        dialog.showAndWait().ifPresent(text -> {
+            saveUndoSnapshot(map);
+            Node newNode = service.addNode(map, parent.getId(), text);
+            currentNode = newNode;
+            refreshCanvas(canvas, map);
+            canvas.requestFocus();
+            TutorialManager.onAction(TutorialManager.TutorialAction.NODE_ADDED);
+        });
+    }
+
+    private void confirmAndDeleteNode(MindMap map, Pane canvas, Node node) {
+        if (node == null || node.getParentId() == null) return; // Cannot delete root
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle(LanguageManager.get("dlg.delete.title"));
+        confirm.setHeaderText(LanguageManager.getf("dlg.delete.header", node.getText()));
+        confirm.setContentText(LanguageManager.get("dlg.delete.content"));
+        applyTheme(confirm);
+        confirm.showAndWait()
+            .filter(btn -> btn == ButtonType.OK)
+            .ifPresent(btn -> {
+                saveUndoSnapshot(map);
+                String parentId = node.getParentId();
+                service.deleteNode(map, node);
+                currentNode = map.getNodes().stream()
+                        .filter(n -> n.getId().equals(parentId))
+                        .findFirst()
+                        .orElse(map.getNodes().isEmpty() ? null : map.getNodes().get(0));
+                refreshCanvas(canvas, map);
+                canvas.requestFocus();
+            });
     }
 
     private void promptEditNode(MindMap map, Pane canvas, Node node) {
@@ -1241,9 +1275,9 @@ public class MainController {
                     new Stop(0, Color.web("#6366f1")),
                     new Stop(1, Color.web("#4338ca"))));
             if (isCurrent) {
-                rect.setStroke(Color.web("#a5b4fc"));
-                rect.setStrokeWidth(2.5);
-                rect.setEffect(new javafx.scene.effect.DropShadow(18, 0, 4, Color.web("#6366f155")));
+                rect.setStroke(Color.web("#8b5cf6"));
+                rect.setStrokeWidth(2.0);
+                rect.setEffect(new javafx.scene.effect.DropShadow(0, 0, 4, Color.web("#8b5cf6")));
             } else {
                 rect.setStroke(Color.web("#4338ca"));
                 rect.setStrokeWidth(1.5);
@@ -1261,9 +1295,9 @@ public class MainController {
             }
 
             if (isCurrent) {
-                rect.setStroke(Color.web("#6366f1"));
-                rect.setStrokeWidth(2.5);
-                rect.setEffect(new javafx.scene.effect.DropShadow(14, 0, 3, Color.web("#6366f144")));
+                rect.setStroke(Color.web("#8b5cf6"));
+                rect.setStrokeWidth(2.0);
+                rect.setEffect(new javafx.scene.effect.DropShadow(0, 0, 4, Color.web("#8b5cf6")));
             } else {
                 Color borderColor = isDarkCanvas ? Color.web("#2a3245") : Color.web("#e2e8f0");
                 rect.setStroke(borderColor);
@@ -1314,7 +1348,7 @@ public class MainController {
                 currentNode = node;
                 refreshCanvas(canvas, map);
                 if (e.getClickCount() == 2) {
-                    showDescriptionPopup(node, canvas, map);
+                    promptEditNode(map, canvas, node);
                 }
                 canvas.requestFocus();
             }
@@ -1370,23 +1404,16 @@ public class MainController {
         MenuItem addChild = new MenuItem(LanguageManager.get("menu.addchild"));
         addChild.setOnAction(e -> promptAddChild(map, canvas, node));
 
+        MenuItem addSibling = new MenuItem(LanguageManager.get("menu.addsibling"));
+        addSibling.setDisable(node.getParentId() == null);
+        addSibling.setOnAction(e -> promptAddSibling(map, canvas, node));
+
         MenuItem editText = new MenuItem(LanguageManager.get("menu.edittext"));
         editText.setOnAction(e -> promptEditNode(map, canvas, node));
 
         MenuItem deleteNode = new MenuItem(LanguageManager.get("menu.deletenode"));
         deleteNode.setDisable(node.getParentId() == null);
-        deleteNode.setOnAction(e -> {
-            if (node.getParentId() != null) {
-                saveUndoSnapshot(map);
-                String parentId = node.getParentId();
-                service.deleteNode(map, node);
-                currentNode = map.getNodes().stream()
-                        .filter(n -> n.getId().equals(parentId))
-                        .findFirst().orElse(null);
-                refreshCanvas(canvas, map);
-                canvas.requestFocus();
-            }
-        });
+        deleteNode.setOnAction(e -> confirmAndDeleteNode(map, canvas, node));
 
         MenuItem editDesc = new MenuItem(LanguageManager.get("menu.editdesc"));
         editDesc.setOnAction(e -> showEditDescriptionDialog(node, canvas, map));
@@ -1416,7 +1443,7 @@ public class MainController {
         });
 
         contextMenu.getItems().addAll(
-            addChild, editText,
+            addChild, addSibling, editText,
             new SeparatorMenuItem(),
             styleNode,
             new SeparatorMenuItem(),
