@@ -1,11 +1,11 @@
 ## 1. Package Directories & Relocating Files
 
-- [ ] 1.1 Create subdirectories under `htl/leonding/at`: `model`, `controller`, `service`, `repository`, `util`
-- [ ] 1.2 Move `MindMap.java` and `Node.java` to the `model` package
-- [ ] 1.3 Move `MainController.java`, `OverviewController.java`, `AiChatController.java`, `NodeStyleEditor.java`, and `TutorialManager.java` to the `controller` package
-- [ ] 1.4 Move `MindMapService.java`, `SyncService.java`, and `LocalSimulatedSyncService.java` to the `service` package
-- [ ] 1.5 Move `MindMapRepository.java` and `DatabaseManager.java` to the `repository` package
-- [ ] 1.6 Move `JwtUtil.java`, `PasswordHasher.java`, `LanguageManager.java`, `SessionManager.java`, and `WindowsDarkMode.java` to the `util` package
+- [x] 1.1 Create subdirectories under `htl/leonding/at`: `model`, `controller`, `service`, `repository`, `util`
+- [x] 1.2 Move `MindMap.java` and `Node.java` to the `model` package
+- [x] 1.3 Move `MainController.java`, `OverviewController.java`, `AiChatController.java`, `NodeStyleEditor.java`, and `TutorialManager.java` to the `controller` package
+- [x] 1.4 Move `MindMapService.java`, `SyncService.java`, and `LocalSimulatedSyncService.java` to the `service` package
+- [x] 1.5 Move `MindMapRepository.java` and `DatabaseManager.java` to the `repository` package
+- [x] 1.6 Move `JwtUtil.java`, `PasswordHasher.java`, `LanguageManager.java`, `SessionManager.java`, and `WindowsDarkMode.java` to the `util` package
 
 ## 2. Refactoring Java Code (Imports & Declarations)
 
