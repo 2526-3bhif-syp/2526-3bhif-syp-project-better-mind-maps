@@ -19,9 +19,9 @@ Root nodes SHALL render with a vertical blue gradient (#3498db to #2980b9) and b
 - **THEN** it displays as a white card with a subtle drop shadow (radius 4.0, offset y 2.0, color #00000018) and a soft gray border
 
 ### Requirement: Selection Highlights
-An active or selected node SHALL immediately highlight with a prominent red border (#e74c3c) of thickness 3.0 pixels.
+An active or selected node SHALL immediately highlight with a prominent violet border (`#8b5cf6`) of thickness 2.0 pixels and a hard drop shadow offset below the node (e.g., `DropShadow(radius=0, offsetY=4, color=#8b5cf6)`) to ensure visibility regardless of the node's fill color.
 
 #### Scenario: Highlighting a selected node
 - **GIVEN** a node is currently selected
 - **WHEN** the node is drawn or selected
-- **THEN** its border stroke transitions to #e74c3c with a stroke width of 3.0 pixels
+- **THEN** its border stroke transitions to `#8b5cf6` with a stroke width of 2.0 pixels and it renders with a hard drop shadow downward
