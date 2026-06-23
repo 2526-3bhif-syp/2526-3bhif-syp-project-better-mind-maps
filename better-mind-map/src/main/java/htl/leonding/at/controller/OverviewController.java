@@ -1,4 +1,11 @@
-package htl.leonding.at;
+package htl.leonding.at.controller;
+import htl.leonding.at.model.*;
+import htl.leonding.at.controller.*;
+import htl.leonding.at.service.*;
+import htl.leonding.at.repository.*;
+import htl.leonding.at.util.*;
+import htl.leonding.at.App;
+
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -430,7 +437,7 @@ public class OverviewController {
 
     private void applyTheme(Dialog<?> dialog) {
         dialog.getDialogPane().getStylesheets().add(
-            getClass().getResource("styles.css").toExternalForm()
+            App.class.getResource("styles.css").toExternalForm()
         );
     }
 
@@ -599,7 +606,7 @@ public class OverviewController {
         LanguageManager.setLanguage(lang);
         saveLanguagePreference();
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("overview-view.fxml"));
+            FXMLLoader loader = new FXMLLoader(App.class.getResource("overview-view.fxml"));
             Stage stage = (Stage) cardsFlow.getScene().getWindow();
             javafx.scene.Parent root = loader.load();
             OverviewController loaded = loader.getController();
@@ -651,7 +658,7 @@ public class OverviewController {
             return;
         }
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("main-view.fxml"));
+            FXMLLoader loader = new FXMLLoader(App.class.getResource("main-view.fxml"));
             javafx.scene.Parent mainRoot = loader.load();
             MainController controller = loader.getController();
             controller.loadMindMap(map);
@@ -666,7 +673,7 @@ public class OverviewController {
     private void onLogout() {
         SessionManager.logout();
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("login-view.fxml"));
+            FXMLLoader loader = new FXMLLoader(App.class.getResource("login-view.fxml"));
             Stage stage = (Stage) cardsFlow.getScene().getWindow();
             stage.getScene().setRoot(loader.load());
             WindowsDarkMode.applyToAllWindows();

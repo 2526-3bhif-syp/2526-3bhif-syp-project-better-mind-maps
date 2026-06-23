@@ -1,4 +1,11 @@
-package htl.leonding.at;
+package htl.leonding.at.controller;
+import htl.leonding.at.model.*;
+import htl.leonding.at.controller.*;
+import htl.leonding.at.service.*;
+import htl.leonding.at.repository.*;
+import htl.leonding.at.util.*;
+import htl.leonding.at.App;
+
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -118,7 +125,7 @@ public class AiChatController {
             if (returnCallback != null) returnCallback.run();
         } else {
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("overview-view.fxml"));
+                FXMLLoader loader = new FXMLLoader(App.class.getResource("overview-view.fxml"));
                 stage.getScene().setRoot(loader.load());
                 WindowsDarkMode.applyToAllWindows();
             } catch (IOException e) {

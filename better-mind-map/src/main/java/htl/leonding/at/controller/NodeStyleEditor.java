@@ -1,4 +1,11 @@
-package htl.leonding.at;
+package htl.leonding.at.controller;
+import htl.leonding.at.model.*;
+import htl.leonding.at.controller.*;
+import htl.leonding.at.service.*;
+import htl.leonding.at.repository.*;
+import htl.leonding.at.util.*;
+import htl.leonding.at.App;
+
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -127,7 +134,7 @@ public class NodeStyleEditor {
         );
 
         Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
+        scene.getStylesheets().add(App.class.getResource("styles.css").toExternalForm());
         popup.setScene(scene);
 
         // Position near centre of owning window

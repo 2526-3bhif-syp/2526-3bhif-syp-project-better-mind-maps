@@ -1,9 +1,15 @@
-package htl.leonding.at;
+package htl.leonding.at.controller;
+import htl.leonding.at.model.*;
+import htl.leonding.at.controller.*;
+import htl.leonding.at.service.*;
+import htl.leonding.at.repository.*;
+import htl.leonding.at.util.*;
+import htl.leonding.at.App;
 
-import javafx.application.Platform;
+
+import htl.leonding.at.*;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -125,7 +131,7 @@ public class LoginController {
 
     private void loadOverview() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("overview-view.fxml"));
+            FXMLLoader loader = new FXMLLoader(App.class.getResource("overview-view.fxml"));
             Stage stage = (Stage) usernameField.getScene().getWindow();
             stage.getScene().setRoot(loader.load());
             WindowsDarkMode.applyToAllWindows();

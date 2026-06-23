@@ -1,4 +1,11 @@
-package htl.leonding.at;
+package htl.leonding.at.controller;
+import htl.leonding.at.model.*;
+import htl.leonding.at.controller.*;
+import htl.leonding.at.service.*;
+import htl.leonding.at.repository.*;
+import htl.leonding.at.util.*;
+import htl.leonding.at.App;
+
 
 import javafx.animation.*;
 import javafx.application.Platform;
@@ -229,7 +236,7 @@ public class MainController {
     }
 
     private void applyTheme(Dialog<?> dialog) {
-        String css = getClass().getResource("styles.css").toExternalForm();
+        String css = App.class.getResource("styles.css").toExternalForm();
         dialog.getDialogPane().getStylesheets().add(css);
         dialog.getDialogPane().getStyleClass().add("dialog-pane");
     }
@@ -284,7 +291,7 @@ public class MainController {
     @FXML
     private void onBackToOverview() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("overview-view.fxml"));
+            FXMLLoader loader = new FXMLLoader(App.class.getResource("overview-view.fxml"));
             javafx.scene.Parent root = loader.load();
             OverviewController controller = loader.getController();
             controller.setMainController(this);
@@ -354,7 +361,7 @@ public class MainController {
         }
 
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("ai-chat-view.fxml"));
+            FXMLLoader loader = new FXMLLoader(App.class.getResource("ai-chat-view.fxml"));
             javafx.scene.Parent chatRoot = loader.load();
             AiChatController chatCtrl = loader.getController();
             chatCtrl.loadExistingMap(activeMap);
@@ -2194,7 +2201,7 @@ public class MainController {
 
         Scene scene = new Scene(outerRoot);
         scene.setFill(Color.TRANSPARENT);
-        scene.getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
+        scene.getStylesheets().add(App.class.getResource("styles.css").toExternalForm());
         popup.setScene(scene);
         popup.show();
 

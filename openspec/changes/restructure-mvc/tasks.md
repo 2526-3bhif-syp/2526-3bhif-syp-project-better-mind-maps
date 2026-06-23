@@ -9,9 +9,9 @@
 
 ## 2. Refactoring Java Code (Imports & Declarations)
 
-- [ ] 2.1 Update package declarations at the top of all moved Java files to match their new package names
-- [ ] 2.2 Update all import statements in the relocated Java files and in `App.java` to resolve cross-package references
-- [ ] 2.3 Refactor resource loading paths in `App.java`, `LoginController.java`, `OverviewController.java`, and `MainController.java` to use absolute classpath resolution (e.g., using `/htl/leonding/at/` or loading via `App.class.getResource(...)`)
+- [x] 2.1 Update package declarations at the top of all moved Java files to match their new package names
+- [x] 2.2 Update all import statements in the relocated Java files and in `App.java` to resolve cross-package references
+- [x] 2.3 Refactor resource loading paths in `App.java`, `LoginController.java`, `OverviewController.java`, and `MainController.java` to use absolute classpath resolution (e.g., using `/htl/leonding/at/` or loading via `App.class.getResource(...)`)
 
 ## 3. FXML Controller Bindings
 
