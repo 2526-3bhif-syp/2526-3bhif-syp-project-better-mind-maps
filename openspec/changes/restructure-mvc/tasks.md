@@ -22,5 +22,5 @@
 
 ## 4. Verification & Testing
 
-- [ ] 4.1 Run Maven clean compilation to verify the application builds without package or dependency errors
-- [ ] 4.2 Start the application and perform a full integration test (Login, Dashboard navigation, opening a MindMap, styling nodes, using the AI panel) to verify no runtime `NullPointerException`s are thrown by resource resolution
+- [x] 4.1 Run Maven clean compilation to verify the application builds without package or dependency errors
+- [x] 4.2 Start the application and perform a full integration test (Login, Dashboard navigation, opening a MindMap, styling nodes, using the AI panel) to verify no runtime `NullPointerException`s are thrown by resource resolution
