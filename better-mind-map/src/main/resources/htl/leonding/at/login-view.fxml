@@ -44,7 +44,7 @@
                style="-fx-font-size: 13px; -fx-text-fill: #e74c3c;"/>
         
         <HBox spacing="14" alignment="CENTER">
-            <Button text="Sign In" onAction="#onLogin" styleClass="btn-blue" style="-fx-min-width: 120;"/>
+            <Button text="Sign In" onAction="#onLogin" defaultButton="true" styleClass="btn-blue" style="-fx-min-width: 120;"/>
             <Button text="Register" onAction="#onRegister" styleClass="btn-ghost" style="-fx-min-width: 120;"/>
         </HBox>
         
