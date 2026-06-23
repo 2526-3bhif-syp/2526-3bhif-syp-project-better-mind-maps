@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="htl.leonding.at.AiChatController"
+            fx:controller="htl.leonding.at.controller.AiChatController"
             stylesheets="@styles.css"
             style="-fx-background-color: #0b0f1a;">
 

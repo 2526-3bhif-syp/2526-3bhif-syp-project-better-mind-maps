@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.HBox?>
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="htl.leonding.at.LoginController"
+      fx:controller="htl.leonding.at.controller.LoginController"
       stylesheets="@styles.css"
       alignment="CENTER"
       spacing="20"

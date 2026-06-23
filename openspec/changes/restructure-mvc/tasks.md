@@ -15,10 +15,10 @@
 
 ## 3. FXML Controller Bindings
 
-- [ ] 3.1 Update the `fx:controller` reference in `login-view.fxml` to `htl.leonding.at.controller.LoginController`
-- [ ] 3.2 Update the `fx:controller` reference in `overview-view.fxml` to `htl.leonding.at.controller.OverviewController`
-- [ ] 3.3 Update the `fx:controller` reference in `main-view.fxml` to `htl.leonding.at.controller.MainController`
-- [ ] 3.4 Update the `fx:controller` reference in `ai-chat-view.fxml` to `htl.leonding.at.controller.AiChatController`
+- [x] 3.1 Update the `fx:controller` reference in `login-view.fxml` to `htl.leonding.at.controller.LoginController`
+- [x] 3.2 Update the `fx:controller` reference in `overview-view.fxml` to `htl.leonding.at.controller.OverviewController`
+- [x] 3.3 Update the `fx:controller` reference in `main-view.fxml` to `htl.leonding.at.controller.MainController`
+- [x] 3.4 Update the `fx:controller` reference in `ai-chat-view.fxml` to `htl.leonding.at.controller.AiChatController`
 
 ## 4. Verification & Testing
 
