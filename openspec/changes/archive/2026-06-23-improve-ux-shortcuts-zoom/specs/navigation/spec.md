@@ -1,6 +1,9 @@
-## Purpose
-Defines zooming, panning, keyboard hotkeys, and focus traversal within the mind map workspace.
-## Requirements
+## ADDED Requirements
+
+*None*
+
+## MODIFIED Requirements
+
 ### Requirement: Workspace Scaling and Panning
 Scroll-wheeling on the viewport or performing a pinch-to-zoom gesture on the trackpad/touchscreen SHALL scale the canvas up or down (clamped between 0.2 and 5.0) centered on the cursor position. Clicking and dragging on empty space SHALL pan the canvas smoothly at 60 FPS.
 
@@ -18,12 +21,3 @@ Scroll-wheeling on the viewport or performing a pinch-to-zoom gesture on the tra
 - **GIVEN** the workspace scale is 1.0
 - **WHEN** the user performs a pinch gesture (zoom-in) on the viewport with a zoom factor of 1.2
 - **THEN** the scale factor increases to 1.2 centered on the gesture cursor position
-
-### Requirement: Directional Keyboard Focus Traversal
-Directional keyboard keys (LEFT, RIGHT, UP, DOWN, TAB) SHALL shift focus dynamically across nodes.
-
-#### Scenario: Sequential focus traversal using Tab
-- **GIVEN** a mind map has multiple nodes
-- **WHEN** the user presses the TAB key
-- **THEN** the selection focus advances to the next node in the global node hierarchy
-
